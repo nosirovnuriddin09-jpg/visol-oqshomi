@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="theme-color" content="#dfeaf5">
+<title id="pageTitle">Taklifnoma — Visol Oqshomi</title>
+<meta name="description" id="metaDescription" content="Sizni tantanali toʻy oqshomimizga lutfan taklif etamiz.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Great+Vibes&display=swap" rel="stylesheet">
+
+<!-- QRCode.js for entrance check-in -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<!-- Canvas Confetti for Celebration Effects -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<script>document.documentElement.className += " js";</script>
+
+<style>
+/* ============================================================
+   TAKLIFNOMA — Visol Oqshomi · Nikoh toʻylari
+   Powder Blue & Gold watercolor · mobile-first · single file
+   ============================================================ */
+
+:root{
+  --blue-900:#12284b;
+  --blue-800:#1a355e;
+  --blue-700:#26477c;
+  --blue-600:#3a5f9c;
+  --blue-500:#5b7fb9;
+  --blue-300:#a9c4e2;
+  --blue-200:#c8dbef;
+  --blue-100:#e2edf8;
+  --blue-050:#f2f7fc;
+
+  --gold-100:#fdf3d4;
+  --gold-200:#f3e0a6;
+  --gold-300:#e5c479;
+  --gold-400:#cfa452;
+  --gold-500:#b28437;
+  --gold-600:#8a6323;
+
+  --paper:#fdfcf8;
+  --ink:#16294d;
+  --ink-soft:#4a5f86;
+
+  --shell: min(100vw, 480px);
+  --ease: cubic-bezier(.22,.9,.28,1);
+
+  --grad-gold: linear-gradient(160deg,
+      var(--gold-600) 0%, var(--gold-400) 18%, var(--gold-100) 38%,
+      var(--gold-300) 52%, var(--gold-500) 70%, var(--gold-200) 86%, var(--gold-500) 100%);
+
+  --grad-gold-ink: linear-gradient(165deg,
+      var(--gold-600) 0%, var(--gold-500) 30%, var(--gold-300) 50%,
+      var(--gold-500) 72%, var(--gold-600) 100%);
+
+  --grad-blue-ink: linear-gradient(170deg,
+      var(--blue-900) 0%, var(--blue-700) 45%, var(--blue-600) 60%, var(--blue-900) 100%);
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+
+body{
+  font-family:'Cormorant Garamond', Georgia, serif;
+  background:#cfdff0;
+  color:var(--ink);
+  overflow-x:clip;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* page lock only while the cover is showing */
+body.locked{
+  position:fixed; inset:0; width:100%; overflow:hidden;
+}
+
+/* ---------- page shell centered like a phone card ---------- */
+.shell{
+  position:relative;
+  width:min(100%, 480px);
+  margin:0 auto;
+  min-height:100svh;
+  background:
+    radial-gradient(120% 55% at 108% -4%, rgba(140,175,215,.50) 0%, rgba(140,175,215,0) 60%),
+    radial-gradient(110% 50% at -10% 8%,  rgba(168,197,228,.45) 0%, rgba(168,197,228,0) 55%),
+    radial-gradient(120% 60% at -12% 104%, rgba(133,168,208,.55) 0%, rgba(133,168,208,0) 58%),
+    radial-gradient(120% 55% at 112% 96%, rgba(158,190,222,.5) 0%, rgba(158,190,222,0) 60%),
+    linear-gradient(180deg, #eef5fb 0%, #f7fafd 30%, #f2f7fb 55%, #e8f1f9 100%);
+  box-shadow:0 0 80px rgba(20,45,90,.25);
+}
+
+/* watercolor blooms */
+.shell::before, .shell::after{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+}
+.shell::before{
+  background:
+    radial-gradient(38% 22% at 12% 6%,  rgba(122,161,205,.28), transparent 70%),
+    radial-gradient(30% 18% at 88% 14%, rgba(122,161,205,.24), transparent 70%),
+    radial-gradient(42% 24% at 90% 88%, rgba(108,150,198,.30), transparent 70%),
+    radial-gradient(36% 20% at 6% 78%,  rgba(122,161,205,.26), transparent 70%),
+    radial-gradient(24% 14% at 50% 40%, rgba(190,212,235,.35), transparent 70%);
+  filter:blur(6px);
+}
+/* gold speckles */
+.shell::after{
+  background-image:
+    radial-gradient(2px 2px at 12% 9%,  rgba(207,164,82,.8), transparent 60%),
+    radial-gradient(1.6px 1.6px at 30% 4%, rgba(207,164,82,.7), transparent 60%),
+    radial-gradient(2.2px 2.2px at 82% 7%, rgba(229,196,121,.8), transparent 60%),
+    radial-gradient(1.4px 1.4px at 68% 13%, rgba(178,132,55,.7), transparent 60%),
+    radial-gradient(2px 2px at 8% 55%,  rgba(207,164,82,.6), transparent 60%),
+    radial-gradient(1.6px 1.6px at 94% 48%, rgba(207,164,82,.65), transparent 60%),
+    radial-gradient(2px 2px at 14% 90%, rgba(229,196,121,.75), transparent 60%),
+    radial-gradient(1.8px 1.8px at 88% 93%, rgba(178,132,55,.7), transparent 60%),
+    radial-gradient(1.4px 1.4px at 55% 97%, rgba(207,164,82,.6), transparent 60%);
+}
+
+/* thin gold frame with clipped corners */
+.frame{
+  position:fixed; z-index:60; pointer-events:none;
+  top:10px; bottom:10px;
+  left:0; right:0; margin:0 auto;
+  width:calc(min(100%, 480px) - 20px);
+  opacity:0; animation:frameIn 1.4s .4s var(--ease) forwards;
+}
+@keyframes frameIn{ to{ opacity:1; } }
+.frame svg{ width:100%; height:100%; display:block; }
+
+main{ position:relative; z-index:2; }
+
+/* ============================================================
+   COVER / ENTRY SCREEN (SCREENSHOT 1)
+   ============================================================ */
+#cover{
+  position:fixed; inset:0; z-index:100;
+  display:flex; align-items:center; justify-content:center;
+  background:
+    radial-gradient(120% 80% at 50% 110%, rgba(90,130,180,.45), transparent 60%),
+    linear-gradient(180deg, #dcebf7 0%, #eef5fb 45%, #dfecf7 100%);
+  transition:opacity 1s var(--ease), visibility 1s;
+}
+#cover.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+
+.cover-card{
+  width:min(88vw, 380px);
+  text-align:center;
+  padding:46px 26px 40px;
+  background:rgba(253,252,248,.72);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  border-radius:16px;
+  position:relative;
+  box-shadow:0 24px 60px rgba(24,52,100,.18);
+  animation:coverPop 1.2s var(--ease) both;
+}
+@keyframes coverPop{
+  from{ opacity:0; transform:translateY(26px) scale(.96); }
+  to{ opacity:1; transform:none; }
+}
+.cover-card::before{
+  content:""; position:absolute; inset:10px; border-radius:10px;
+  border:1px solid rgba(178,132,55,.55); pointer-events:none;
+}
+.cover-kicker{
+  font-family:'Cinzel', serif; font-size:.68rem; letter-spacing:.42em;
+  text-transform:uppercase; color:var(--gold-600); margin-bottom:14px;
+}
+.cover-names{
+  font-family:'Great Vibes', cursive;
+  font-size:clamp(1.8rem, calc(var(--shell) * .078), 2.4rem);
+  line-height:1.25;
+  background:var(--grad-blue-ink);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  margin-bottom:6px;
+}
+.cover-date{
+  font-size:1.05rem; letter-spacing:.14em; color:var(--ink-soft); margin-bottom:26px;
+}
+.open-btn{
+  font-family:'Cinzel', serif;
+  font-size:.72rem; letter-spacing:.2em; text-transform:uppercase;
+  color:#fff; background:linear-gradient(160deg, var(--blue-700), var(--blue-900));
+  border:1px solid var(--gold-300);
+  padding:14px 24px; border-radius:999px; cursor:pointer;
+  max-width:100%;
+  position:relative; overflow:hidden;
+  box-shadow:0 10px 26px rgba(24,52,100,.35);
+  transition:transform .35s var(--ease), box-shadow .35s var(--ease);
+}
+.open-btn:active{ transform:scale(.96); }
+.open-btn::after{
+  content:""; position:absolute; top:0; bottom:0; left:-70%; width:45%;
+  background:linear-gradient(105deg, transparent, rgba(255,244,214,.55), transparent);
+  animation:sweep 2.6s 1s infinite;
+}
+@keyframes sweep{ 0%{ left:-70%; } 55%,100%{ left:130%; } }
+
+.cover-flower{
+  position:absolute; width:150px; height:150px; opacity:.9; pointer-events:none;
+}
+.cover-flower.tl{ top:-46px; left:-40px; transform:rotate(-18deg); }
+.cover-flower.br{ bottom:-46px; right:-40px; transform:rotate(155deg); }
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+section{
+  position:relative;
+  padding:64px 30px;
+  text-align:center;
+}
+
+.rv{ transition:opacity .9s var(--ease), transform .9s var(--ease); }
+html.js .rv{ opacity:0; transform:translateY(30px); }
+html.js .rv.in{ opacity:1; transform:none; }
+.rv[data-d="1"]{ transition-delay:.12s; } .rv[data-d="2"]{ transition-delay:.24s; }
+.rv[data-d="3"]{ transition-delay:.36s; } .rv[data-d="4"]{ transition-delay:.48s; }
+.rv[data-d="5"]{ transition-delay:.6s; }
+
+/* ---------- HERO (SCREENSHOT 2) ---------- */
+#hero{ padding-top:calc(70px + env(safe-area-inset-top)); min-height:96svh; display:flex; flex-direction:column; justify-content:center; }
+
+.hero-orn{ width:190px; margin:0 auto 18px; color:var(--gold-500); }
+.hero-orn svg{ width:100%; display:block; }
+
+h1.title{
+  font-family:'Cinzel', serif;
+  font-weight:800;
+  font-size:clamp(1.9rem, calc(var(--shell) * .105), 3.3rem);
+  letter-spacing:.05em;
+  white-space:nowrap;
+  background:var(--grad-blue-ink);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 2px 10px rgba(24,52,100,.18));
+}
+.title-sub{
+  font-family:'Cinzel', serif; font-size:.66rem; letter-spacing:.5em;
+  text-transform:uppercase; color:var(--gold-600); margin-top:14px;
+}
+
+.guest{
+  margin-top:44px;
+}
+.guest-label{
+  font-size:1.35rem; font-style:italic; color:var(--ink-soft);
+}
+.guest-name{
+  display:inline-block;
+  font-family:'Great Vibes', cursive;
+  font-size:clamp(1.7rem, calc(var(--shell) * .072), 2.35rem);
+  line-height:1.3;
+  margin-top:6px; padding:0 18px 4px;
+  background:var(--grad-blue-ink);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  border-bottom:1px solid var(--gold-400);
+  min-width:230px;
+}
+
+.scroll-hint{
+  margin-top:54px; color:var(--gold-600);
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  font-family:'Cinzel', serif; font-size:.6rem; letter-spacing:.35em; text-transform:uppercase;
+}
+.scroll-hint svg{ width:20px; animation:bob 2s infinite var(--ease); }
+@keyframes bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(8px);} }
+
+/* ---------- INVITE (SCREENSHOT 3) ---------- */
+.lead{ font-size:1.3rem; font-style:italic; color:var(--ink-soft); margin-bottom:10px; }
+
+.names{
+  font-family:'Great Vibes', cursive;
+  font-size:clamp(1.8rem, calc(var(--shell) * .095), 2.9rem);
+  line-height:1.35;
+  background:var(--grad-blue-ink);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 2px 8px rgba(24,52,100,.15));
+}
+.event-name{
+  font-family:'Great Vibes', cursive;
+  font-size:clamp(2.2rem, calc(var(--shell) * .105), 3.1rem);
+  margin-top:2px;
+  background:var(--grad-gold-ink);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 2px 8px rgba(138,99,35,.22));
+}
+.invite-body{
+  margin-top:20px; font-size:1.28rem; line-height:1.65; color:var(--ink);
+}
+.invite-body b{ font-weight:700; color:var(--blue-800); white-space:nowrap; }
+
+.divider{ width:150px; margin:0 auto; color:var(--gold-500); }
+.divider svg{ width:100%; display:block; }
+
+/* ---------- DATE CARD + COUNTDOWN (SCREENSHOT 3) ---------- */
+.date-card{
+  background:rgba(253,252,248,.8);
+  border-radius:16px;
+  padding:34px 22px 30px;
+  position:relative;
+  box-shadow:0 18px 44px rgba(24,52,100,.14);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+}
+.date-card::before{
+  content:""; position:absolute; inset:9px; border-radius:10px;
+  border:1px solid rgba(178,132,55,.5); pointer-events:none;
+}
+.date-row{
+  display:flex; align-items:center; justify-content:center; gap:16px;
+  font-family:'Cinzel', serif;
+}
+.date-row .dow, .date-row .time{
+  font-size:.72rem; letter-spacing:.24em; text-transform:uppercase; color:var(--ink-soft);
+  padding:8px 0; border-top:1px solid var(--gold-400); border-bottom:1px solid var(--gold-400);
+  white-space:nowrap;
+}
+.date-row .day{
+  font-size:3.1rem; font-weight:600; line-height:1;
+  background:var(--grad-gold-ink);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.date-month{
+  margin-top:12px; font-family:'Cinzel', serif; font-size:.95rem;
+  letter-spacing:.4em; text-transform:uppercase; color:var(--blue-800);
+}
+
+.countdown{
+  margin-top:26px; display:flex; justify-content:center; gap:10px;
+}
+.cd-box{
+  flex:1; max-width:86px;
+  background:linear-gradient(170deg, var(--blue-800), var(--blue-900));
+  border:1px solid rgba(229,196,121,.55);
+  border-radius:12px; padding:12px 4px 10px;
+  box-shadow:0 10px 24px rgba(18,40,75,.28);
+}
+.cd-num{
+  font-family:'Cinzel', serif; font-size:1.55rem; font-weight:600; color:var(--gold-200);
+  font-variant-numeric:tabular-nums;
+}
+.cd-lbl{
+  margin-top:3px; font-family:'Cinzel', serif; font-size:.56rem;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--blue-300);
+}
+.cd-done{
+  margin-top:26px; font-family:'Great Vibes', cursive; font-size:2rem;
+  background:var(--grad-gold-ink); -webkit-background-clip:text; background-clip:text; color:transparent;
+  display:none;
+}
+
+.cal-btn{
+  margin-top:24px; display:inline-flex; align-items:center; gap:9px;
+  font-family:'Cinzel', serif; font-size:.66rem; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--blue-800); text-decoration:none;
+  border:1px solid var(--gold-400); border-radius:999px; padding:12px 22px;
+  background:rgba(253,252,248,.65);
+  transition:transform .3s var(--ease), box-shadow .3s var(--ease);
+}
+.cal-btn:active{ transform:scale(.96); }
+.cal-btn svg{ width:15px; color:var(--gold-600); }
+
+/* ---------- LOCATION (SCREENSHOT 4) ---------- */
+.loc-pin{ width:44px; margin:0 auto 14px; color:var(--gold-500); animation:pinFloat 3s infinite var(--ease); }
+.loc-pin svg{ width:100%; display:block; }
+@keyframes pinFloat{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-7px);} }
+
+.loc-name{
+  font-family:'Cinzel', serif; font-size:1.5rem; font-weight:600; letter-spacing:.08em;
+  background:var(--grad-blue-ink); -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.loc-addr{ margin-top:10px; font-size:1.22rem; font-style:italic; color:var(--ink-soft); line-height:1.5; }
+
+.map-btn{
+  margin-top:26px; display:inline-flex; align-items:center; gap:10px;
+  font-family:'Cinzel', serif; font-size:.7rem; letter-spacing:.26em; text-transform:uppercase;
+  color:#fff; text-decoration:none;
+  background:linear-gradient(160deg, var(--blue-700), var(--blue-900));
+  border:1px solid var(--gold-300);
+  padding:15px 28px; border-radius:999px;
+  box-shadow:0 12px 28px rgba(24,52,100,.3);
+  transition:transform .3s var(--ease);
+}
+.map-btn:active{ transform:scale(.96); }
+.map-btn svg{ width:15px; }
+
+/* ---------- FOOTER (SCREENSHOT 4) ---------- */
+#footer{ padding-bottom:120px; }
+.footer-lead{ font-size:1.25rem; font-style:italic; color:var(--ink-soft); }
+.footer-family{
+  font-family:'Great Vibes', cursive;
+  font-size:clamp(1.8rem, calc(var(--shell) * .08), 2.4rem);
+  margin-top:8px;
+  background:var(--grad-blue-ink);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.footer-orn{ width:130px; margin:26px auto 0; color:var(--gold-500); }
+.footer-orn svg{ width:100%; display:block; }
+.credit{
+  margin-top:34px; font-family:'Cinzel', serif; font-size:.56rem;
+  letter-spacing:.3em; text-transform:uppercase; color:rgba(74,95,134,.55);
+}
+
+/* ---------- corner flowers on sections ---------- */
+.corner{
+  position:absolute; width:135px; height:135px; pointer-events:none; z-index:1; opacity:.92;
+}
+.corner.tl{ top:-8px; left:-14px; }
+.corner.tr{ top:-8px; right:-14px; transform:scaleX(-1); }
+.corner.bl{ bottom:-8px; left:-14px; transform:scaleY(-1); }
+.corner.br{ bottom:-8px; right:-14px; transform:scale(-1); }
+.corner svg{ width:100%; height:100%; display:block; }
+.corner .sway{ transform-origin:20% 20%; animation:sway 6s infinite ease-in-out; }
+@keyframes sway{ 0%,100%{ transform:rotate(0deg);} 50%{ transform:rotate(3.2deg);} }
+
+/* ---------- petals canvas ---------- */
+#petals{
+  position:fixed; z-index:50; pointer-events:none;
+  top:0; height:100%;
+  left:0; right:0; margin:0 auto;
+  width:min(100%, 480px);
+}
+
+/* ---------- audio button (SCREENSHOT 2,3,4) ---------- */
+#musicWrap{
+  position:fixed; z-index:70;
+  left:0; right:0; margin:0 auto;
+  bottom:calc(20px + env(safe-area-inset-bottom));
+  width:min(100%, 480px);
+  display:flex; justify-content:flex-end;
+  padding-right:20px;
+  pointer-events:none;
+}
+#musicBtn{
+  pointer-events:auto;
+  width:52px; height:52px; border-radius:50%;
+  border:1px solid var(--gold-300);
+  background:linear-gradient(160deg, var(--blue-700), var(--blue-900));
+  color:var(--gold-200); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 12px 28px rgba(18,40,75,.4);
+  transition:transform .3s var(--ease);
+}
+#musicBtn:active{ transform:scale(.92); }
+#musicBtn svg{ width:20px; }
+#musicBtn.playing{ animation:pulse 2.4s infinite; }
+@keyframes pulse{
+  0%{ box-shadow:0 12px 28px rgba(18,40,75,.4), 0 0 0 0 rgba(229,196,121,.45); }
+  70%{ box-shadow:0 12px 28px rgba(18,40,75,.4), 0 0 0 16px rgba(229,196,121,0); }
+  100%{ box-shadow:0 12px 28px rgba(18,40,75,.4), 0 0 0 0 rgba(229,196,121,0); }
+}
+#musicBtn .eq{ display:none; align-items:flex-end; gap:2.5px; height:18px; }
+#musicBtn .eq i{
+  width:3px; background:var(--gold-200); border-radius:2px;
+  animation:eq 1s infinite ease-in-out;
+}
+#musicBtn .eq i:nth-child(1){ height:60%; animation-delay:0s; }
+#musicBtn .eq i:nth-child(2){ height:100%; animation-delay:.2s; }
+#musicBtn .eq i:nth-child(3){ height:45%; animation-delay:.4s; }
+#musicBtn .eq i:nth-child(4){ height:80%; animation-delay:.1s; }
+@keyframes eq{ 0%,100%{ transform:scaleY(.4);} 50%{ transform:scaleY(1);} }
+#musicBtn.playing .icon-note{ display:none; }
+#musicBtn.playing .eq{ display:flex; }
+
+@media (max-width: 374px){
+  section{ padding-left:22px; padding-right:22px; }
+  .date-card{ padding:30px 14px 26px; }
+  .date-row{ gap:10px; }
+  .date-row .dow, .date-row .time{ font-size:.62rem; letter-spacing:.16em; }
+  .date-row .day{ font-size:2.6rem; }
+  .countdown{ gap:7px; }
+  .cd-num{ font-size:1.3rem; }
+  .cd-lbl{ font-size:.5rem; letter-spacing:.12em; }
+  .corner{ width:110px; height:110px; }
+  .invite-body{ font-size:1.16rem; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.2s !important; }
+  #petals{ display:none; }
+  html.js .rv, .rv{ opacity:1 !important; transform:none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ====== COVER (SCREENSHOT 1) ====== -->
+<div id="cover" role="dialog" aria-label="Taklifnoma muqovasi">
+  <div class="cover-card">
+    <svg class="cover-flower tl" viewBox="0 0 120 120" aria-hidden="true"><use href="#flower-bunch"/></svg>
+    <svg class="cover-flower br" viewBox="0 0 120 120" aria-hidden="true"><use href="#flower-bunch"/></svg>
+    <div class="cover-kicker" id="coverKicker">Nikoh toʻyi</div>
+    <div class="cover-names" id="coverNames"><span style="opacity:0.85">Visol Oqshomi</span></div>
+    <div class="cover-date" id="coverDate">Tantanali Oqshom</div>
+    <button class="open-btn" id="openBtn">Taklifnomani ochish</button>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- Thin gold clipped-corner frame -->
+  <div class="frame" aria-hidden="true">
+    <svg viewBox="0 0 460 980" preserveAspectRatio="none" fill="none">
+      <path d="M28 6 H432 L454 28 V952 L432 974 H28 L6 952 V28 Z"
+            stroke="url(#frameGold)" stroke-width="1.4"/>
+      <path d="M36 14 H424 L446 36 V944 L424 966 H36 L14 944 V36 Z"
+            stroke="url(#frameGold)" stroke-width=".6" opacity=".65"/>
+      <defs>
+        <linearGradient id="frameGold" x1="0" y1="0" x2="460" y2="980" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#cfa452"/>
+          <stop offset=".3" stop-color="#f3e0a6"/>
+          <stop offset=".55" stop-color="#b28437"/>
+          <stop offset=".8" stop-color="#e5c479"/>
+          <stop offset="1" stop-color="#8a6323"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <canvas id="petals" aria-hidden="true"></canvas>
+
+  <main>
+
+    <!-- ====== HERO (SCREENSHOT 2) ====== -->
+    <section id="hero">
+      <div class="corner tl"><svg viewBox="0 0 120 120"><g class="sway"><use href="#flower-bunch"/></g></svg></div>
+      <div class="corner tr"><svg viewBox="0 0 120 120"><g class="sway"><use href="#flower-bunch"/></g></svg></div>
+
+      <div class="hero-orn rv"><svg viewBox="0 0 200 34"><use href="#orn-header"/></svg></div>
+      <h1 class="title rv" data-d="1">Taklifnoma</h1>
+      <div class="title-sub rv" data-d="2" id="heroSubtitle">Nikoh toʻyi · 2026</div>
+
+      <div class="guest rv" data-d="3">
+        <div class="guest-label">Hurmatli</div>
+        <div class="guest-name" id="guestName">Hurmatli Mehmon</div>
+        <div id="guestCommentBox" class="rv hidden" style="margin-top:10px;font-style:italic;font-size:0.85rem;color:#f3e0a6;opacity:0.95;max-width:320px;margin-left:auto;margin-right:auto;">
+          «<span id="guestCommentText"></span>»
+        </div>
+      </div>
+
+      <div class="scroll-hint rv" data-d="4">
+        <span>Pastga suring</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </section>
+
+    <!-- ====== INVITE (SCREENSHOT 3) ====== -->
+    <section id="invite">
+      <div class="divider rv"><svg viewBox="0 0 160 26"><use href="#orn-divider"/></svg></div>
+      <p class="lead rv" data-d="1" style="margin-top:34px;" id="inviteLeadText">Sizni aziz farzandlarimiz</p>
+      <div class="names rv" data-d="2" id="inviteCoupleNames">Kelin va Kuyovlarning</div>
+      <div class="event-name rv" data-d="3" id="inviteEventName">Nikoh toʻylari</div>
+      <p class="invite-body rv" data-d="4">
+        munosabati bilan<br>
+        <b id="inviteDateFormatted">Toʻy kuni</b> soat <b id="inviteTimeFormatted">18:00</b> da<br>
+        <span id="inviteActionText">yoziladigan dasturxonimizga</span><br>taklif etamiz!
+      </p>
+    </section>
+
+    <!-- ====== DATE + COUNTDOWN (SCREENSHOT 3) ====== -->
+    <section id="date">
+      <div class="corner bl"><svg viewBox="0 0 120 120"><g class="sway"><use href="#flower-bunch"/></g></svg></div>
+      <div class="date-card rv">
+        <div class="date-row">
+          <span class="dow" id="dowText">Seshanba</span>
+          <span class="day" id="dayNum">11</span>
+          <span class="time" id="timeText">Soat 19:00</span>
+        </div>
+        <div class="date-month" id="monthYearText">Avgust · 2026</div>
+
+        <div class="countdown" id="countdown" aria-label="Toʻygacha qolgan vaqt">
+          <div class="cd-box"><div class="cd-num" id="cdD">00</div><div class="cd-lbl">Kun</div></div>
+          <div class="cd-box"><div class="cd-num" id="cdH">00</div><div class="cd-lbl">Soat</div></div>
+          <div class="cd-box"><div class="cd-num" id="cdM">00</div><div class="cd-lbl">Daqiqa</div></div>
+          <div class="cd-box"><div class="cd-num" id="cdS">00</div><div class="cd-lbl">Soniya</div></div>
+        </div>
+        <div class="cd-done" id="cdDone">Qutlugʻ kun muborak boʻlsin!</div>
+
+        <a class="cal-btn" id="calBtn" href="#" download="nikoh-toyi.ics">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Taqvimga qoʻshish
+        </a>
+      </div>
+    </section>
+
+    <!-- ====== LOCATION (SCREENSHOT 4) ====== -->
+    <section id="location">
+      <div class="divider rv"><svg viewBox="0 0 160 26"><use href="#orn-divider"/></svg></div>
+      <div class="loc-pin rv" data-d="1" style="margin-top:34px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div class="loc-name rv" data-d="2" id="venueName">Tantanalar Saroyi</div>
+      <p class="loc-addr rv" data-d="3" id="venueAddress">Toʻyxona manzili</p>
+      <a class="map-btn rv" data-d="4" id="mapBtn"
+         href="https://maps.google.com"
+         target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        Xaritada koʻrish
+      </a>
+    </section>
+
+    <!-- ====== FOOTER (SCREENSHOT 4) ====== -->
+    <section id="footer">
+      <div class="corner bl"><svg viewBox="0 0 120 120"><g class="sway"><use href="#flower-bunch"/></g></svg></div>
+      <div class="corner br"><svg viewBox="0 0 120 120"><g class="sway"><use href="#flower-bunch"/></g></svg></div>
+
+      <p class="footer-lead rv">Hurmat va ehtirom ila,</p>
+      <div class="footer-family rv" data-d="1" id="footerFamily">Toʻy egalari va xonadon ahillari</div>
+      <div class="footer-orn rv" data-d="2"><svg viewBox="0 0 160 26"><use href="#orn-divider"/></svg></div>
+      <div class="credit rv" data-d="3" id="footerCredit">Taklifnoma · 2026</div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ====== AUDIO ====== -->
+<audio id="bgm" loop preload="auto" playsinline webkit-playsinline>
+  <source src="/music.mp3" type="audio/mpeg" />
+  <source src="/music.mp3.mp3" type="audio/mpeg" />
+  <source src="/audio.mp3" type="audio/mpeg" />
+</audio>
+<div id="musicWrap">
+  <button id="musicBtn" aria-label="Musiqani yoqish yoki oʻchirish">
+    <svg class="icon-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+  </button>
+</div>
+
+<!-- ====== SHARED SVG DEFS ====== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="petalBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dcebf8"/>
+      <stop offset=".55" stop-color="#a9c4e2"/>
+      <stop offset="1" stop-color="#6f95c4"/>
+    </linearGradient>
+    <linearGradient id="petalWhite" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dfe9f4"/>
+    </linearGradient>
+    <linearGradient id="leafBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9dbbdc"/>
+      <stop offset="1" stop-color="#5b7fb9"/>
+    </linearGradient>
+
+    <radialGradient id="roseBlue" cx=".4" cy=".35" r=".75">
+      <stop offset="0" stop-color="#eef4fb"/>
+      <stop offset=".45" stop-color="#bcd2ea"/>
+      <stop offset=".8" stop-color="#8fb0d6"/>
+      <stop offset="1" stop-color="#6b92c2"/>
+    </radialGradient>
+    <radialGradient id="peonyWhite" cx=".42" cy=".38" r=".75">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".6" stop-color="#f6f4ec"/>
+      <stop offset="1" stop-color="#dde7f0"/>
+    </radialGradient>
+    <linearGradient id="leafDeep" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7d9dc4"/>
+      <stop offset="1" stop-color="#41608e"/>
+    </linearGradient>
+
+    <filter id="wcEdge" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency=".055" numOctaves="3" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="4.5"/>
+    </filter>
+
+    <!-- single blue rose -->
+    <g id="wc-rose">
+      <circle r="24" fill="url(#roseBlue)"/>
+      <path d="M0-24 C10-25 20-18 23-8 C26 2 22 13 14 19 C6 25 -6 25 -14 19 C-22 13 -26 2 -23-8 C-20-18 -10-25 0-24Z"
+            fill="none" stroke="#7d9dc4" stroke-width="1.4" opacity=".55"/>
+      <path d="M-2-18 C8-19 16-13 18-4 C20 5 15 13 7 16 C-1 19 -11 17 -15 10 C-19 3 -17-7 -11-13 C-8-16 -5-18 -2-18Z"
+            fill="#cfdff0" opacity=".8"/>
+      <path d="M-1-13 C7-13 13-8 14-1 C15 6 10 12 3 13 C-4 14 -11 10 -12 3 C-13-4 -9-11 -1-13Z"
+            fill="#a9c4e2" opacity=".85"/>
+      <path d="M0-9 C6-8 9-4 9 1 C9 6 5 9 0 9 C-5 9 -9 5 -9 0 C-9-5 -5-9 0-9Z"
+            fill="#e8f0f9"/>
+      <path d="M0-6 C4-6 6-3 6 0 C6 3 3 5 0 5 C-3 5 -5 3 -5 0 C-5-2 -3-5 0-6 M0-2 C2-2 3 0 2 1 C1 2 -1 2 -2 1"
+            fill="none" stroke="#7d9dc4" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>
+      <path d="M-20 6 C-14 14 -6 18 4 17 M-14-16 C-18-8 -19 0 -16 8"
+            fill="none" stroke="#8fb0d6" stroke-width="1" opacity=".5"/>
+    </g>
+
+    <!-- white peony -->
+    <g id="wc-peony">
+      <g fill="url(#peonyWhite)" stroke="#ccd9e6" stroke-width=".9">
+        <path d="M0-22 C7-26 15-22 16-14 C22-16 28-10 25-3 C31 1 30 10 23 12 C24 19 17 25 10 22 C7 28 -4 29 -8 23 C-15 27 -23 22 -22 14 C-29 12 -31 3 -25-2 C-29-9 -24-17 -16-16 C-16-24 -7-27 0-22Z"/>
+      </g>
+      <g fill="#eef2f7" opacity=".9">
+        <path d="M0-15 C5-18 11-15 11-9 C16-10 20-5 17 0 C21 4 18 11 12 11 C12 16 5 19 1 15 C-4 19 -11 17 -11 11 C-17 11 -20 4 -16 0 C-19-5 -15-11 -10-9 C-10-15 -5-18 0-15Z"/>
+      </g>
+      <path d="M-8-4 C-4-9 4-9 8-4 M-6 6 C-2 2 4 3 7 6" fill="none" stroke="#d7e0ea" stroke-width="1.1" opacity=".9"/>
+      <g fill="#cfa452">
+        <circle cx="0" cy="0" r="1.5"/><circle cx="-4" cy="-2" r="1.1"/><circle cx="4" cy="-2" r="1.1"/>
+        <circle cx="-2" cy="3" r="1.1"/><circle cx="3" cy="2.6" r="1.1"/><circle cx="0" cy="-4" r="1.1"/>
+      </g>
+      <g stroke="#e5c479" stroke-width=".8" fill="none" opacity=".9">
+        <path d="M0 0 L-6-6 M0 0 L6-6 M0 0 L-7 2 M0 0 L7 2 M0 0 L0-8"/>
+      </g>
+    </g>
+
+    <!-- hydrangea floret -->
+    <g id="wc-floret">
+      <g fill="url(#petalBlue)" stroke="#8fb0d6" stroke-width=".6">
+        <path d="M0-6 C3-6 4-2 2-1 C4 0 4 4 1 4.5 C0 7 -3 6 -3 3.5 C-6 4 -7 0 -4.5-1 C-6.5-3 -4-6 -1.5-5 C-1-5.6 -.5-6 0-6Z"/>
+      </g>
+      <circle r="1.3" fill="#f3e0a6"/>
+    </g>
+
+    <!-- leaf with vein -->
+    <g id="wc-leaf">
+      <path d="M0 0 C10-4 22-2 28 8 C22 18 10 20 0 16 C-3 11 -3 5 0 0Z" fill="url(#leafDeep)"/>
+      <path d="M2 8 C10 8 18 9 25 9" stroke="#c8dbef" stroke-width=".9" fill="none" opacity=".8"/>
+      <path d="M8 8 L10 4 M13 8.4 L15 4.6 M18 8.8 L20 5.6 M8 8 L9 12 M13 8.6 L14 12.6" stroke="#c8dbef" stroke-width=".6" fill="none" opacity=".6"/>
+    </g>
+
+    <!-- baby's breath sprig -->
+    <g id="wc-breath">
+      <path d="M0 22 C2 14 2 8 0 0 M0 10 C-4 6 -6 3 -7-2 M0 12 C4 8 6 4 7 0"
+            stroke="#9db8d6" stroke-width=".9" fill="none"/>
+      <g fill="#ffffff" stroke="#c9d9ea" stroke-width=".5">
+        <circle cx="0" cy="-1" r="2.2"/><circle cx="-7" cy="-3" r="1.9"/><circle cx="7" cy="-1" r="1.9"/>
+        <circle cx="-4" cy="4" r="1.5"/><circle cx="4" cy="5" r="1.5"/>
+      </g>
+    </g>
+
+    <!-- gold twig -->
+    <g id="wc-twig" stroke="#cfa452" fill="none" stroke-linecap="round">
+      <path d="M0 26 C3 16 3 8 0 0" stroke-width="1.2"/>
+      <path d="M1 6 C4 4 6 1 6-3 M1 12 C-3 10 -5 7 -5 3 M2 18 C5 16 7 13 7 9" stroke-width=".9" opacity=".9"/>
+      <circle cx="6" cy="-3" r="1.2" fill="#e5c479" stroke="none"/>
+      <circle cx="-5" cy="3" r="1.2" fill="#e5c479" stroke="none"/>
+      <circle cx="7" cy="9" r="1.2" fill="#e5c479" stroke="none"/>
+    </g>
+
+    <!-- watercolor flower bunch -->
+    <g id="flower-bunch" filter="url(#wcEdge)">
+      <ellipse cx="52" cy="58" rx="52" ry="48" fill="#b9cfe6" opacity=".22"/>
+      <use href="#wc-leaf" transform="translate(60,20) rotate(-40)"/>
+      <use href="#wc-leaf" transform="translate(14,44) rotate(-165) scale(1.05)"/>
+      <use href="#wc-leaf" transform="translate(20,86) rotate(140) scale(.9)"/>
+      <use href="#wc-leaf" transform="translate(74,84) rotate(30) scale(.85)"/>
+      <use href="#wc-leaf" transform="translate(84,44) rotate(-8) scale(.75)"/>
+      <use href="#wc-twig" transform="translate(88,14) rotate(35)"/>
+      <use href="#wc-twig" transform="translate(12,70) rotate(-125) scale(.9)"/>
+      <use href="#wc-breath" transform="translate(90,66) rotate(55)"/>
+      <use href="#wc-breath" transform="translate(30,14) rotate(-30) scale(.9)"/>
+      <g transform="translate(88,88) scale(1.05)">
+        <use href="#wc-floret" transform="translate(0,-7)"/>
+        <use href="#wc-floret" transform="translate(7,-2) rotate(40)"/>
+        <use href="#wc-floret" transform="translate(4,6) rotate(80) scale(.9)"/>
+        <use href="#wc-floret" transform="translate(-5,5) rotate(-50) scale(.85)"/>
+        <use href="#wc-floret" transform="translate(-7,-3) rotate(-90) scale(.9)"/>
+        <use href="#wc-floret" transform="translate(0,0) rotate(15) scale(.8)"/>
+      </g>
+      <use href="#wc-rose" transform="translate(46,52) rotate(-8)"/>
+      <use href="#wc-peony" transform="translate(24,84) rotate(10) scale(.92)"/>
+      <use href="#wc-rose" transform="translate(86,26) rotate(20) scale(.5)"/>
+    </g>
+
+    <!-- header ornament -->
+    <g id="orn-header" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+      <path d="M6 22 C36 22 52 10 100 10 C148 10 164 22 194 22"/>
+      <path d="M62 22 C78 16 88 16 100 20 C112 16 122 16 138 22" opacity=".7"/>
+      <path d="M100 4 l3.5 6 -3.5 6 -3.5 -6 Z" fill="currentColor" stroke="none"/>
+      <circle cx="6" cy="22" r="1.8" fill="currentColor" stroke="none"/>
+      <circle cx="194" cy="22" r="1.8" fill="currentColor" stroke="none"/>
+    </g>
+
+    <!-- section divider ornament -->
+    <g id="orn-divider" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+      <path d="M6 13 H62 M98 13 H154"/>
+      <path d="M80 5 c4 3 4 6 0 9 c-4 -3 -4 -6 0 -9Z" fill="currentColor" stroke="none"/>
+      <path d="M66 13 c4 -4 8 -4 12 -1 M94 13 c-4 -4 -8 -4 -12 -1" opacity=".8"/>
+      <circle cx="6" cy="13" r="1.6" fill="currentColor" stroke="none"/>
+      <circle cx="154" cy="13" r="1.6" fill="currentColor" stroke="none"/>
+    </g>
+  </defs>
+</svg>
+
+<script>
+/* ============================================================
+   TAKLIFNOMA JS — cover, dynamic ticket data, petals, countdown, audio
+   ============================================================ */
+(function(){
+  "use strict";
+
+  /* ---------- URL params & Backend Ticket Integration ---------- */
+  var p = new URLSearchParams(location.search);
+  var ticketParam = p.get("ticket") || p.get("id");
+  var guestParam = p.get("mehmon") || p.get("name") || p.get("guest");
+  var coupleParam = p.get("couple");
+  var venueParam = p.get("venue");
+  var addressParam = p.get("address");
+  var dateParam = p.get("date");
+  var isVerifyMode = p.get("verify") || p.get("verified");
+
+  if(isVerifyMode){
+    var vBanner = document.getElementById("verifiedBanner");
+    if(vBanner) vBanner.style.display = "inline-block";
+  }
+
+  var hasCustom = {
+    guest: false,
+    couple: false,
+    venue: false,
+    address: false,
+    dateTime: false
+  };
+
+  function applyCustomDetails(details) {
+    if(!details) return;
+    var guestName = details.guest_name || details.full_name || details.name;
+    var coupleNames = details.groom_bride || details.couple_names || details.couple;
+    var venueName = details.venue_name || details.venue;
+    var venueAddress = details.venue_address || details.address;
+    var eventDateTime = details.event_date || details.event_date_time || details.date;
+    var comment = details.comment || details.wishes;
+
+    var eventType = details.event_type || details.eventType;
+    var evStr = eventType && String(eventType).trim() ? String(eventType).trim() : "Nikoh toʻyi";
+    var isPlov = /osh/i.test(evStr);
+
+    var cKicker = document.getElementById("coverKicker");
+    if(cKicker) cKicker.textContent = evStr;
+
+    var iEvName = document.getElementById("inviteEventName");
+    if(iEvName) {
+      if(isPlov) {
+        iEvName.textContent = evStr.toLowerCase().endsWith("i") ? evStr : (evStr + "i");
+      } else if(/to['ʻ`]?y/i.test(evStr)) {
+        iEvName.textContent = evStr.toLowerCase().endsWith("lari") ? evStr : (evStr.replace(/to['ʻ`]?yi?/i, "toʻylari"));
+      } else {
+        iEvName.textContent = evStr;
+      }
+    }
+
+    var iAction = document.getElementById("inviteActionText");
+    if(iAction){
+      if(isPlov){
+        iAction.textContent = "yoziladigan toʻy oshimizga";
+      } else {
+        iAction.textContent = "yoziladigan dasturxonimizga";
+      }
+    }
+
+    if(guestName && String(guestName).trim()){
+      hasCustom.guest = true;
+      var gEl = document.getElementById("guestName");
+      if(gEl) gEl.textContent = String(guestName).trim();
+    }
+    if(coupleNames && String(coupleNames).trim()){
+      hasCustom.couple = true;
+      var cStr = String(coupleNames).trim();
+      document.title = "Taklifnoma — " + cStr;
+      var cNames = document.getElementById("coverNames");
+      if(cNames) cNames.innerHTML = cStr.replace(/\s*&\s*|\s+va\s+/gi, '<br>&amp;<br>');
+      var hSub = document.getElementById("heroSubtitle");
+      if(hSub) hSub.textContent = cStr + " · " + evStr;
+      var iCouple = document.getElementById("inviteCoupleNames");
+      if(iCouple) {
+        var baseNames = cStr.replace(/\s*&\s*/g, ' va ');
+        if(!baseNames.toLowerCase().endsWith('larning') && !baseNames.toLowerCase().endsWith('ning')){
+          iCouple.innerHTML = baseNames + "larning";
+        } else {
+          iCouple.innerHTML = baseNames;
+        }
+      }
+    } else {
+      var hSubNoCouple = document.getElementById("heroSubtitle");
+      if(hSubNoCouple) hSubNoCouple.textContent = evStr;
+    }
+    if(venueName && String(venueName).trim()){
+      hasCustom.venue = true;
+      var vName = document.getElementById("venueName");
+      if(vName) vName.textContent = String(venueName).trim();
+    }
+    if(venueAddress && String(venueAddress).trim()){
+      hasCustom.address = true;
+      var vAddr = document.getElementById("venueAddress");
+      if(vAddr) vAddr.innerHTML = "Moʻljal: " + String(venueAddress).trim().replace(", ", "<br>");
+    }
+    if(venueName || venueAddress){
+      var mapBtn = document.getElementById("mapBtn");
+      if(mapBtn){
+        var mapQuery = [venueName, venueAddress].filter(Boolean).join(" ");
+        mapBtn.href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(mapQuery);
+      }
+    }
+    if(eventDateTime && String(eventDateTime).trim()){
+      hasCustom.dateTime = true;
+      var rawDt = String(eventDateTime).trim();
+
+      var UZ_MONTHS = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"];
+      var UZ_DOW = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
+
+      var parsedYear = 2026;
+      var parsedMonthIdx = 10; // Noyabr
+      var parsedDay = 15;
+      var parsedHour = 18;
+      var parsedMinute = 0;
+
+      // Match YYYY-MM-DD
+      var isoMatch = rawDt.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+      if(isoMatch){
+        parsedYear = parseInt(isoMatch[1], 10);
+        parsedMonthIdx = Math.max(0, Math.min(11, parseInt(isoMatch[2], 10) - 1));
+        parsedDay = parseInt(isoMatch[3], 10);
+      } else {
+        // Match DD.MM.YYYY
+        var dmyMatch = rawDt.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+        if(dmyMatch){
+          parsedDay = parseInt(dmyMatch[1], 10);
+          parsedMonthIdx = Math.max(0, Math.min(11, parseInt(dmyMatch[2], 10) - 1));
+          parsedYear = parseInt(dmyMatch[3], 10);
+        } else {
+          for(var mi = 0; mi < UZ_MONTHS.length; mi++){
+            var reg = new RegExp(UZ_MONTHS[mi], 'i');
+            if(reg.test(rawDt)){
+              parsedMonthIdx = mi;
+              break;
+            }
+          }
+          var dMatch = rawDt.match(/(?:^|\D)(\d{1,2})(?:-|\s|\.|\/)/);
+          if(dMatch) parsedDay = parseInt(dMatch[1], 10);
+          var yMatch = rawDt.match(/(\d{4})/);
+          if(yMatch) parsedYear = parseInt(yMatch[1], 10);
+        }
+      }
+
+      var timeMatch = rawDt.match(/(\d{1,2}):(\d{2})/);
+      if(timeMatch){
+        parsedHour = parseInt(timeMatch[1], 10);
+        parsedMinute = parseInt(timeMatch[2], 10);
+      }
+
+      var dtObj = new Date(parsedYear, parsedMonthIdx, parsedDay, parsedHour, parsedMinute, 0);
+      var dowName = UZ_DOW[dtObj.getDay()];
+      var monthName = UZ_MONTHS[parsedMonthIdx];
+      var timeStr = (parsedHour < 10 ? "0" + parsedHour : parsedHour) + ":" + (parsedMinute < 10 ? "0" + parsedMinute : parsedMinute);
+      var dayPad = (parsedDay < 10 ? "0" + parsedDay : parsedDay);
+      var monthPad = (parsedMonthIdx + 1 < 10 ? "0" + (parsedMonthIdx + 1) : (parsedMonthIdx + 1));
+
+      var cDate = document.getElementById("coverDate");
+      if(cDate) cDate.textContent = dayPad + "." + monthPad + "." + parsedYear + " · " + timeStr;
+
+      var iDate = document.getElementById("inviteDateFormatted");
+      if(iDate) iDate.textContent = parsedYear + "-yil " + parsedDay + "-" + monthName.toLowerCase();
+
+      var iTime = document.getElementById("inviteTimeFormatted");
+      if(iTime) iTime.textContent = timeStr;
+
+      var dNum = document.getElementById("dayNum");
+      if(dNum) dNum.textContent = parsedDay;
+
+      var dowText = document.getElementById("dowText");
+      if(dowText) dowText.textContent = dowName;
+
+      var tText = document.getElementById("timeText");
+      if(tText) tText.textContent = "Soat " + timeStr;
+
+      var monthYearText = document.getElementById("monthYearText");
+      if(monthYearText) monthYearText.textContent = monthName + " · " + parsedYear;
+
+      // Update countdown target
+      if(!isNaN(dtObj.getTime())){
+        target = dtObj.getTime();
+        tick();
+      }
+
+      // Update calendar button (.ics)
+      var dClean = "" + parsedYear + monthPad + dayPad;
+      var tClean = "" + (parsedHour < 10 ? "0" + parsedHour : parsedHour) + (parsedMinute < 10 ? "0" + parsedMinute : parsedMinute) + "00";
+      var dtStart = dClean + "T" + tClean;
+      var icsSummary = (coupleNames || "Kelin va Kuyov") + " — " + (details.event_type || "Nikoh toʻyi");
+      var icsLocation = (venueName || "Tantanalar Saroyi") + (venueAddress ? ", " + venueAddress : "");
+      var ics = [
+        "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Taklifnoma//UZ",
+        "BEGIN:VEVENT",
+        "UID:nikoh-" + dClean + "@taklifnoma",
+        "DTSTAMP:20260101T000000Z",
+        "DTSTART;TZID=Asia/Tashkent:" + dtStart,
+        "SUMMARY:" + icsSummary,
+        "LOCATION:" + icsLocation.replace(/,/g, "\\,"),
+        "DESCRIPTION:Sizni tantanali to'y oqshomimizga lutfan taklif etamiz.",
+        "END:VEVENT","END:VCALENDAR"
+      ].join("\r\n");
+      var calBtn = document.getElementById("calBtn");
+      if(calBtn) calBtn.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+    }
+    if(comment && String(comment).trim()){
+      var cBox = document.getElementById("guestCommentBox");
+      var cText = document.getElementById("guestCommentText");
+      if(cBox && cText){
+        cText.textContent = String(comment).trim();
+        cBox.classList.remove("hidden");
+      }
+    }
+  }
+
+  if(guestParam){
+    var g = decodeURIComponent(guestParam.replace(/\+/g," ")).trim().slice(0,60);
+    if(g) applyCustomDetails({ full_name: g });
+  }
+  if(coupleParam || venueParam || addressParam || dateParam){
+    applyCustomDetails({
+      couple_names: coupleParam ? decodeURIComponent(coupleParam.replace(/\+/g," ")).trim() : null,
+      venue_name: venueParam ? decodeURIComponent(venueParam.replace(/\+/g," ")).trim() : null,
+      venue_address: addressParam ? decodeURIComponent(addressParam.replace(/\+/g," ")).trim() : null,
+      event_date_time: dateParam ? decodeURIComponent(dateParam.replace(/\+/g," ")).trim() : null
+    });
+  }
+
+  // If ticket ID is present, fetch guest details and custom event info from backend API
+  if(ticketParam){
+    var cleanTicket = ticketParam.replace("#", "").trim();
+    fetch("/api/invitation/" + encodeURIComponent(cleanTicket))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data && data.success && (data.invitation || data.ticket)){
+          applyCustomDetails(data.invitation || data.ticket);
+        }
+      })
+      .catch(function(err){
+        console.warn("API invitation load notice, trying /api/ticket/:", err);
+        fetch("/api/ticket/" + encodeURIComponent(cleanTicket))
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            if(d && d.success && (d.invitation || d.ticket)){
+              applyCustomDetails(d.invitation || d.ticket);
+            }
+          })
+          .catch(function(e){
+            console.warn("API ticket load error:", e);
+          });
+      });
+  }
+
+  /* ---------- cover open ---------- */
+  var cover = document.getElementById("cover");
+  var bgm = document.getElementById("bgm");
+  var musicBtn = document.getElementById("musicBtn");
+  var opened = false;
+
+  /* ---------- audio playback range (configurable from settings) ---------- */
+  var AUDIO_LOOP_START = 0;
+  var AUDIO_LOOP_END = 166; // default 2 minutes and 46 seconds = 166 seconds
+
+  bgm.addEventListener("timeupdate", function(){
+    if(bgm.currentTime >= AUDIO_LOOP_END){
+      bgm.currentTime = AUDIO_LOOP_START;
+      if(!bgm.paused){
+        bgm.play();
+      }
+    }
+  });
+
+  function tryPlay(){
+    if(bgm.currentTime >= AUDIO_LOOP_END || bgm.currentTime < AUDIO_LOOP_START){
+      bgm.currentTime = AUDIO_LOOP_START;
+    }
+    var pr = bgm.play();
+    if(pr && pr.then){
+      pr.then(function(){
+        musicBtn.classList.add("playing");
+      }).catch(function(err){
+        console.warn("Autoplay notice (user interaction required):", err);
+        musicBtn.classList.remove("playing");
+      });
+    }
+  }
+
+  function unlock(){
+    document.body.classList.remove("locked");
+    document.body.style.overflow = "";
+  }
+
+  function launchConfettiCelebration(){
+    if(typeof confetti === "function"){
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#cfa452", "#f3e0a6", "#5b7fb9", "#a9c4e2", "#ffffff", "#e5c479"]
+      });
+    }
+  }
+
+  document.getElementById("openBtn").addEventListener("click", function(){
+    opened = true;
+    cover.classList.add("hidden");
+    unlock();
+    window.scrollTo(0, 0);
+    tryPlay();
+    burst();
+    launchConfettiCelebration();
+  });
+  document.body.classList.add("locked");
+
+  window.addEventListener("error", unlock);
+  setTimeout(function(){ if(cover.classList.contains("hidden")) unlock(); }, 2000);
+
+  /* ---------- audio toggle ---------- */
+  function toggleMusic(e){
+    if(e) e.preventDefault();
+    if(bgm.paused){
+      tryPlay();
+    } else {
+      bgm.pause();
+      musicBtn.classList.remove("playing");
+    }
+  }
+
+  musicBtn.addEventListener("click", toggleMusic);
+  musicBtn.addEventListener("touchend", toggleMusic);
+  bgm.addEventListener("error", function(){
+    musicBtn.classList.remove("playing");
+  });
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden && !bgm.paused){ bgm.pause(); musicBtn.classList.remove("playing"); musicBtn.dataset.auto = "1"; }
+    else if(!document.hidden && musicBtn.dataset.auto === "1" && opened){ delete musicBtn.dataset.auto; tryPlay(); }
+  });
+
+  /* ---------- scroll-hint click ---------- */
+  var hint = document.querySelector(".scroll-hint");
+  if(hint){
+    hint.style.cursor = "pointer";
+    hint.addEventListener("click", function(){
+      document.getElementById("invite").scrollIntoView({ block:"start", behavior:"smooth" });
+    });
+  }
+
+  /* ---------- reveal on scroll ---------- */
+  var revealEls = [].slice.call(document.querySelectorAll(".rv"));
+  var pending = false;
+  function checkReveal(){
+    pending = false;
+    var vh = window.innerHeight;
+    for(var i = revealEls.length - 1; i >= 0; i--){
+      var el = revealEls[i];
+      var r = el.getBoundingClientRect();
+      if(r.top < vh - 60 && r.bottom > 0){
+        el.classList.add("in");
+        revealEls.splice(i, 1);
+      }
+    }
+  }
+  function queueReveal(){
+    if(!pending){ pending = true; requestAnimationFrame(checkReveal); }
+  }
+  window.addEventListener("scroll", queueReveal, { passive:true });
+  window.addEventListener("resize", queueReveal);
+  checkReveal();
+
+  var poll = setInterval(function(){
+    checkReveal();
+    if(!revealEls.length) clearInterval(poll);
+  }, 300);
+
+  setTimeout(function(){
+    clearInterval(poll);
+    revealEls.forEach(function(el){ el.classList.add("in"); });
+    revealEls.length = 0;
+  }, 8000);
+
+  /* ---------- countdown timer ---------- */
+  var target = new Date("2026-08-11T19:00:00+05:00").getTime();
+  var elD = document.getElementById("cdD"), elH = document.getElementById("cdH"),
+      elM = document.getElementById("cdM"), elS = document.getElementById("cdS");
+  function pad(n){ return (n<10?"0":"") + n; }
+  function tick(){
+    var diff = target - Date.now();
+    if(diff <= 0){
+      document.getElementById("countdown").style.display = "none";
+      document.getElementById("cdDone").style.display = "block";
+      if(cdTimer) clearInterval(cdTimer);
+      return;
+    }
+    elD.textContent = pad(Math.floor(diff/864e5));
+    elH.textContent = pad(Math.floor(diff/36e5)%24);
+    elM.textContent = pad(Math.floor(diff/6e4)%60);
+    elS.textContent = pad(Math.floor(diff/1e3)%60);
+  }
+  var cdTimer = setInterval(tick, 1000);
+  tick();
+
+  /* ---------- calendar (.ics) generation ---------- */
+  function updateCalendar(s){
+    if(!s) return;
+    var dClean = (s.event_date || "2026-08-11").replace(/-/g, "");
+    var tClean = (s.event_time || "19:00").replace(/:/g, "") + "00";
+    var dtStart = dClean + "T" + tClean;
+    var ics = [
+      "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Taklifnoma//UZ",
+      "BEGIN:VEVENT",
+      "UID:nikoh-" + dClean + "@taklifnoma",
+      "DTSTAMP:20260101T000000Z",
+      "DTSTART;TZID=Asia/Tashkent:" + dtStart,
+      "SUMMARY:" + (s.groom_name || "Kuyov") + " va " + (s.bride_name || "Kelin") + " — " + (s.event_type || "Nikoh to'yi"),
+      "LOCATION:" + (s.venue_name || "Tantanalar Saroyi") + "\\, " + (s.venue_address || ""),
+      "DESCRIPTION:Hurmat va ehtirom ila\\, " + (s.family_names || "Oila"),
+      "END:VEVENT","END:VCALENDAR"
+    ].join("\r\n");
+    var calBtn = document.getElementById("calBtn");
+    if(calBtn) calBtn.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+  }
+
+  /* ---------- dynamic wedding settings from /api/settings ---------- */
+  function applySettings(s){
+    if(!s) return;
+    if(typeof s.music_loop_start === "number") AUDIO_LOOP_START = s.music_loop_start;
+    if(typeof s.music_loop_end === "number") AUDIO_LOOP_END = s.music_loop_end;
+
+    // NEVER overwrite custom ticket or user details
+    if(ticketParam || hasCustom.couple || hasCustom.venue || hasCustom.address || hasCustom.dateTime || hasCustom.guest){
+      return;
+    }
+
+    if(s.groom_name && s.bride_name){
+      document.title = "Taklifnoma — " + s.groom_name + " va " + s.bride_name;
+      var coverNames = document.getElementById("coverNames");
+      if(coverNames) coverNames.innerHTML = s.groom_name + "<br>&amp;<br>" + s.bride_name;
+      var inviteCouple = document.getElementById("inviteCoupleNames");
+      if(inviteCouple) inviteCouple.innerHTML = s.groom_name + " va<br>" + s.bride_name + "larning";
+      var heroSub = document.getElementById("heroSubtitle");
+      if(heroSub && s.event_type) heroSub.textContent = s.event_type + " · " + (s.year || "2026");
+    }
+    var coverKicker = document.getElementById("coverKicker");
+    if(coverKicker && s.event_type) coverKicker.textContent = s.event_type;
+
+    if(s.day_number && s.event_date && s.event_time){
+      var dParts = s.event_date.split("-");
+      var monthNum = dParts.length > 1 ? dParts[1] : "08";
+      var yearNum = dParts.length > 0 ? dParts[0] : (s.year || "2026");
+      var dayPad = (s.day_number < 10 && !String(s.day_number).startsWith("0")) ? ("0" + s.day_number) : s.day_number;
+      var coverDate = document.getElementById("coverDate");
+      if(coverDate) coverDate.textContent = dayPad + "." + monthNum + "." + yearNum + " · " + s.event_time;
+      var inviteDateFmt = document.getElementById("inviteDateFormatted");
+      if(inviteDateFmt && s.year && s.month_name && s.day_number){
+        inviteDateFmt.textContent = s.year + "-yil " + s.day_number + "-" + s.month_name.toLowerCase();
+      }
+    }
+
+    var inviteEvent = document.getElementById("inviteEventName");
+    if(inviteEvent && s.event_type) inviteEvent.textContent = s.event_type;
+
+    var inviteTimeFmt = document.getElementById("inviteTimeFormatted");
+    if(inviteTimeFmt && s.event_time) inviteTimeFmt.textContent = s.event_time;
+
+    var dowText = document.getElementById("dowText");
+    if(dowText && s.day_of_week) dowText.textContent = s.day_of_week;
+
+    var dayNum = document.getElementById("dayNum");
+    if(dayNum && s.day_number) dayNum.textContent = s.day_number;
+
+    var timeText = document.getElementById("timeText");
+    if(timeText && s.event_time) timeText.textContent = "Soat " + s.event_time;
+
+    var monthYearText = document.getElementById("monthYearText");
+    if(monthYearText && s.month_name && s.year){
+      monthYearText.textContent = s.month_name + " · " + s.year;
+    }
+
+    if(s.venue_name){
+      var venueName = document.getElementById("venueName");
+      if(venueName) venueName.textContent = s.venue_name;
+    }
+
+    if(s.venue_address){
+      var venueAddress = document.getElementById("venueAddress");
+      if(venueAddress) venueAddress.innerHTML = "Moʻljal: " + s.venue_address.replace(", ", "<br>");
+    }
+
+    var mapBtn = document.getElementById("mapBtn");
+    if(mapBtn && s.map_url) mapBtn.href = s.map_url;
+
+    var footerFamily = document.getElementById("footerFamily");
+    if(footerFamily && s.family_names) footerFamily.textContent = s.family_names;
+
+    var footerCredit = document.getElementById("footerCredit");
+    if(footerCredit && s.year) footerCredit.textContent = "Taklifnoma · " + s.year;
+
+    if(s.event_date && s.event_time){
+      var isoStr = s.event_date + "T" + (s.event_time.length === 5 ? s.event_time + ":00" : s.event_time) + "+05:00";
+      var parsedTarget = new Date(isoStr).getTime();
+      if(!isNaN(parsedTarget)){
+        target = parsedTarget;
+        tick();
+      }
+    }
+
+    updateCalendar(s);
+  }
+
+  fetch("/api/settings")
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data && data.success && data.settings){
+        if(typeof data.settings.music_loop_start === "number") AUDIO_LOOP_START = data.settings.music_loop_start;
+        if(typeof data.settings.music_loop_end === "number") AUDIO_LOOP_END = data.settings.music_loop_end;
+        if(!ticketParam && !hasCustom.couple && !hasCustom.venue && !hasCustom.address && !hasCustom.dateTime && !hasCustom.guest){
+          applySettings(data.settings);
+        }
+      }
+    })
+    .catch(function(err){
+      console.warn("Settings API load notice:", err);
+    });
+
+  /* ============================================================
+     FLOWING PETALS — canvas animation
+     ============================================================ */
+  var canvas = document.getElementById("petals");
+  var ctx = canvas.getContext("2d");
+  var W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var petals = [], sparkles = [];
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function resize(){
+    var r = canvas.getBoundingClientRect();
+    W = r.width; H = r.height;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  var COLORS = [
+    ["#dcebf8","#a9c4e2"],
+    ["#c8dbef","#87a9d0"],
+    ["#ffffff","#dfe9f4"],
+    ["#eef4fa","#b9cfe6"]
+  ];
+
+  function newPetal(startAnywhere){
+    var kind = Math.random();
+    var c = COLORS[(Math.random()*COLORS.length)|0];
+    return {
+      x: Math.random()*W,
+      y: startAnywhere ? Math.random()*H : -30 - Math.random()*60,
+      size: 7 + Math.random()*11,
+      vy: .4 + Math.random()*.5,
+      vx: (Math.random()-.5)*.36,
+      swayP: Math.random()*Math.PI*2,
+      swayF: .0011 + Math.random()*.0016,
+      swayA: .1 + Math.random()*.16,
+      rot: Math.random()*Math.PI*2,
+      vr: (Math.random()-.5)*.006,
+      flip: Math.random()*Math.PI*2,
+      flipV: .006 + Math.random()*.011,
+      c1: c[0], c2: c[1],
+      flower: kind > .8,
+      op: .55 + Math.random()*.4
+    };
+  }
+  function newSparkle(){
+    return {
+      x: Math.random()*W, y: Math.random()*H,
+      r: .6 + Math.random()*1.4,
+      tw: Math.random()*Math.PI*2,
+      spd: .01 + Math.random()*.02,
+      vy: .08 + Math.random()*.14
+    };
+  }
+
+  var COUNT = Math.round(Math.min(34, Math.max(20, W/16)));
+  for(var i=0;i<COUNT;i++) petals.push(newPetal(true));
+  for(var s=0;s<26;s++) sparkles.push(newSparkle());
+
+  function drawPetal(p){
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    if(p.flipV){
+      ctx.scale(.45 + .55*Math.abs(Math.cos(p.flip)), 1);
+    }
+    ctx.globalAlpha = p.op;
+
+    var g = ctx.createLinearGradient(-p.size,-p.size,p.size,p.size);
+    g.addColorStop(0, p.c1); g.addColorStop(1, p.c2);
+    ctx.fillStyle = g;
+
+    if(p.flower){
+      for(var k=0;k<5;k++){
+        ctx.rotate(Math.PI*2/5);
+        ctx.beginPath();
+        ctx.ellipse(0, -p.size*.62, p.size*.34, p.size*.62, 0, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = p.op;
+      ctx.beginPath();
+      ctx.fillStyle = "#e5c479";
+      ctx.arc(0,0,p.size*.22,0,Math.PI*2);
+      ctx.fill();
+    }else{
+      ctx.beginPath();
+      ctx.moveTo(0, -p.size);
+      ctx.bezierCurveTo(p.size*.9, -p.size*.5, p.size*.7, p.size*.7, 0, p.size);
+      ctx.bezierCurveTo(-p.size*.7, p.size*.7, -p.size*.9, -p.size*.5, 0, -p.size);
+      ctx.fill();
+      ctx.globalAlpha = p.op*.5;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = .8;
+      ctx.beginPath();
+      ctx.moveTo(0,-p.size*.7);
+      ctx.quadraticCurveTo(p.size*.15, 0, 0, p.size*.7);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  var burstPetals = [];
+  function burst(){
+    if(reduced) return;
+    for(var i=0;i<26;i++){
+      var p = newPetal(false);
+      p.x = W/2 + (Math.random()-.5)*60;
+      p.y = H*.35;
+      p.vy = -(1.5 + Math.random()*2.6);
+      p.vx = (Math.random()-.5)*4.2;
+      p.grav = .05;
+      burstPetals.push(p);
+    }
+  }
+  window.burst = burst;
+
+  function frame(t){
+    requestAnimationFrame(frame);
+    if(document.hidden) return;
+
+    ctx.clearRect(0,0,W,H);
+
+    for(var i=0;i<sparkles.length;i++){
+      var sp = sparkles[i];
+      sp.tw += sp.spd*16;
+      sp.y += sp.vy;
+      if(sp.y > H + 4){ sp.y = -4; sp.x = Math.random()*W; }
+      var a = .25 + Math.abs(Math.sin(sp.tw))*.5;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = "#e5c479";
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    var wind = Math.sin(t*.00022)*.16 + Math.sin(t*.00007)*.1;
+    for(var j=0;j<petals.length;j++){
+      var p = petals[j];
+      p.swayP += p.swayF*16;
+      p.flip += p.flipV*16;
+      var flat = Math.abs(Math.sin(p.flip));
+      p.x += p.vx + wind + Math.cos(p.swayP)*p.swayA;
+      p.y += p.vy*(.7 + .45*(1-flat));
+      p.rot += p.vr;
+      if(p.y > H + 40 || p.x < -60 || p.x > W + 60){ petals[j] = newPetal(false); }
+      drawPetal(p);
+    }
+
+    for(var b=burstPetals.length-1;b>=0;b--){
+      var q = burstPetals[b];
+      q.vy += q.grav;
+      q.y += q.vy;
+      q.x += q.vx;
+      q.vx *= .985;
+      q.rot += q.vr*3;
+      q.op -= .0022;
+      if(q.op <= 0 || q.y > H + 40) burstPetals.splice(b,1);
+      else drawPetal(q);
+    }
+  }
+  if(!reduced) requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
