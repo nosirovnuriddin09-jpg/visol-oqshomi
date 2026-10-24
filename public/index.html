@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="uz" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Visol Oqshomi - Maxsus Tadbir & Rasmiy Taklifnoma</title>
+  
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              950: '#060a12',
+              900: '#0b0f19',
+              850: '#0f172a',
+              800: '#141e33',
+              700: '#1e293b'
+            },
+            gold: {
+              50: '#fbf8eb',
+              100: '#f6f0cb',
+              200: '#eddca1',
+              300: '#e2c26d',
+              400: '#d4af37', // Classic Royal Gold
+              500: '#c59d28',
+              600: '#a87e1e',
+              700: '#865f1a',
+              800: '#704c1c',
+              900: '#5f401d'
+            }
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            royal: ['"Cinzel"', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif']
+          },
+          animation: {
+            'shimmer': 'shimmer 3s ease-in-out infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 5s ease-in-out infinite'
+          },
+          keyframes: {
+            shimmer: {
+              '0%, 100%': { opacity: '0.6' },
+              '50%': { opacity: '1' }
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' }
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- QRCode.js for live client-side QR generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Canvas Confetti for Celebration effect -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- html2canvas for Ticket Image Download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    /* Custom Luxury Styling */
+    body {
+      background-color: #080c16;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .gold-gradient-text {
+      background: linear-gradient(135deg, #fff2be 0%, #d4af37 45%, #f3e5ab 70%, #aa8017 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .gold-btn-gradient {
+      background: linear-gradient(135deg, #d4af37 0%, #f5e49e 50%, #b8860b 100%);
+      box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
+      transition: all 0.3s ease;
+    }
+
+    .gold-btn-gradient:hover {
+      box-shadow: 0 6px 28px rgba(212, 175, 55, 0.55);
+      transform: translateY(-2px);
+    }
+
+    .gold-btn-gradient:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+    }
+
+    .luxury-card {
+      background: linear-gradient(145deg, rgba(17, 24, 39, 0.85) 0%, rgba(11, 15, 25, 0.95) 100%);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(212, 175, 55, 0.22);
+      box-shadow: 0 10px 35px -5px rgba(0, 0, 0, 0.6), 0 0 25px -10px rgba(212, 175, 55, 0.15);
+    }
+
+    .gold-border-glow {
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.15), inset 0 0 15px rgba(212, 175, 55, 0.05);
+    }
+
+    /* Ambient Glow background spots */
+    .ambient-glow-1 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .ambient-glow-2 {
+      position: absolute;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.04) 0%, rgba(0, 0, 0, 0) 70%);
+      top: 600px;
+      right: -100px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Ticket styling */
+    .invitation-ticket {
+      position: relative;
+      background: radial-gradient(ellipse at top, #141c2e 0%, #090e18 100%);
+      border: 2px solid #d4af37;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(212, 175, 55, 0.35);
+    }
+
+    .invitation-ticket::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 1px dashed rgba(212, 175, 55, 0.45);
+      pointer-events: none;
+      border-radius: 12px;
+    }
+
+    .ornament-corner {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-color: #d4af37;
+      pointer-events: none;
+    }
+    .corner-tl { top: 12px; left: 12px; border-top: 2px solid #d4af37; border-left: 2px solid #d4af37; }
+    .corner-tr { top: 12px; right: 12px; border-top: 2px solid #d4af37; border-right: 2px solid #d4af37; }
+    .corner-bl { bottom: 12px; left: 12px; border-bottom: 2px solid #d4af37; border-left: 2px solid #d4af37; }
+    .corner-br { bottom: 12px; right: 12px; border-bottom: 2px solid #d4af37; border-right: 2px solid #d4af37; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090e18;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d4af37;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="relative min-h-screen selection:bg-gold-500 selection:text-navy-950">
+
+  <!-- Ambient Light Accents -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="sticky top-0 z-50 backdrop-blur-xl bg-navy-900/80 border-b border-gold-400/20 transition-all duration-300" id="navbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Logo & Branding -->
+        <a href="#hero" class="flex items-center space-x-3 group">
+          <div class="w-11 h-11 rounded-full border border-gold-400/50 flex items-center justify-center bg-gold-400/10 group-hover:scale-105 transition-transform duration-300">
+            <i class="fa-solid fa-ring text-gold-400 text-lg"></i>
+          </div>
+          <div>
+            <span class="font-royal text-xl sm:text-2xl font-bold tracking-wider gold-gradient-text block leading-none">VISOL OQSHOMI</span>
+            <span class="text-[10px] sm:text-xs tracking-widest uppercase text-slate-400 font-sans">Maxsus Tadbir</span>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300">
+          <a href="#haqida" class="hover:text-gold-300 transition-colors">Haqida</a>
+          <a href="#dastur" class="hover:text-gold-300 transition-colors">Dastur</a>
+          <a href="#galereya" class="hover:text-gold-300 transition-colors">Galereya</a>
+          <a href="#manzil" class="hover:text-gold-300 transition-colors">Manzil</a>
+          <a href="#royxatdan-otish" class="hover:text-gold-300 transition-colors">Ro'yxatdan O'tish</a>
+        </nav>
+
+        <!-- Right Action Button -->
+        <div class="hidden sm:flex items-center space-x-4">
+          <a href="#royxatdan-otish" class="gold-btn-gradient text-navy-950 font-semibold px-5 py-2.5 rounded-full text-xs uppercase tracking-wider flex items-center space-x-2">
+            <i class="fa-solid fa-ticket"></i>
+            <span>Taklifnoma olish</span>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Hamburger Button -->
+        <button id="mobileMenuBtn" class="md:hidden text-gold-400 focus:outline-none p-2 rounded-lg hover:bg-slate-800/50" aria-label="Toggle navigation">
+          <i class="fa-solid fa-bars text-xl" id="menuIcon"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobileMenu" class="hidden md:hidden bg-navy-900/95 border-b border-gold-400/20 px-6 py-5 space-y-4 text-center">
+      <a href="#haqida" class="mobile-nav-link block text-slate-300 hover:text-gold-300 font-medium py-1">Haqida</a>
+      <a href="#dastur" class="mobile-nav-link block text-slate-300 hover:text-gold-300 font-medium py-1">Dastur</a>
+      <a href="#galereya" class="mobile-nav-link block text-slate-300 hover:text-gold-300 font-medium py-1">Galereya</a>
+      <a href="#manzil" class="mobile-nav-link block text-slate-300 hover:text-gold-300 font-medium py-1">Manzil</a>
+      <a href="#royxatdan-otish" class="mobile-nav-link block text-gold-400 font-semibold py-1">Ro'yxatdan O'tish</a>
+      <div class="pt-3">
+        <a href="#royxatdan-otish" class="mobile-nav-link gold-btn-gradient text-navy-950 font-bold px-6 py-2.5 rounded-full text-xs uppercase tracking-wider inline-flex items-center space-x-2 w-full justify-center">
+          <i class="fa-solid fa-ticket"></i>
+          <span>Taklifnoma olish</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-24">
+
+    <!-- HERO SECTION -->
+    <section id="hero" class="text-center pt-8 sm:pt-16 pb-12 relative">
+      <!-- Royal Monogram Emblem -->
+      <div class="inline-flex items-center justify-center p-3 sm:p-4 rounded-full bg-gold-400/5 border border-gold-400/30 mb-6 shadow-inner animate-float">
+        <i class="fa-solid fa-crown text-gold-400 text-2xl sm:text-3xl"></i>
+      </div>
+
+      <!-- Small Top Badge -->
+      <div class="flex items-center justify-center mb-4">
+        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-xs sm:text-sm uppercase tracking-widest font-semibold">
+          <i class="fa-solid fa-sparkles text-gold-400 text-xs"></i>
+          Maxsus Tantanali Nikoh Oqshomi
+          <i class="fa-solid fa-sparkles text-gold-400 text-xs"></i>
+        </span>
+      </div>
+
+      <!-- Main Event Title -->
+      <h1 class="font-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-4">
+        <span class="gold-gradient-text block" id="indexEventTitle">VISOL OQSHOMI</span>
+      </h1>
+
+      <p class="font-royal text-lg sm:text-2xl text-slate-300 tracking-wider mb-6" id="indexCoupleNames">
+        Visol Oqshomi
+      </p>
+
+      <p class="max-w-2xl mx-auto text-sm sm:text-base text-slate-400 leading-relaxed font-light mb-10">
+        Muqaddas sevgining go'zal visoli va yangi baxtli oilaning unutilmas ibtidosi sharafiga yozilgan tantanali to'y dasturxoni. Sizni ushbu nurli quvonchimizga lutfan taklif etamiz.
+      </p>
+
+      <!-- Key Event Highlights Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-10">
+        <!-- Date -->
+        <div class="luxury-card p-4 rounded-2xl flex items-center justify-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400">
+            <i class="fa-solid fa-calendar-star"></i>
+          </div>
+          <div class="text-left">
+            <span class="text-xs text-slate-400 block uppercase tracking-wider">Sana</span>
+            <span class="font-bold text-slate-200 text-sm sm:text-base" id="indexDateText">To'y Sanasi</span>
+          </div>
+        </div>
+
+        <!-- Time -->
+        <div class="luxury-card p-4 rounded-2xl flex items-center justify-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <div class="text-left">
+            <span class="text-xs text-slate-400 block uppercase tracking-wider">Boshlanish vaqti</span>
+            <span class="font-bold text-slate-200 text-sm sm:text-base" id="indexTimeText">18:00 da</span>
+          </div>
+        </div>
+
+        <!-- Venue -->
+        <div class="luxury-card p-4 rounded-2xl flex items-center justify-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+          <div class="text-left">
+            <span class="text-xs text-slate-400 block uppercase tracking-wider">Manzil</span>
+            <span class="font-bold text-slate-200 text-sm sm:text-base" id="indexVenueText">Tantanalar Saroyi</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COUNTDOWN TIMER -->
+      <div class="max-w-xl mx-auto mb-12">
+        <div class="text-xs text-gold-300 uppercase tracking-widest mb-3 font-semibold">Tadbir boshlanishiga qoldi</div>
+        <div class="grid grid-cols-4 gap-2 sm:gap-4 text-center">
+          <div class="luxury-card p-3 rounded-xl border border-gold-400/30">
+            <span id="countdownDays" class="font-serif text-2xl sm:text-4xl font-bold gold-gradient-text block">00</span>
+            <span class="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider">Kun</span>
+          </div>
+          <div class="luxury-card p-3 rounded-xl border border-gold-400/30">
+            <span id="countdownHours" class="font-serif text-2xl sm:text-4xl font-bold gold-gradient-text block">00</span>
+            <span class="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider">Soat</span>
+          </div>
+          <div class="luxury-card p-3 rounded-xl border border-gold-400/30">
+            <span id="countdownMinutes" class="font-serif text-2xl sm:text-4xl font-bold gold-gradient-text block">00</span>
+            <span class="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider">Daqiqa</span>
+          </div>
+          <div class="luxury-card p-3 rounded-xl border border-gold-400/30">
+            <span id="countdownSeconds" class="font-serif text-2xl sm:text-4xl font-bold gold-gradient-text block">00</span>
+            <span class="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider">Soniya</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Call to action buttons -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#royxatdan-otish" class="w-full sm:w-auto gold-btn-gradient text-navy-950 font-bold px-8 py-3.5 rounded-full text-sm uppercase tracking-wider inline-flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-ticket-simple"></i>
+          <span>Taklifnoma Olish</span>
+        </a>
+        <a href="#dastur" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-sm uppercase tracking-wider inline-flex items-center justify-center space-x-2 border border-gold-400/40 text-gold-300 hover:bg-gold-400/10 transition-colors">
+          <i class="fa-solid fa-scroll"></i>
+          <span>Dastur bilan tanishish</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- SECTION: HAQIDA (ABOUT) -->
+    <section id="haqida" class="scroll-mt-28">
+      <div class="text-center mb-12">
+        <span class="text-xs uppercase tracking-widest text-gold-400 font-semibold block mb-2">Tadbir haqida</span>
+        <h2 class="font-serif text-3xl sm:text-4xl font-bold text-slate-100">Ikki Qalbning Nurli Rishtasi</h2>
+        <div class="w-20 h-0.5 bg-gradient-to-r from-transparent via-gold-400 to-transparent mx-auto mt-4"></div>
+      </div>
+
+      <div class="luxury-card p-6 sm:p-10 rounded-3xl relative overflow-hidden">
+        <div class="max-w-3xl mx-auto text-center space-y-6">
+          <p class="font-serif italic text-lg sm:text-xl text-gold-200/90 leading-relaxed">
+            "Muhabbat — bu ikki insonning bir-biriga qarab turishi emas, balki birgalikda bir tomonga, yorug' kelajak sari bir maqsad bilan boqishidir."
+          </p>
+          <p class="text-slate-300 text-sm sm:text-base leading-relaxed font-light">
+            Aziz va muhtaram mehmonimiz! Hayotimizdagi eng hayajonli, eng fayzli va unutilmas oqshomda sizning samimiy tabassumlaringiz, pok niyatlaringiz hamda qutlug' duolaringiz biz uchun beqiyos ahamiyatga ega. Ushbu tantanada sizni o'z qadrdonimiz sifatida ko'rishdan bag'oyat mamnunmiz.
+          </p>
+        </div>
+
+        <!-- 4 Luxury Feature Badges -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12 pt-8 border-t border-gold-400/20">
+          <div class="text-center p-4 rounded-xl bg-navy-950/40 border border-gold-400/10">
+            <div class="w-12 h-12 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-400 flex items-center justify-center mx-auto mb-3">
+              <i class="fa-solid fa-music text-lg"></i>
+            </div>
+            <h3 class="font-serif font-bold text-slate-200 mb-1">Jonli Simfoniya</h3>
+            <p class="text-xs text-slate-400">Skripka va violonchel ijrosidagi mumtoz kuylar</p>
+          </div>
+
+          <div class="text-center p-4 rounded-xl bg-navy-950/40 border border-gold-400/10">
+            <div class="w-12 h-12 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-400 flex items-center justify-center mx-auto mb-3">
+              <i class="fa-solid fa-utensils text-lg"></i>
+            </div>
+            <h3 class="font-serif font-bold text-slate-200 mb-1">Lazzatli Dasturxon</h3>
+            <p class="text-xs text-slate-400">Sharqona va yevropacha saralangan shohona taomlar</p>
+          </div>
+
+          <div class="text-center p-4 rounded-xl bg-navy-950/40 border border-gold-400/10">
+            <div class="w-12 h-12 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-400 flex items-center justify-center mx-auto mb-3">
+              <i class="fa-solid fa-camera-retro text-lg"></i>
+            </div>
+            <h3 class="font-serif font-bold text-slate-200 mb-1">Maxsus Fotozona</h3>
+            <p class="text-xs text-slate-400">360° interaktiv video va professional fotomaydon</p>
+          </div>
+
+          <div class="text-center p-4 rounded-xl bg-navy-950/40 border border-gold-400/10">
+            <div class="w-12 h-12 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-400 flex items-center justify-center mx-auto mb-3">
+              <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+            </div>
+            <h3 class="font-serif font-bold text-slate-200 mb-1">Yorug'lik & Mushak</h3>
+            <p class="text-xs text-slate-400">Kechki osmonda unutilmas mushakbozlik shousi</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: DASTUR (PROGRAM TIMELINE) -->
+    <section id="dastur" class="scroll-mt-28">
+      <div class="text-center mb-12">
+        <span class="text-xs uppercase tracking-widest text-gold-400 font-semibold block mb-2">Oqshom tartibi</span>
+        <h2 class="font-serif text-3xl sm:text-4xl font-bold text-slate-100">Kechki Dastur Rejasi</h2>
+        <div class="w-20 h-0.5 bg-gradient-to-r from-transparent via-gold-400 to-transparent mx-auto mt-4"></div>
+      </div>
+
+      <!-- Timeline Container -->
+      <div class="max-w-3xl mx-auto space-y-6">
+        
+        <!-- Timeline Item 1 -->
+        <div class="luxury-card p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-gold-400">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 shrink-0">
+              <i class="fa-solid fa-champagne-glasses text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-serif text-lg font-bold text-slate-100">Welcome Reception & Qizil Yo'lak</h3>
+              <p class="text-xs sm:text-sm text-slate-400">Mehmonlarni kutib olish, engil salqin ichimliklar va jonli skripka sadolari</p>
+            </div>
+          </div>
+          <span class="px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-xs font-semibold whitespace-nowrap self-end sm:self-center">
+            18:00 — 18:45
+          </span>
+        </div>
+
+        <!-- Timeline Item 2 -->
+        <div class="luxury-card p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-gold-400">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 shrink-0">
+              <i class="fa-solid fa-rings-wedding text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-serif text-lg font-bold text-slate-100">Tantanali Kirib Kelish & Nikoh</h3>
+              <p class="text-xs sm:text-sm text-slate-400">Kelin va kuyovning tantanali kirib kelishi hamda rasmiy nikoh e'loni</p>
+            </div>
+          </div>
+          <span class="px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-xs font-semibold whitespace-nowrap self-end sm:self-center">
+            18:45 — 19:30
+          </span>
+        </div>
+
+        <!-- Timeline Item 3 -->
+        <div class="luxury-card p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-gold-400">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 shrink-0">
+              <i class="fa-solid fa-microphone-lines text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-serif text-lg font-bold text-slate-100">Kechki Ziyofat & Qutlovlar</h3>
+              <p class="text-xs sm:text-sm text-slate-400">Shohona dasturxon ochilishi, ota-onalar va aziz mehmonlarning dil so'zlari</p>
+            </div>
+          </div>
+          <span class="px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-xs font-semibold whitespace-nowrap self-end sm:self-center">
+            19:30 — 20:30
+          </span>
+        </div>
+
+        <!-- Timeline Item 4 -->
+        <div class="luxury-card p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-gold-400">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 shrink-0">
+              <i class="fa-solid fa-heart text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-serif text-lg font-bold text-slate-100">Birinchi Vals & Nur Shou</h3>
+              <p class="text-xs sm:text-sm text-slate-400">Yoshlarning birinchi romantik raqsi va og'ir oq tuman sehri</p>
+            </div>
+          </div>
+          <span class="px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-xs font-semibold whitespace-nowrap self-end sm:self-center">
+            20:30 — 21:15
+          </span>
+        </div>
+
+        <!-- Timeline Item 5 -->
+        <div class="luxury-card p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-gold-400">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 shrink-0">
+              <i class="fa-solid fa-guitar text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-serif text-lg font-bold text-slate-100">Estrada Yulduzlari & Jonli Raqs</h3>
+              <p class="text-xs sm:text-sm text-slate-400">Taniqli san'atkorlar ijrosidagi quvnoq kuy-qo'shiqlar va shou-dastur</p>
+            </div>
+          </div>
+          <span class="px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-xs font-semibold whitespace-nowrap self-end sm:self-center">
+            21:15 — 22:30
+          </span>
+        </div>
+
+        <!-- Timeline Item 6 -->
+        <div class="luxury-card p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-gold-400">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 shrink-0">
+              <i class="fa-solid fa-cake-candles text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-serif text-lg font-bold text-slate-100">Katta To'y Torti & Mushakbozlik</h3>
+              <p class="text-xs sm:text-sm text-slate-400">Katta oqshom tortini kesish va tungi osmonda jilvalanuvchi feyerverk</p>
+            </div>
+          </div>
+          <span class="px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-xs font-semibold whitespace-nowrap self-end sm:self-center">
+            22:30 — 23:00
+          </span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION: GALEREYA (GALLERY) -->
+    <section id="galereya" class="scroll-mt-28">
+      <div class="text-center mb-12">
+        <span class="text-xs uppercase tracking-widest text-gold-400 font-semibold block mb-2">Xotiralar</span>
+        <h2 class="font-serif text-3xl sm:text-4xl font-bold text-slate-100">Muhabbat Lahzalari</h2>
+        <div class="w-20 h-0.5 bg-gradient-to-r from-transparent via-gold-400 to-transparent mx-auto mt-4"></div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Gallery Card 1 -->
+        <div class="luxury-card rounded-2xl overflow-hidden group border border-gold-400/20">
+          <div class="h-64 bg-gradient-to-br from-slate-900 to-navy-950 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-cover bg-center opacity-35 group-hover:scale-110 transition-transform duration-700" style="background-image: url('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80');"></div>
+            <div class="relative z-10">
+              <i class="fa-solid fa-heart text-gold-400 text-3xl mb-3"></i>
+              <h3 class="font-serif text-lg font-bold text-slate-100">Visol Orzusi</h3>
+              <p class="text-xs text-slate-300">Ikki qalbning muqaddas ahdi</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gallery Card 2 -->
+        <div class="luxury-card rounded-2xl overflow-hidden group border border-gold-400/20">
+          <div class="h-64 bg-gradient-to-br from-slate-900 to-navy-950 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-cover bg-center opacity-35 group-hover:scale-110 transition-transform duration-700" style="background-image: url('https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80');"></div>
+            <div class="relative z-10">
+              <i class="fa-solid fa-champagne-glasses text-gold-400 text-3xl mb-3"></i>
+              <h3 class="font-serif text-lg font-bold text-slate-100">Shohona Ziyofat</h3>
+              <p class="text-xs text-slate-300">Har bir detalda oliy ehtirom</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gallery Card 3 -->
+        <div class="luxury-card rounded-2xl overflow-hidden group border border-gold-400/20">
+          <div class="h-64 bg-gradient-to-br from-slate-900 to-navy-950 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-cover bg-center opacity-35 group-hover:scale-110 transition-transform duration-700" style="background-image: url('https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80');"></div>
+            <div class="relative z-10">
+              <i class="fa-solid fa-music text-gold-400 text-3xl mb-3"></i>
+              <h3 class="font-serif text-lg font-bold text-slate-100">Sehrli Oqshom</h3>
+              <p class="text-xs text-slate-300">Nafis ohanglar va samimiy quvonch</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: MANZIL VA DRESS-KOD (VENUE & DRESS CODE) -->
+    <section id="manzil" class="scroll-mt-28">
+      <div class="text-center mb-12">
+        <span class="text-xs uppercase tracking-widest text-gold-400 font-semibold block mb-2">Tafsilotlar</span>
+        <h2 class="font-serif text-3xl sm:text-4xl font-bold text-slate-100">Manzil & Dress-kod</h2>
+        <div class="w-20 h-0.5 bg-gradient-to-r from-transparent via-gold-400 to-transparent mx-auto mt-4"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Venue Card -->
+        <div class="luxury-card p-6 sm:p-8 rounded-3xl space-y-6">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 shrink-0">
+              <i class="fa-solid fa-map-location-dot text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-serif text-xl font-bold text-slate-100">"Yulduzlar Qasri" Grand Ball Hall</h3>
+              <p class="text-xs text-gold-300 uppercase tracking-wider">Toshkent shahri</p>
+            </div>
+          </div>
+
+          <p class="text-sm text-slate-300 leading-relaxed">
+            <strong class="text-gold-200">Mo'ljal:</strong> Toshkent sh., Mirzo Ulug'bek tumani, Mustaqillik shoh ko'chasi, 88-uy.<br />
+            (Katta avtoturargoh va xizmat ko'rsatuvchi personal mavjud).
+          </p>
+
+          <!-- Action navigation buttons -->
+          <div class="flex flex-wrap gap-3 pt-2">
+            <a href="https://yandex.com/maps/?text=Toshkent+Yulduzlar+Qasri" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-navy-950 border border-gold-400/40 text-gold-300 hover:bg-gold-400/10 transition-colors text-xs font-semibold inline-flex items-center space-x-2">
+              <i class="fa-solid fa-diamond-turn-right text-gold-400"></i>
+              <span>Yandex Xarita</span>
+            </a>
+            <a href="https://maps.google.com/?q=Tashkent" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-navy-950 border border-gold-400/40 text-gold-300 hover:bg-gold-400/10 transition-colors text-xs font-semibold inline-flex items-center space-x-2">
+              <i class="fa-solid fa-map-pin text-gold-400"></i>
+              <span>Google Maps</span>
+            </a>
+            <a href="https://taxi.yandex.uz/" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-navy-950 border border-gold-400/40 text-gold-300 hover:bg-gold-400/10 transition-colors text-xs font-semibold inline-flex items-center space-x-2">
+              <i class="fa-solid fa-taxi text-gold-400"></i>
+              <span>Taksi chaqirish</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Dress Code Card -->
+        <div class="luxury-card p-6 sm:p-8 rounded-3xl space-y-6">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 shrink-0">
+              <i class="fa-solid fa-vest-patches text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-serif text-xl font-bold text-slate-100">Dress-Kod Talablari</h3>
+              <p class="text-xs text-gold-300 uppercase tracking-wider">Black Tie / Kechki Libos</p>
+            </div>
+          </div>
+
+          <div class="space-y-4 text-sm text-slate-300">
+            <div class="flex items-start space-x-3">
+              <i class="fa-solid fa-user-tie text-gold-400 mt-1"></i>
+              <div>
+                <strong class="text-slate-100 block">Janoblar uchun:</strong>
+                <span>Klassik smoking yoki to'q qora / to'q ko'k rangli rasmiy kostyum va kapalak galstuk.</span>
+              </div>
+            </div>
+
+            <div class="flex items-start space-x-3">
+              <i class="fa-solid fa-person-dress text-gold-400 mt-1"></i>
+              <div>
+                <strong class="text-slate-100 block">Xonimlar uchun:</strong>
+                <span>Oqshom libosi (Kechki uzun ko'ylaklar, nafis pastel, zumrad, tilla yoki to'q ranglar).</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-gold-400/10 border border-gold-400/20 text-xs text-gold-200">
+            <i class="fa-solid fa-circle-info mr-1.5 text-gold-400"></i>
+            Oq rang faqat kelin uchun ajratilganligini inobatga olishingizni iltimos qilamiz.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: RO'YXATDAN O'TISH & TAKLIFNOMA (REGISTRATION & INVITATION TICKET) -->
+    <section id="royxatdan-otish" class="scroll-mt-28">
+      
+      <!-- SECTION HEADER -->
+      <div class="text-center mb-10">
+        <span class="text-xs uppercase tracking-widest text-gold-400 font-semibold block mb-2">Tashrifingizni tasdiqlang</span>
+        <h2 class="font-serif text-3xl sm:text-5xl font-bold gold-gradient-text">Ro'yxatdan O'tish</h2>
+        <p class="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto mt-2">
+          Mehmonlar ro'yxatiga kiritilishingiz va shaxsiy QR-kodli elektron taklifnomangizni olish uchun shaklni to'ldiring.
+        </p>
+        <div class="w-20 h-0.5 bg-gradient-to-r from-transparent via-gold-400 to-transparent mx-auto mt-4"></div>
+      </div>
+
+      <!-- MAIN INTERACTIVE CONTAINER -->
+      <div class="max-w-xl mx-auto">
+
+        <!-- TELEGRAM STATUS CHIP (Detects Telegram Mini App context) -->
+        <div id="tgStatusBadge" class="hidden mb-6 p-3 rounded-2xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-between text-xs text-gold-300">
+          <div class="flex items-center space-x-2">
+            <i class="fa-brands fa-telegram text-base text-gold-400"></i>
+            <span>Telegram ulandi: <strong id="tgUserName" class="text-white">Foydalanuvchi</strong></span>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-gold-400/20 text-[10px] font-bold uppercase">Mini App</span>
+        </div>
+
+        <!-- RECENT TICKET BANNER (Shows last created ticket without locking the form) -->
+        <div id="alreadyRegisteredBanner" class="hidden mb-6 p-4 rounded-2xl bg-navy-900 border border-gold-400/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xl">
+          <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gold-400/20 border border-gold-400/40 flex items-center justify-center text-gold-400 shrink-0">
+              <i class="fa-solid fa-ticket text-base"></i>
+            </div>
+            <div>
+              <span class="font-bold text-slate-100 block">Oxirgi Yaratilgan VIP Taklifnoma:</span>
+              <span class="text-slate-400">Chipta ID: <strong id="existingTicketId" class="text-gold-300 font-mono">#VO-XXXX</strong></span>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="copyExistingInviteLinkBtn" class="px-3 py-2 rounded-xl border border-gold-400/50 text-gold-300 hover:bg-gold-400/10 text-[11px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-regular fa-copy"></i>
+              <span>Silkani Nusxalash</span>
+            </button>
+            <button type="button" id="viewExistingTicketBtn" class="px-3.5 py-2 rounded-xl gold-btn-gradient text-navy-950 font-bold uppercase tracking-wider text-[11px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer">
+              <i class="fa-solid fa-eye mr-1"></i>Chiptani Ko'rish
+            </button>
+            <a id="viewExistingInviteLink" href="#" target="_blank" class="px-3.5 py-2 rounded-xl border border-gold-400/50 text-gold-300 hover:bg-gold-400/10 text-[11px] font-semibold transition-colors flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-envelope-open mr-1"></i>Ochish
+            </a>
+          </div>
+        </div>
+
+        <!-- FORM CONTAINER (Hides after successful submission) -->
+        <div id="registrationFormContainer" class="luxury-card p-6 sm:p-10 rounded-3xl border border-gold-400/40 relative shadow-2xl transition-all duration-500">
+          <form id="rsvpForm" class="space-y-6" novalidate>
+            
+            <!-- Hidden Telegram ID field -->
+            <input type="hidden" id="telegramIdInput" name="telegram_id" value="" />
+
+            <!-- SECTION 1: MAROSIM VA TADBIR TAFSILOTLARI -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-navy-950/70 border border-gold-400/30 space-y-4">
+              <div class="flex items-center space-x-2 text-gold-400 border-b border-gold-400/20 pb-2">
+                <i class="fa-solid fa-gem text-xs"></i>
+                <span class="text-xs font-bold uppercase tracking-widest">1. Marosim va Tadbir Tafsilotlari</span>
+              </div>
+
+              <!-- Input: Tadbir / Marosim Turi (To'y yoki Nahor oshi) -->
+              <div>
+                <label for="eventTypeSelect" class="block text-xs uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
+                  Tadbir / Marosim Turi <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gold-400/70">
+                    <i class="fa-solid fa-champagne-glasses"></i>
+                  </div>
+                  <select
+                    id="eventTypeSelect"
+                    name="event_type"
+                    class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all cursor-pointer"
+                  >
+                    <option value="Nikoh toʻyi" selected>💍 Nikoh toʻyi</option>
+                    <option value="Nahor oshi">🍲 Nahor oshi</option>
+                    <option value="Fotiha toʻyi">💐 Fotiha toʻyi</option>
+                    <option value="Sunnat toʻyi">🎉 Sunnat toʻyi</option>
+                    <option value="Beshik toʻyi">👶 Beshik toʻyi</option>
+                    <option value="Tugʻilgan kun / Yubiley">🎂 Tugʻilgan kun / Yubiley</option>
+                    <option value="custom">✏️ Boshqa marosim (o'zingiz yozing)...</option>
+                  </select>
+                </div>
+                <!-- Custom Event Type Text Box (if custom selected) -->
+                <div id="customEventTypeContainer" class="hidden mt-2">
+                  <input
+                    type="text"
+                    id="customEventTypeInput"
+                    placeholder="Marosim nomini kiriting (masalan: Xatmi Qur'on yoki Iftorlik)"
+                    class="w-full px-4 py-2 bg-navy-950 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 text-sm"
+                  />
+                </div>
+              </div>
+
+              <!-- Input: Kelin va Kuyov Ismi -->
+              <div>
+                <label for="coupleNamesInput" id="coupleNamesLabel" class="block text-xs uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
+                  Kelin va Kuyov (yoki To'y Egalari) Ismi <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gold-400/70">
+                    <i class="fa-solid fa-heart"></i>
+                  </div>
+                  <input
+                    type="text"
+                    id="coupleNamesInput"
+                    name="couple_names"
+                    required
+                    placeholder="Masalan: Anvar & Madina"
+                    class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              <!-- Input: To'yxona Nomi -->
+              <div>
+                <label for="venueNameInput" class="block text-xs uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
+                  To'yxona Nomi <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gold-400/70">
+                    <i class="fa-solid fa-building-columns"></i>
+                  </div>
+                  <input
+                    type="text"
+                    id="venueNameInput"
+                    name="venue_name"
+                    required
+                    placeholder="Masalan: «Grand Palace» tantanalar saroyi"
+                    class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              <!-- Input: To'yxona Manzili -->
+              <div>
+                <label for="venueAddressInput" class="block text-xs uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
+                  To'yxona Manzili <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gold-400/70">
+                    <i class="fa-solid fa-location-dot"></i>
+                  </div>
+                  <input
+                    type="text"
+                    id="venueAddressInput"
+                    name="venue_address"
+                    required
+                    placeholder="Masalan: Toshkent shahri, Yunusobod tumani"
+                    class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              <!-- Input: To'y Sanasi va Vaqti -->
+              <div>
+                <label for="eventDateTimeInput" class="block text-xs uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
+                  To'y Sanasi va Vaqti <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gold-400/70">
+                    <i class="fa-solid fa-calendar-star"></i>
+                  </div>
+                  <input
+                    type="text"
+                    id="eventDateTimeInput"
+                    name="event_date_time"
+                    required
+                    placeholder="Masalan: 2026-11-15 soat 18:00"
+                    class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: TAKLIFNOMA KIM UCHUN / MEHMON ISMI -->
+            <div class="space-y-4 pt-1">
+              <div class="flex items-center space-x-2 text-gold-400 border-b border-gold-400/20 pb-2">
+                <i class="fa-solid fa-user-check text-xs"></i>
+                <span class="text-xs font-bold uppercase tracking-widest">2. Taklifnoma Kim Uchun / Mehmon</span>
+              </div>
+
+              <!-- Input: Full Name / Guest Name -->
+              <div>
+                <label for="fullNameInput" class="block text-xs uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
+                  Taklifnoma Kim Uchun / Mehmon Ismi <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gold-400/70">
+                    <i class="fa-solid fa-user"></i>
+                  </div>
+                  <input
+                    type="text"
+                    id="fullNameInput"
+                    name="full_name"
+                    required
+                    placeholder="Masalan: Nosirov Nuriddin Uluğbek O'g'li"
+                    class="w-full pl-10 pr-4 py-3 bg-navy-950/80 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
+                  />
+                </div>
+                <p id="fullNameError" class="hidden text-xs text-red-400 mt-1 pl-1">Iltimos, mehmon ism va familiyasini kiriting.</p>
+              </div>
+
+              <!-- Input: Phone Number -->
+              <div>
+                <label for="phoneInput" class="block text-xs uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
+                  Telefon raqami <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gold-400/70">
+                    <i class="fa-solid fa-phone"></i>
+                  </div>
+                  <input
+                    type="tel"
+                    id="phoneInput"
+                    name="phone"
+                    required
+                    placeholder="+998 90 123 45 67"
+                    class="w-full pl-10 pr-4 py-3 bg-navy-950/80 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
+                  />
+                </div>
+                <p id="phoneError" class="hidden text-xs text-red-400 mt-1 pl-1">Iltimos, telefon raqamini to'g'ri kiriting (+998 ...).</p>
+              </div>
+
+              <!-- Dropdown: Guests Count -->
+              <div>
+                <label for="guestsCountInput" class="block text-xs uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
+                  Mehmonlar soni <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gold-400/70">
+                    <i class="fa-solid fa-users"></i>
+                  </div>
+                  <select
+                    id="guestsCountInput"
+                    name="guests_count"
+                    class="w-full pl-10 pr-10 py-3 bg-navy-950/90 border border-gold-400/30 rounded-xl text-slate-100 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm appearance-none transition-all cursor-pointer"
+                  >
+                    <option value="1">1 kishi (Shaxsiy taklifnoma)</option>
+                    <option value="2" selected>2 kishi (Juftlik bilan)</option>
+                    <option value="3">3 kishi (Oila bilan)</option>
+                    <option value="4">4 kishi (Katta oila)</option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gold-400/70">
+                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Textarea: Comments / Wishes -->
+              <div>
+                <label for="commentInput" class="block text-xs uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
+                  Qo'shimcha izoh yoki tilak
+                </label>
+                <textarea
+                  id="commentInput"
+                  name="comment"
+                  rows="3"
+                  placeholder="Yoshlarga samimiy tilaklar yoki qo'shimcha ma'lumot..."
+                  class="w-full p-3.5 bg-navy-950/80 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="formErrorBanner" class="hidden p-3.5 rounded-xl bg-red-950/60 border border-red-500/40 text-red-200 text-xs">
+              <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>
+              <span id="formErrorMessage">Xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.</span>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              id="submitBtn"
+              class="w-full gold-btn-gradient text-navy-950 font-bold py-4 rounded-xl text-sm sm:text-base uppercase tracking-wider flex items-center justify-center space-x-2 shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer"
+            >
+              <i class="fa-solid fa-ticket-simple" id="btnIcon"></i>
+              <span id="btnText">Ro'yxatdan o'tish va Taklifnoma olish</span>
+              <div id="btnSpinner" class="hidden w-5 h-5 border-2 border-navy-950 border-t-transparent rounded-full animate-spin"></div>
+            </button>
+
+            <p class="text-center text-[11px] text-slate-400">
+              <i class="fa-solid fa-shield-halved text-gold-400/80 mr-1"></i>
+              Ma'lumotlaringiz xavfsiz saqlanadi va bevosita Telegram bot orqali tasdiqlanadi.
+            </p>
+          </form>
+        </div>
+
+        <!-- DIGITAL INVITATION CARD RESULT (Revealed after successful registration) -->
+        <div id="invitationCardContainer" class="hidden transition-all duration-700">
+          
+          <!-- Top celebratory banner -->
+          <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gold-400/20 border-2 border-gold-400 text-gold-400 text-2xl mb-3 animate-bounce">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <h3 class="font-serif text-2xl sm:text-3xl font-bold gold-gradient-text">Tashrifingiz Tasdiqlandi!</h3>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1">
+              Sizga maxsus raqamli taklifnoma rasmiylashtirildi. Ushbu bilet Telegram botingizga ham yuborildi.
+            </p>
+          </div>
+
+          <!-- THE LUXURY DIGITAL TICKET (Target for html2canvas screenshot) -->
+          <div id="ticketDownloadTarget" class="invitation-ticket rounded-3xl p-6 sm:p-8 text-center text-slate-100 overflow-hidden relative">
+            <!-- Ornate corners -->
+            <div class="ornament-corner corner-tl"></div>
+            <div class="ornament-corner corner-tr"></div>
+            <div class="ornament-corner corner-bl"></div>
+            <div class="ornament-corner corner-br"></div>
+
+            <!-- Top Header -->
+            <div class="mb-4">
+              <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-[10px] uppercase tracking-widest font-bold">
+                <i class="fa-solid fa-crown text-[9px] text-gold-400"></i>
+                <span>Rasmiy Taklifnoma • VIP Chipta</span>
+                <i class="fa-solid fa-crown text-[9px] text-gold-400"></i>
+              </div>
+              <h4 class="font-royal text-2xl sm:text-3xl font-black tracking-widest gold-gradient-text mt-3" id="ticketEventTitle">VISOL OQSHOMI</h4>
+              <p class="font-serif italic text-sm text-gold-200/90 tracking-wider font-semibold" id="ticketCoupleNames">Anvar &amp; Madina</p>
+            </div>
+
+            <!-- Ticket ID Pill -->
+            <div class="my-4 inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-navy-950/80 border border-gold-400/40">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400">Chipta ID:</span>
+              <span id="ticketDisplayId" class="font-mono text-sm sm:text-base font-bold text-gold-300 tracking-wider">#VO-2026-0000</span>
+              <button type="button" id="copyTicketBtn" title="Chipta raqamini nusxalash" class="text-gold-400 hover:text-white ml-1 text-xs">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+
+            <!-- Guest Name -->
+            <div class="my-4">
+              <span class="text-[10px] uppercase tracking-widest text-slate-400 block mb-1">Muhtaram Mehmon:</span>
+              <h5 id="ticketGuestName" class="font-serif text-xl sm:text-2xl font-bold text-slate-100 tracking-wide gold-gradient-text">
+                Alisher Navoiy
+              </h5>
+            </div>
+
+            <!-- Event Details Specs Table -->
+            <div class="grid grid-cols-2 gap-3 text-left bg-navy-950/60 p-3.5 rounded-2xl border border-gold-400/20 my-5 text-xs">
+              <div>
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Sana & Vaqt:</span>
+                <span class="font-semibold text-slate-200" id="ticketDateTime">15-Noyabr, 2026 • 18:00</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Mehmonlar soni:</span>
+                <span id="ticketGuestCount" class="font-semibold text-gold-300">2 kishi</span>
+              </div>
+              <div class="col-span-2 pt-1 border-t border-slate-800">
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider block">To'yxona & Manzil:</span>
+                <span class="font-semibold text-slate-200" id="ticketVenueAddress">"Grand Palace" tantanalar saroyi, Toshkent</span>
+              </div>
+            </div>
+
+            <!-- DYNAMIC QR CODE DISPLAY -->
+            <div class="my-6 flex flex-col items-center justify-center">
+              <div class="p-3 bg-white rounded-2xl shadow-2xl border-2 border-gold-400 inline-block">
+                <div id="qrcodeCanvas"></div>
+              </div>
+              <span class="text-[10px] text-gold-300 tracking-wider uppercase mt-2.5 font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-qrcode text-xs"></i>
+                Tadbirga kirishda ushbu QR-kodni ko'rsating
+              </span>
+            </div>
+
+            <!-- Footer Note on Ticket -->
+            <div class="pt-3 border-t border-gold-400/20 text-[10px] text-slate-400">
+              Dress-kod: Black Tie / Kechki Libos • Shaxsiy tasdiqlangan taklifnoma
+            </div>
+          </div>
+
+          <!-- DEDICATED INVITATION LINK & SHARING BOX -->
+          <div class="mt-6 p-4 sm:p-5 rounded-2xl bg-navy-950/90 border border-gold-400/40 text-left space-y-3 shadow-2xl">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2 text-gold-400">
+                <i class="fa-solid fa-link text-sm"></i>
+                <span class="text-xs font-bold uppercase tracking-wider">Taklifnoma Silkasi (Havola):</span>
+              </div>
+              <span class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-circle-check"></i> Tayyor
+              </span>
+            </div>
+
+            <!-- The Link Input with Copy Button -->
+            <div class="flex items-center space-x-2">
+              <input
+                type="text"
+                id="inviteUrlDisplayInput"
+                readonly
+                value=""
+                class="flex-1 bg-navy-900 border border-gold-400/30 rounded-xl px-3 py-2.5 text-xs text-gold-200 font-mono select-all focus:outline-none focus:border-gold-400"
+              />
+              <button
+                type="button"
+                id="copyInviteUrlBtn"
+                class="gold-btn-gradient text-navy-950 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <i class="fa-regular fa-copy" id="copyUrlIcon"></i>
+                <span id="copyUrlText">Nusxalash</span>
+              </button>
+            </div>
+
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              💡 <b>Mehmonga yuborish uchun:</b> Ushbu silkani nusxalang yoki quyidagi tugma orqali Telegramda to'g'ridan-to'g'ri mehmonga yuboring. Havola ochilganda shaxsiy taklifnoma va musiqa yangraydi.
+            </p>
+
+            <!-- Action buttons: Share and Open -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <a
+                id="shareTelegramBtn"
+                href="#"
+                target="_blank"
+                class="py-2.5 px-3 rounded-xl bg-[#24A1DE]/20 hover:bg-[#24A1DE]/30 border border-[#24A1DE]/50 text-[#68c6ff] font-semibold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer"
+              >
+                <i class="fa-brands fa-telegram text-base"></i>
+                <span>Telegramda Ulashish</span>
+              </a>
+
+              <a
+                id="openPersonalInviteBtn"
+                href="#"
+                target="_blank"
+                class="py-2.5 px-3 rounded-xl gold-btn-gradient text-navy-950 font-bold text-xs flex items-center justify-center space-x-2 shadow hover:scale-105 transition-all cursor-pointer"
+              >
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                <span>Taklifnomani Ochish</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Secondary Action Buttons for the Ticket -->
+          <div class="mt-4 space-y-2.5">
+            <button
+              type="button"
+              id="downloadTicketBtn"
+              class="w-full py-3 rounded-xl border border-gold-400/50 text-gold-300 hover:bg-gold-400/10 transition-colors text-xs uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg"
+            >
+              <i class="fa-solid fa-download"></i>
+              <span>Taklifnomani Rasm Qilib Saqlash</span>
+            </button>
+
+            <button
+              type="button"
+              id="closeTgBtn"
+              class="w-full py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors text-xs uppercase tracking-wider flex items-center justify-center space-x-2"
+            >
+              <i class="fa-brands fa-telegram"></i>
+              <span>Telegramda yopish</span>
+            </button>
+
+            <button
+              type="button"
+              id="registerAnotherBtn"
+              class="w-full text-center text-xs text-slate-400 hover:text-gold-300 underline pt-1"
+            >
+              Boshqa mehmon uchun ro'yxatdan o'tish
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="mt-24 border-t border-gold-400/20 bg-navy-950 py-10 text-center relative z-10">
+    <div class="max-w-7xl mx-auto px-4 space-y-4">
+      <div class="flex items-center justify-center space-x-2">
+        <i class="fa-solid fa-ring text-gold-400"></i>
+        <span class="font-royal text-lg font-bold gold-gradient-text tracking-widest">VISOL OQSHOMI</span>
+        <i class="fa-solid fa-ring text-gold-400"></i>
+      </div>
+      <p class="text-xs text-slate-400 max-w-md mx-auto">
+        Tantanali nikoh kechasi va rasmiy taklifnoma tizimi. Barcha huquqlar himoyalangan © 2026.
+      </p>
+      <div class="text-[11px] text-gold-400/80">
+        Telegram Mini App texnologiyasi asosida yaratildi
+      </div>
+    </div>
+  </footer>
+
+  <!-- MAIN JAVASCRIPT LOGIC -->
+  <script>
+    // 1. Initialize Telegram WebApp SDK
+    const tg = window.Telegram?.WebApp;
+    let tgUser = null;
+
+    if (tg) {
+      try {
+        tg.ready();
+        tg.expand();
+        tg.enableClosingConfirmation && tg.enableClosingConfirmation();
+
+        // Configure header & background colors
+        if (tg.setHeaderColor) tg.setHeaderColor('#0b0f19');
+        if (tg.setBackgroundColor) tg.setBackgroundColor('#0b0f19');
+
+        // Extract user data if launched from Telegram
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+          tgUser = tg.initDataUnsafe.user;
+          const userFullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
+          
+          const fullNameInput = document.getElementById('fullNameInput');
+          const tgIdInput = document.getElementById('telegramIdInput');
+          const tgStatusBadge = document.getElementById('tgStatusBadge');
+          const tgUserName = document.getElementById('tgUserName');
+
+          if (fullNameInput && userFullName) {
+            fullNameInput.value = userFullName;
+          }
+          if (tgIdInput && tgUser.id) {
+            tgIdInput.value = tgUser.id;
+          }
+          if (tgStatusBadge && tgUserName) {
+            tgUserName.textContent = tgUser.username ? `@${tgUser.username}` : userFullName;
+            tgStatusBadge.classList.remove('hidden');
+          }
+
+          // Check if this telegram user has already registered
+          checkExistingTicket(tgUser.id);
+        }
+      } catch (e) {
+        console.warn('Telegram WebApp initialization error:', e);
+      }
+    }
+
+    // 2. Mobile Navigation Toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const menuIcon = document.getElementById('menuIcon');
+
+    if (mobileMenuBtn && mobileMenu) {
+      mobileMenuBtn.addEventListener('click', () => {
+        const isHidden = mobileMenu.classList.contains('hidden');
+        if (isHidden) {
+          mobileMenu.classList.remove('hidden');
+          menuIcon.classList.remove('fa-bars');
+          menuIcon.classList.add('fa-xmark');
+        } else {
+          mobileMenu.classList.add('hidden');
+          menuIcon.classList.remove('fa-xmark');
+          menuIcon.classList.add('fa-bars');
+        }
+      });
+
+      // Close mobile menu when links clicked
+      document.querySelectorAll('.mobile-nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.add('hidden');
+          menuIcon.classList.remove('fa-xmark');
+          menuIcon.classList.add('fa-bars');
+        });
+      });
+    }
+
+    // 3. Dynamic Event Settings & Countdown
+    let eventTargetTime = new Date('2026-08-11T19:00:00+05:00').getTime();
+
+    function updateTimer() {
+      const now = new Date().getTime();
+      const diff = eventTargetTime - now;
+
+      if (diff <= 0) {
+        document.getElementById('countdownDays').textContent = '00';
+        document.getElementById('countdownHours').textContent = '00';
+        document.getElementById('countdownMinutes').textContent = '00';
+        document.getElementById('countdownSeconds').textContent = '00';
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById('countdownDays').textContent = String(days).padStart(2, '0');
+      document.getElementById('countdownHours').textContent = String(hours).padStart(2, '0');
+      document.getElementById('countdownMinutes').textContent = String(minutes).padStart(2, '0');
+      document.getElementById('countdownSeconds').textContent = String(seconds).padStart(2, '0');
+    }
+
+    // Fetch and apply settings in index.html
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.success && data.settings) {
+          const s = data.settings;
+          if (s.groom_name && s.bride_name) {
+            const coupleEl = document.getElementById('indexCoupleNames');
+            if (coupleEl) coupleEl.textContent = `${s.groom_name} & ${s.bride_name}`;
+          }
+          if (s.event_type) {
+            const titleEl = document.getElementById('indexEventTitle');
+            if (titleEl) titleEl.textContent = s.event_type.toUpperCase();
+          }
+          if (s.day_number && s.month_name && s.year) {
+            const dateEl = document.getElementById('indexDateText');
+            if (dateEl) dateEl.textContent = `${s.day_number}-${s.month_name}, ${s.year}`;
+          }
+          if (s.event_time) {
+            const timeEl = document.getElementById('indexTimeText');
+            if (timeEl) timeEl.textContent = `${s.event_time} da`;
+          }
+          if (s.venue_name) {
+            const venueEl = document.getElementById('indexVenueText');
+            if (venueEl) venueEl.textContent = s.venue_name;
+          }
+          if (s.event_date && s.event_time) {
+            const iso = `${s.event_date}T${s.event_time.length === 5 ? s.event_time + ':00' : s.event_time}+05:00`;
+            const parsed = new Date(iso).getTime();
+            if (!isNaN(parsed)) eventTargetTime = parsed;
+          }
+
+          updateTimer();
+        }
+      })
+      .catch(err => console.warn('Could not load settings in index.html:', err));
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
+
+    // 4. Phone input formatting helper (+998...)
+    const phoneInput = document.getElementById('phoneInput');
+    if (phoneInput) {
+      phoneInput.addEventListener('focus', function() {
+        if (!this.value.trim()) {
+          this.value = '+998 ';
+        }
+      });
+      phoneInput.addEventListener('input', function(e) {
+        let value = this.value;
+        if (!value.startsWith('+998')) {
+          this.value = '+998 ' + value.replace(/[^\d]/g, '');
+        }
+      });
+    }
+
+    // 5. Check if user already registered
+    async function checkExistingTicket(telegramId) {
+      if (!telegramId) return;
+      try {
+        const res = await fetch(`/api/user-ticket/${telegramId}`);
+        const data = await res.json();
+        if (data.success && data.ticket) {
+          const t = data.ticket;
+
+          // Show existing ticket banner above the form without hiding or locking the form
+          const banner = document.getElementById('alreadyRegisteredBanner');
+          const ticketIdEl = document.getElementById('existingTicketId');
+          const viewBtn = document.getElementById('viewExistingTicketBtn');
+          const linkBtn = document.getElementById('viewExistingInviteLink');
+          const copyExistingBtn = document.getElementById('copyExistingInviteLinkBtn');
+
+          if (banner) banner.classList.remove('hidden');
+          if (ticketIdEl) ticketIdEl.textContent = t.unique_ticket_id;
+          const cleanTicket = t.unique_ticket_id.replace('#', '');
+          const fullInviteUrl = window.location.origin + `/invite.html?ticket=${encodeURIComponent(cleanTicket)}`;
+          
+          if (linkBtn) {
+            linkBtn.href = fullInviteUrl;
+            linkBtn.onclick = (e) => {
+              e.preventDefault();
+              if (tg && tg.openLink) {
+                tg.openLink(fullInviteUrl);
+              } else {
+                window.open(fullInviteUrl, '_blank');
+              }
+            };
+          }
+
+          if (copyExistingBtn) {
+            copyExistingBtn.onclick = () => {
+              navigator.clipboard.writeText(fullInviteUrl).then(() => {
+                copyExistingBtn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i><span>Nusxalandi!</span>';
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                setTimeout(() => {
+                  copyExistingBtn.innerHTML = '<i class="fa-regular fa-copy"></i><span>Silkani Nusxalash</span>';
+                }, 2500);
+              }).catch(() => {
+                prompt('Taklifnoma havolasi:', fullInviteUrl);
+              });
+            };
+          }
+
+          if (viewBtn) {
+            viewBtn.onclick = () => {
+              renderInvitationTicket(t, fullInviteUrl);
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('Could not check existing ticket:', err);
+      }
+    }
+
+    // 6. Form Submission Handling
+    const rsvpForm = document.getElementById('rsvpForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnIcon = document.getElementById('btnIcon');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const formErrorBanner = document.getElementById('formErrorBanner');
+    const formErrorMessage = document.getElementById('formErrorMessage');
+
+    // Event type change dynamic handler
+    const eventTypeSelect = document.getElementById('eventTypeSelect');
+    const customEventContainer = document.getElementById('customEventTypeContainer');
+    const coupleNamesLabel = document.getElementById('coupleNamesLabel');
+    const coupleNamesInput = document.getElementById('coupleNamesInput');
+
+    if (eventTypeSelect) {
+      eventTypeSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+          if (customEventContainer) customEventContainer.classList.remove('hidden');
+        } else {
+          if (customEventContainer) customEventContainer.classList.add('hidden');
+        }
+        if (this.value === 'Nahor oshi') {
+          if (coupleNamesLabel) coupleNamesLabel.innerHTML = 'To\'y Egalari yoki Yoshlar Ismi <span class="text-red-400">*</span>';
+          if (coupleNamesInput) coupleNamesInput.placeholder = 'Masalan: Saidovlar oilasi yoki Otabek & Sevara';
+        } else if (this.value === 'Sunnat toʻyi') {
+          if (coupleNamesLabel) coupleNamesLabel.innerHTML = 'Toybola va Ota-onasi Ismi <span class="text-red-400">*</span>';
+          if (coupleNamesInput) coupleNamesInput.placeholder = 'Masalan: Jasurbek (Karimovlar oilasi)';
+        } else {
+          if (coupleNamesLabel) coupleNamesLabel.innerHTML = 'Kelin va Kuyov (yoki To\'y Egalari) Ismi <span class="text-red-400">*</span>';
+          if (coupleNamesInput) coupleNamesInput.placeholder = 'Masalan: Anvar & Madina';
+        }
+      });
+    }
+
+    rsvpForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      // Trigger Telegram Haptic feedback
+      if (tg?.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('medium');
+      }
+
+      // Reset errors
+      document.getElementById('fullNameError').classList.add('hidden');
+      document.getElementById('phoneError').classList.add('hidden');
+      formErrorBanner.classList.add('hidden');
+
+      // Capture Event Type
+      let eventTypeVal = 'Nikoh toʻyi';
+      if (eventTypeSelect) {
+        if (eventTypeSelect.value === 'custom') {
+          const customVal = document.getElementById('customEventTypeInput')?.value.trim();
+          eventTypeVal = customVal || 'Maxsus Marosim';
+        } else {
+          eventTypeVal = eventTypeSelect.value;
+        }
+      }
+
+      const coupleNames = document.getElementById('coupleNamesInput') ? document.getElementById('coupleNamesInput').value.trim() : '';
+      const venueName = document.getElementById('venueNameInput') ? document.getElementById('venueNameInput').value.trim() : '';
+      const venueAddress = document.getElementById('venueAddressInput') ? document.getElementById('venueAddressInput').value.trim() : '';
+      const eventDateTime = document.getElementById('eventDateTimeInput') ? document.getElementById('eventDateTimeInput').value.trim() : '';
+      const fullName = document.getElementById('fullNameInput').value.trim();
+      const phone = document.getElementById('phoneInput').value.trim();
+      const guestsCount = document.getElementById('guestsCountInput').value;
+      const comment = document.getElementById('commentInput').value.trim();
+      const telegramId = document.getElementById('telegramIdInput').value.trim();
+
+      // Validation
+      let hasError = false;
+      if (!fullName || fullName.length < 3) {
+        document.getElementById('fullNameError').classList.remove('hidden');
+        hasError = true;
+      }
+      if (!phone || phone.length < 9) {
+        document.getElementById('phoneError').classList.remove('hidden');
+        hasError = true;
+      }
+
+      if (hasError) {
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+        return;
+      }
+
+      // UI Loading state
+      btnText.textContent = "Rasmiylashtirilmoqda...";
+      btnIcon.classList.add('hidden');
+      btnSpinner.classList.remove('hidden');
+      submitBtn.disabled = true;
+
+      try {
+        const payload = {
+          event_type: eventTypeVal,
+          couple_names: coupleNames,
+          groom_bride: coupleNames,
+          venue_name: venueName,
+          venue_address: venueAddress,
+          event_date_time: eventDateTime,
+          event_date: eventDateTime,
+          full_name: fullName,
+          guest_name: fullName,
+          phone: phone,
+          guests_count: parseInt(guestsCount, 10),
+          comment: comment,
+          telegram_id: telegramId || (tgUser ? String(tgUser.id) : null),
+          initData: tg?.initData || null
+        };
+
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.ticket) {
+          // Success celebration with Confetti
+          launchConfetti();
+          if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+          // Render ticket
+          renderInvitationTicket(result.ticket, result.invite_url);
+        } else {
+          throw new Error(result.error || "Ro'yxatdan o'tishda xatolik yuz berdi");
+        }
+      } catch (err) {
+        console.error('Registration error:', err);
+        formErrorMessage.textContent = err.message || "Server bilan bog'lanishda xatolik yuz berdi.";
+        formErrorBanner.classList.remove('hidden');
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+      } finally {
+        btnText.textContent = "Ro'yxatdan o'tish va Taklifnoma olish";
+        btnIcon.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+        submitBtn.disabled = false;
+      }
+    });
+
+    // 7. Render Invitation Ticket Card with Dynamic QR
+    function renderInvitationTicket(ticket, inviteUrl) {
+      const formContainer = document.getElementById('registrationFormContainer');
+      const ticketContainer = document.getElementById('invitationCardContainer');
+
+      // Populate card data
+      document.getElementById('ticketDisplayId').textContent = ticket.unique_ticket_id;
+      document.getElementById('ticketGuestName').textContent = ticket.full_name;
+      document.getElementById('ticketGuestCount').textContent = `${ticket.guests_count} kishi`;
+
+      if (ticket.event_type) {
+        const titleEl = document.getElementById('ticketEventTitle');
+        if (titleEl) titleEl.textContent = ticket.event_type.toUpperCase();
+      }
+
+      const coupleNamesVal = ticket.couple_names || (document.getElementById('coupleNamesInput') ? document.getElementById('coupleNamesInput').value.trim() : '');
+      if (coupleNamesVal) {
+        const coupleEl = document.getElementById('ticketCoupleNames');
+        if (coupleEl) coupleEl.textContent = coupleNamesVal;
+      }
+
+      const dateTimeVal = ticket.event_date_time || (document.getElementById('eventDateTimeInput') ? document.getElementById('eventDateTimeInput').value.trim() : '');
+      if (dateTimeVal) {
+        const dtEl = document.getElementById('ticketDateTime');
+        if (dtEl) dtEl.textContent = dateTimeVal;
+      }
+
+      const venueNameVal = ticket.venue_name || (document.getElementById('venueNameInput') ? document.getElementById('venueNameInput').value.trim() : '');
+      const venueAddrVal = ticket.venue_address || (document.getElementById('venueAddressInput') ? document.getElementById('venueAddressInput').value.trim() : '');
+      if (venueNameVal || venueAddrVal) {
+        const vaEl = document.getElementById('ticketVenueAddress');
+        if (vaEl) {
+          const parts = [venueNameVal, venueAddrVal].filter(Boolean);
+          vaEl.textContent = parts.join(', ');
+        }
+      }
+
+      // Set personal invite link
+      const cleanId = ticket.unique_ticket_id.replace('#', '');
+      let fullInviteUrl = inviteUrl;
+      if (!fullInviteUrl || !fullInviteUrl.startsWith('http')) {
+        fullInviteUrl = window.location.origin + `/invite.html?ticket=${encodeURIComponent(cleanId)}`;
+      }
+
+      // Populate Link input box
+      const urlInput = document.getElementById('inviteUrlDisplayInput');
+      if (urlInput) {
+        urlInput.value = fullInviteUrl;
+      }
+
+      // Configure Copy Link button
+      const copyUrlBtn = document.getElementById('copyInviteUrlBtn');
+      if (copyUrlBtn) {
+        copyUrlBtn.onclick = () => {
+          navigator.clipboard.writeText(fullInviteUrl).then(() => {
+            const icon = document.getElementById('copyUrlIcon');
+            const text = document.getElementById('copyUrlText');
+            if (icon) icon.className = 'fa-solid fa-check text-green-700';
+            if (text) text.textContent = 'Nusxalandi!';
+            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            setTimeout(() => {
+              if (icon) icon.className = 'fa-regular fa-copy';
+              if (text) text.textContent = 'Nusxalash';
+            }, 2500);
+          }).catch(() => {
+            if (urlInput) {
+              urlInput.select();
+              document.execCommand('copy');
+              alert('Taklifnoma havolasi nusxalandi!');
+            }
+          });
+        };
+      }
+
+      // Configure Telegram Share button
+      const shareTgBtn = document.getElementById('shareTelegramBtn');
+      if (shareTgBtn) {
+        const guestName = ticket.full_name || 'Muhtaram mehmon';
+        const shareText = `Assalomu alaykum, ${guestName}! Sizni to'yimizga taklif etamiz. Shaxsiy taklifnomangiz:`;
+        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(fullInviteUrl)}&text=${encodeURIComponent(shareText)}`;
+        shareTgBtn.href = shareUrl;
+        shareTgBtn.onclick = (e) => {
+          if (tg && tg.openTelegramLink) {
+            e.preventDefault();
+            tg.openTelegramLink(shareUrl);
+          }
+        };
+      }
+
+      // Configure Open Button (works smoothly both inside TG WebApp and regular browser)
+      const openBtn = document.getElementById('openPersonalInviteBtn');
+      if (openBtn) {
+        openBtn.href = fullInviteUrl;
+        openBtn.onclick = (e) => {
+          e.preventDefault();
+          if (tg && tg.openLink) {
+            tg.openLink(fullInviteUrl);
+          } else {
+            window.open(fullInviteUrl, '_blank');
+          }
+        };
+      }
+
+      // Generate dynamic QR Code
+      const qrTarget = document.getElementById('qrcodeCanvas');
+      qrTarget.innerHTML = ''; // clear any previous QR
+
+      // QR content points directly to personal digital invitation
+      const qrData = window.location.origin + `/invite.html?ticket=${encodeURIComponent(cleanId)}`;
+      
+      new QRCode(qrTarget, {
+        text: qrData,
+        width: 150,
+        height: 150,
+        colorDark: "#0b0f19",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      // Smooth switch transition
+      formContainer.classList.add('opacity-0', 'scale-95');
+      setTimeout(() => {
+        formContainer.classList.add('hidden');
+        ticketContainer.classList.remove('hidden');
+        ticketContainer.classList.add('opacity-100');
+
+        // Scroll to ticket smoothly
+        ticketContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+
+    // 8. Download / Save Ticket as High-Res Image
+    const downloadTicketBtn = document.getElementById('downloadTicketBtn');
+    if (downloadTicketBtn) {
+      downloadTicketBtn.addEventListener('click', async function() {
+        const ticketElement = document.getElementById('ticketDownloadTarget');
+        const btn = this;
+        const originalText = btn.innerHTML;
+
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Rasm tayyorlanmoqda...</span>';
+        btn.disabled = true;
+
+        try {
+          const canvas = await html2canvas(ticketElement, {
+            scale: 2, // High resolution
+            useCORS: true,
+            backgroundColor: '#090e18'
+          });
+
+          const image = canvas.toDataURL('image/png');
+          const link = document.createElement('a');
+          const ticketId = document.getElementById('ticketDisplayId').textContent.replace('#', '');
+          link.download = `Visol-Oqshomi-Taklifnoma-${ticketId}.png`;
+          link.href = image;
+          link.click();
+
+          if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        } catch (err) {
+          console.error('Download error:', err);
+          alert('Rasmni yuklab olishda xatolik yuz berdi. Iltimos, ekranni skrinshot qilib oling.');
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      });
+    }
+
+    // 9. Copy Ticket ID to Clipboard
+    const copyTicketBtn = document.getElementById('copyTicketBtn');
+    if (copyTicketBtn) {
+      copyTicketBtn.addEventListener('click', function() {
+        const idText = document.getElementById('ticketDisplayId').textContent;
+        navigator.clipboard.writeText(idText).then(() => {
+          this.innerHTML = '<i class="fa-solid fa-check text-green-400"></i>';
+          if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+          setTimeout(() => {
+            this.innerHTML = '<i class="fa-regular fa-copy"></i>';
+          }, 2000);
+        });
+      });
+    }
+
+    // 10. Close Telegram Mini App
+    const closeTgBtn = document.getElementById('closeTgBtn');
+    if (closeTgBtn) {
+      closeTgBtn.addEventListener('click', function() {
+        if (tg && tg.close) {
+          tg.close();
+        } else {
+          alert('Ushbu oyna Telegram ilovasi ichida avtomatik yopiladi.');
+        }
+      });
+    }
+
+    // 11. Register Another Guest
+    const registerAnotherBtn = document.getElementById('registerAnotherBtn');
+    if (registerAnotherBtn) {
+      registerAnotherBtn.addEventListener('click', function() {
+        document.getElementById('invitationCardContainer').classList.add('hidden');
+        const formContainer = document.getElementById('registrationFormContainer');
+        formContainer.classList.remove('hidden', 'opacity-0', 'scale-95');
+        document.getElementById('fullNameInput').value = '';
+        document.getElementById('phoneInput').value = '+998 ';
+        document.getElementById('commentInput').value = '';
+        formContainer.scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+
+    // 12. Confetti Burst Helper
+    function launchConfetti() {
+      if (typeof confetti !== 'function') return;
+
+      const count = 200;
+      const defaults = {
+        origin: { y: 0.7 },
+        colors: ['#d4af37', '#f3e5ab', '#ffffff', '#ffd700', '#c59d28']
+      };
+
+      function fire(particleRatio, opts) {
+        confetti(Object.assign({}, defaults, opts, {
+          particleCount: Math.floor(count * particleRatio)
+        }));
+      }
+
+      fire(0.25, { spread: 26, startVelocity: 55 });
+      fire(0.2, { spread: 60 });
+      fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+      fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+      fire(0.1, { spread: 120, startVelocity: 45 });
+    }
+  </script>
+</body>
+</html>
