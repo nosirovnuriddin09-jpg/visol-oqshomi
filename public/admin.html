@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boshqaruv Paneli — Taklifnoma & Mehmonlar</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              950: '#070b14',
+              900: '#0b1120',
+              800: '#141e34',
+              700: '#1e2b48'
+            },
+            gold: {
+              400: '#d4af37',
+              500: '#c59d28',
+              600: '#aa8017'
+            }
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    body {
+      background: #070b14;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .gold-gradient {
+      background: linear-gradient(135deg, #d4af37 0%, #f7e6a6 50%, #b8860b 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex flex-col justify-between">
+
+  <div class="max-w-4xl mx-auto w-full space-y-6">
+
+    <!-- Header -->
+    <div class="text-center space-y-2">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-400 text-2xl mb-1">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-100 tracking-tight">To'y & Mehmonlar Boshqaruv Paneli</h1>
+      <p class="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
+        Kelin-kuyov tafsilotlarini sozlang yoki ro'yxatdan o'tgan barcha mehmonlar ma'lumotlarini tahrirlang.
+      </p>
+    </div>
+
+    <!-- Tab Switcher Navigation -->
+    <div class="flex items-center justify-center gap-2 p-1.5 bg-navy-900 border border-gold-400/30 rounded-2xl max-w-md mx-auto">
+      <button type="button" id="tabBtnSettings" onclick="switchTab('settings')" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 gold-gradient text-navy-950 shadow-md">
+        <i class="fa-solid fa-sliders"></i>
+        <span>To'y Sozlamalari</span>
+      </button>
+      <button type="button" id="tabBtnGuests" onclick="switchTab('guests')" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 text-slate-300 hover:text-white">
+        <i class="fa-solid fa-users"></i>
+        <span>Mehmonlar Ro'yxati</span>
+        <span id="tabGuestBadge" class="px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-300 text-[10px]">0</span>
+      </button>
+    </div>
+
+    <!-- Global Alert Box -->
+    <div id="statusAlert" class="hidden p-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 transition-all">
+      <i id="statusIcon" class="fa-solid fa-circle-check text-lg"></i>
+      <span id="statusMessage">Muvaffaqiyatli saqlandi!</span>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 1: TO'Y SOZLAMALARI (SETTINGS)                           -->
+    <!-- ============================================================ -->
+    <div id="tabContentSettings" class="bg-navy-900/90 border border-gold-400/25 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+      <form id="settingsForm" class="space-y-6">
+
+        <!-- BLOCK 1: YOSHLAR -->
+        <div class="border-b border-slate-800 pb-5">
+          <h2 class="text-xs uppercase tracking-widest text-gold-400 font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-heart text-xs"></i>
+            1. Yoshlar Ma'lumotlari
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">Kuyov Ismi:</label>
+              <input type="text" id="groom_name" name="groom_name" required placeholder="Masalan: Anvarjon" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">Kelin Ismi:</label>
+              <input type="text" id="bride_name" name="bride_name" required placeholder="Masalan: Madinaxon" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">Tadbir Turi / Sarlavhasi:</label>
+              <input type="text" id="event_type" name="event_type" required placeholder="Masalan: Nikoh toʻyi yoki Visol Oqshomi" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCK 2: SANA VA VAQT -->
+        <div class="border-b border-slate-800 pb-5">
+          <h2 class="text-xs uppercase tracking-widest text-gold-400 font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-star text-xs"></i>
+            2. Sana va Vaqt
+          </h2>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="col-span-2 sm:col-span-2">
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">To'y Sanasi (YYYY-MM-DD):</label>
+              <input type="date" id="event_date" name="event_date" required class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div class="col-span-2 sm:col-span-2">
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">Boshlanish Vaqti:</label>
+              <input type="text" id="event_time" name="event_time" required placeholder="19:00" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 font-medium mb-1.5">Hafta kuni:</label>
+              <input type="text" id="day_of_week" name="day_of_week" placeholder="Seshanba" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 font-medium mb-1.5">Kun raqami:</label>
+              <input type="text" id="day_number" name="day_number" placeholder="11" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 font-medium mb-1.5">Oy nomi:</label>
+              <input type="text" id="month_name" name="month_name" placeholder="Avgust" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 font-medium mb-1.5">Yil:</label>
+              <input type="text" id="year" name="year" placeholder="2026" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCK 3: TO'YXONA VA MANZIL -->
+        <div class="border-b border-slate-800 pb-5">
+          <h2 class="text-xs uppercase tracking-widest text-gold-400 font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-location-dot text-xs"></i>
+            3. To'yxona va Manzil
+          </h2>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">To'yxona Nomi:</label>
+              <input type="text" id="venue_name" name="venue_name" required placeholder="«Grand Palace» tantanalar saroyi" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">Mo'ljal / Manzil tavsifi:</label>
+              <input type="text" id="venue_address" name="venue_address" required placeholder="Toshkent shahri, Yunusobod tumani" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">Xarita havolasi (Google Maps / Yandex):</label>
+              <input type="url" id="map_url" name="map_url" placeholder="https://maps.google.com/..." class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCK 4: TAKLIF ETUVCHI OILA -->
+        <div class="border-b border-slate-800 pb-5">
+          <h2 class="text-xs uppercase tracking-widest text-gold-400 font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-users text-xs"></i>
+            4. Taklif Etuvchi Oila
+          </h2>
+          <div>
+            <label class="block text-xs text-slate-300 font-medium mb-1.5">Oila imzosi (Pastki qism):</label>
+            <input type="text" id="family_names" name="family_names" required placeholder="To'y egalari va xonadon ahillari" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+          </div>
+        </div>
+
+        <!-- BLOCK 5: MUSIQA VAQTI (LOOP) -->
+        <div>
+          <h2 class="text-xs uppercase tracking-widest text-gold-400 font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-music text-xs"></i>
+            5. Musiqa Davomiyligi (Loop soniyalar)
+          </h2>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">Boshlanish vaqti (soniya):</label>
+              <input type="number" id="music_loop_start" name="music_loop_start" value="0" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-300 font-medium mb-1.5">Tugash vaqti (soniya):</label>
+              <input type="number" id="music_loop_end" name="music_loop_end" value="166" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-400" />
+              <span class="text-[10px] text-slate-400">166 soniya = 2 daqiqa 46 soniya</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit and Action Buttons -->
+        <div class="pt-4 flex flex-col sm:flex-row gap-3">
+          <button type="submit" id="saveBtn" class="flex-1 gold-gradient text-navy-950 font-bold py-3.5 px-6 rounded-xl text-sm uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg hover:brightness-105 active:scale-[0.99] transition-all cursor-pointer">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span id="saveBtnText">O'zgarishlarni Saqlash</span>
+          </button>
+
+          <a href="/invite.html" target="_blank" class="px-6 py-3.5 rounded-xl border border-gold-400/50 text-gold-400 hover:bg-gold-400/10 transition-colors text-sm uppercase tracking-wider flex items-center justify-center space-x-2 font-semibold">
+            <i class="fa-solid fa-eye"></i>
+            <span>Taklifnomani Ko'rish</span>
+          </a>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 2: MEHMONLAR RO'YXATI (GUEST MANAGEMENT)                 -->
+    <!-- ============================================================ -->
+    <div id="tabContentGuests" class="hidden space-y-6">
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-navy-900 border border-gold-400/25 rounded-2xl p-5 flex items-center space-x-4 shadow-xl">
+          <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 text-xl">
+            <i class="fa-solid fa-ticket"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 uppercase tracking-wider block">Jami Ro'yxatdan O'tganlar</span>
+            <span id="statRegistrations" class="text-2xl font-bold text-slate-100">0 ta chipta</span>
+          </div>
+        </div>
+
+        <div class="bg-navy-900 border border-gold-400/25 rounded-2xl p-5 flex items-center space-x-4 shadow-xl">
+          <div class="w-12 h-12 rounded-xl bg-gold-400/10 border border-gold-400/30 flex items-center justify-center text-gold-400 text-xl">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 uppercase tracking-wider block">Jami Mehmonlar Soni</span>
+            <span id="statTotalGuests" class="text-2xl font-bold text-gold-400">0 kishi</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar: Search & Add Guest -->
+      <div class="bg-navy-900/90 border border-gold-400/25 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
+        <div class="relative w-full sm:w-80">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+          <input type="text" id="searchInput" oninput="filterGuests()" placeholder="Mehmon ismi, telefon yoki chipta ID..." class="w-full bg-navy-950 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-gold-400" />
+        </div>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button type="button" onclick="loadGuests()" class="px-3.5 py-2 rounded-xl border border-slate-700 text-slate-300 hover:text-white hover:border-gold-400 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-rotate-right"></i>
+            <span>Yangilash</span>
+          </button>
+          <button type="button" onclick="openAddGuestModal()" class="flex-1 sm:flex-none gold-gradient text-navy-950 font-bold py-2 px-4 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md hover:brightness-105 active:scale-95 transition-all">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Yangi Mehmon</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Guests Table Container -->
+      <div class="bg-navy-900/90 border border-gold-400/25 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-navy-950 text-gold-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="py-3.5 px-4">Chipta ID</th>
+                <th class="py-3.5 px-4">Mehmon Ismi</th>
+                <th class="py-3.5 px-4">Telefon</th>
+                <th class="py-3.5 px-4">Soni</th>
+                <th class="py-3.5 px-4">Izoh / Tilak</th>
+                <th class="py-3.5 px-4 text-center">Amallar</th>
+              </tr>
+            </thead>
+            <tbody id="guestsTableBody" class="divide-y divide-slate-800">
+              <tr>
+                <td colspan="6" class="text-center py-8 text-slate-500">
+                  <i class="fa-solid fa-spinner fa-spin text-lg mb-2 block"></i>
+                  Yuklanmoqda...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: ADD / EDIT GUEST                                      -->
+  <!-- ============================================================ -->
+  <div id="guestModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-navy-900 border border-gold-400/40 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 id="modalTitle" class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-user-pen text-gold-400"></i>
+          <span>Mehmon Ma'lumotlarini Tahrirlash</span>
+        </h3>
+        <button type="button" onclick="closeGuestModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="guestModalForm" class="space-y-4">
+        <input type="hidden" id="modalGuestId" value="" />
+
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Ism va familiya <span class="text-red-400">*</span></label>
+          <input type="text" id="modalFullName" required placeholder="Masalan: Alisher Navoiy" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-gold-400" />
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Telefon raqami <span class="text-red-400">*</span></label>
+          <input type="tel" id="modalPhone" required placeholder="+998 90 123 45 67" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-gold-400" />
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Mehmonlar soni <span class="text-red-400">*</span></label>
+          <select id="modalGuestsCount" class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-gold-400">
+            <option value="1">1 kishi</option>
+            <option value="2">2 kishi</option>
+            <option value="3">3 kishi</option>
+            <option value="4">4 kishi</option>
+            <option value="5">5 kishi</option>
+            <option value="6">6 kishi</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Qo'shimcha izoh / tilak</label>
+          <textarea id="modalComment" rows="2" placeholder="Izoh yoki tilak..." class="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-gold-400"></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeGuestModal()" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold">Bekor qilish</button>
+          <button type="submit" id="modalSaveBtn" class="gold-gradient text-navy-950 font-bold py-2.5 px-5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:brightness-105 active:scale-95 transition-all">Saqlash</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-12 text-center text-xs text-slate-500">
+    Taklifnoma Boshqaruv Tizimi © 2026. Barcha ma'lumotlar avtomatik saqlanadi.
+  </footer>
+
+  <!-- Main JavaScript Logic -->
+  <script>
+    let allGuests = [];
+
+    // --- TAB SWITCHER ---
+    function switchTab(tab) {
+      const tabBtnSettings = document.getElementById('tabBtnSettings');
+      const tabBtnGuests = document.getElementById('tabBtnGuests');
+      const tabContentSettings = document.getElementById('tabContentSettings');
+      const tabContentGuests = document.getElementById('tabContentGuests');
+
+      if (tab === 'settings') {
+        tabBtnSettings.className = "flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 gold-gradient text-navy-950 shadow-md";
+        tabBtnGuests.className = "flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 text-slate-300 hover:text-white";
+        tabContentSettings.classList.remove('hidden');
+        tabContentGuests.classList.add('hidden');
+      } else {
+        tabBtnGuests.className = "flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 gold-gradient text-navy-950 shadow-md";
+        tabBtnSettings.className = "flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 text-slate-300 hover:text-white";
+        tabContentGuests.classList.remove('hidden');
+        tabContentSettings.classList.add('hidden');
+        loadGuests();
+      }
+    }
+
+    // --- 1. LOAD SETTINGS ---
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data && data.success && data.settings) {
+          const s = data.settings;
+          for (let key in s) {
+            const input = document.getElementById(key);
+            if (input) input.value = s[key];
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    }
+    loadSettings();
+
+    // Auto calculate day of week, day number, month when date picked
+    const eventDateInput = document.getElementById('event_date');
+    if (eventDateInput) {
+      eventDateInput.addEventListener('change', function() {
+        const val = this.value;
+        if (!val) return;
+        const d = new Date(val);
+        const dayNum = d.getDate();
+        const yearNum = d.getFullYear();
+        const daysUz = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+        const monthsUz = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
+
+        document.getElementById('day_of_week').value = daysUz[d.getDay()];
+        document.getElementById('day_number').value = dayNum;
+        document.getElementById('month_name').value = monthsUz[d.getMonth()];
+        document.getElementById('year').value = yearNum;
+      });
+    }
+
+    // --- 2. SAVE SETTINGS ---
+    const settingsForm = document.getElementById('settingsForm');
+    const saveBtnText = document.getElementById('saveBtnText');
+
+    settingsForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      saveBtnText.textContent = "Saqlanmoqda...";
+
+      const formData = new FormData(settingsForm);
+      const payload = {};
+      formData.forEach((value, key) => {
+        if (key === 'music_loop_start' || key === 'music_loop_end') {
+          payload[key] = parseInt(value, 10) || 0;
+        } else {
+          payload[key] = value.trim();
+        }
+      });
+
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          showAlert("To'y ma'lumotlari muvaffaqiyatli saqlandi!", "success");
+        } else {
+          throw new Error(result.error || "Xatolik yuz berdi");
+        }
+      } catch (err) {
+        showAlert("Xatolik: " + err.message, "error");
+      } finally {
+        saveBtnText.textContent = "O'zgarishlarni Saqlash";
+      }
+    });
+
+    // --- 3. LOAD GUESTS LIST ---
+    async function loadGuests() {
+      const tbody = document.getElementById('guestsTableBody');
+      try {
+        const res = await fetch('/api/guests');
+        const data = await res.json();
+        if (data.success) {
+          allGuests = data.guests || [];
+          document.getElementById('statRegistrations').textContent = `${data.stats?.total_registrations || 0} ta chipta`;
+          document.getElementById('statTotalGuests').textContent = `${data.stats?.total_guests || 0} kishi`;
+          document.getElementById('tabGuestBadge').textContent = allGuests.length;
+          renderGuestsTable(allGuests);
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-red-400">Mehmonlar ro'yxatini yuklashda xatolik yuz berdi: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderGuestsTable(list) {
+      const tbody = document.getElementById('guestsTableBody');
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-500">Hozircha ro'yxatdan o'tgan mehmonlar yo'q.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(g => {
+        const cleanTicket = (g.unique_ticket_id || '').replace('#', '');
+        const inviteUrl = `/invite.html?ticket=${encodeURIComponent(cleanTicket)}`;
+        return `
+          <tr class="hover:bg-navy-800/60 transition-colors">
+            <td class="py-3 px-4 font-mono font-bold text-gold-300 whitespace-nowrap">${escapeHtml(g.unique_ticket_id || '')}</td>
+            <td class="py-3 px-4 font-semibold text-slate-100 whitespace-nowrap">${escapeHtml(g.full_name || '')}</td>
+            <td class="py-3 px-4 text-slate-300 font-mono whitespace-nowrap">${escapeHtml(g.phone || '')}</td>
+            <td class="py-3 px-4 whitespace-nowrap"><span class="px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-300 text-[11px] font-bold">${g.guests_count || 1} kishi</span></td>
+            <td class="py-3 px-4 text-slate-400 max-w-xs truncate" title="${escapeHtml(g.comment || '')}">${escapeHtml(g.comment || '—')}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">
+              <div class="inline-flex items-center gap-1.5">
+                <a href="${inviteUrl}" target="_blank" title="Taklifnomani ochish" class="p-1.5 rounded-lg bg-navy-950 border border-gold-400/30 text-gold-400 hover:bg-gold-400 hover:text-navy-950 transition-colors">
+                  <i class="fa-solid fa-envelope-open text-xs"></i>
+                </a>
+                <button type="button" onclick="openEditGuestModal(${g.id})" title="Tahrirlash" class="p-1.5 rounded-lg bg-navy-950 border border-blue-400/30 text-blue-400 hover:bg-blue-400 hover:text-navy-950 transition-colors">
+                  <i class="fa-solid fa-pen text-xs"></i>
+                </button>
+                <button type="button" onclick="deleteGuest(${g.id}, '${escapeHtml(g.full_name)}')" title="O'chirish" class="p-1.5 rounded-lg bg-navy-950 border border-red-400/30 text-red-400 hover:bg-red-400 hover:text-white transition-colors">
+                  <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterGuests() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      if (!q) {
+        renderGuestsTable(allGuests);
+        return;
+      }
+      const filtered = allGuests.filter(g => 
+        (g.full_name && g.full_name.toLowerCase().includes(q)) ||
+        (g.phone && g.phone.toLowerCase().includes(q)) ||
+        (g.unique_ticket_id && g.unique_ticket_id.toLowerCase().includes(q))
+      );
+      renderGuestsTable(filtered);
+    }
+
+    // --- 4. ADD / EDIT GUEST MODAL ---
+    const modal = document.getElementById('guestModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalForm = document.getElementById('guestModalForm');
+
+    function openAddGuestModal() {
+      document.getElementById('modalGuestId').value = '';
+      document.getElementById('modalFullName').value = '';
+      document.getElementById('modalPhone').value = '+998 ';
+      document.getElementById('modalGuestsCount').value = '2';
+      document.getElementById('modalComment').value = '';
+      modalTitle.innerHTML = '<i class="fa-solid fa-user-plus text-gold-400"></i><span>Yangi Mehmon Qo\'shish</span>';
+      modal.classList.remove('hidden');
+    }
+
+    function openEditGuestModal(id) {
+      const guest = allGuests.find(g => g.id === id);
+      if (!guest) return;
+      document.getElementById('modalGuestId').value = guest.id;
+      document.getElementById('modalFullName').value = guest.full_name || '';
+      document.getElementById('modalPhone').value = guest.phone || '';
+      document.getElementById('modalGuestsCount').value = String(guest.guests_count || 1);
+      document.getElementById('modalComment').value = guest.comment || '';
+      modalTitle.innerHTML = '<i class="fa-solid fa-user-pen text-gold-400"></i><span>Mehmon Ma\'lumotlarini Tahrirlash</span>';
+      modal.classList.remove('hidden');
+    }
+
+    function closeGuestModal() {
+      modal.classList.add('hidden');
+    }
+
+    modalForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('modalSaveBtn');
+      saveBtn.textContent = 'Saqlanmoqda...';
+
+      const payload = {
+        id: document.getElementById('modalGuestId').value || null,
+        full_name: document.getElementById('modalFullName').value.trim(),
+        phone: document.getElementById('modalPhone').value.trim(),
+        guests_count: parseInt(document.getElementById('modalGuestsCount').value, 10) || 1,
+        comment: document.getElementById('modalComment').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/guests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.success) {
+          closeGuestModal();
+          showAlert(result.message || "Saqlandi!", "success");
+          loadGuests();
+        } else {
+          throw new Error(result.error || "Xatolik yuz berdi");
+        }
+      } catch (err) {
+        alert("Xatolik: " + err.message);
+      } finally {
+        saveBtn.textContent = 'Saqlash';
+      }
+    });
+
+    // --- 5. DELETE GUEST ---
+    async function deleteGuest(id, name) {
+      if (!confirm(`Haqiqatan ham "${name}" mehmonini ro'yxatdan o'chirmoqchimisiz?`)) return;
+      try {
+        const res = await fetch(`/api/guests/${id}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (result.success) {
+          showAlert(`"${name}" ro'yxatdan o'chirildi.`, "success");
+          loadGuests();
+        } else {
+          throw new Error(result.error || "O'chirishda xatolik yuz berdi");
+        }
+      } catch (err) {
+        alert("Xatolik: " + err.message);
+      }
+    }
+
+    // Helper functions
+    function showAlert(msg, type) {
+      const statusAlert = document.getElementById('statusAlert');
+      const statusMessage = document.getElementById('statusMessage');
+      const statusIcon = document.getElementById('statusIcon');
+      statusAlert.classList.remove('hidden', 'bg-green-900/60', 'border-green-500/50', 'text-green-200', 'bg-red-900/60', 'border-red-500/50', 'text-red-200');
+      if (type === 'success') {
+        statusAlert.classList.add('bg-green-900/60', 'border', 'border-green-500/50', 'text-green-200');
+        statusIcon.className = "fa-solid fa-circle-check text-green-400 text-lg";
+      } else {
+        statusAlert.classList.add('bg-red-900/60', 'border', 'border-red-500/50', 'text-red-200');
+        statusIcon.className = "fa-solid fa-triangle-exclamation text-red-400 text-lg";
+      }
+      statusMessage.textContent = msg;
+      statusAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => statusAlert.classList.add('hidden'), 5000);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
