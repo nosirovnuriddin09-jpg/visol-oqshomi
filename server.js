@@ -15,7 +15,7 @@ const db = require('./database');
 // Configuration
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
-const WEBAPP_URL = process.env.WEBAPP_URL || `http://localhost:${PORT}`;
+const WEBAPP_URL = process.env.WEBAPP_URL || process.env.RENDER_EXTERNAL_URL || 'https://visol-oqshomi.onrender.com';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || null;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JN6cT8qet4kdBzHnB9hX4tRgnhy3xwRfFAA6pyUa2Oww';
 
