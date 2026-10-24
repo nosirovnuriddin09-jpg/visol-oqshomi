@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: visol-oqshomi-bot
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: WEBAPP_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
