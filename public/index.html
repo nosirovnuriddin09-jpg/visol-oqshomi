@@ -942,14 +942,34 @@
         <!-- DIGITAL INVITATION CARD RESULT (Revealed after successful registration) -->
         <div id="invitationCardContainer" class="hidden transition-all duration-700">
           
-          <!-- Top celebratory banner -->
-          <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gold-400/20 border-2 border-gold-400 text-gold-400 text-2xl mb-3 animate-bounce">
-              <i class="fa-solid fa-check"></i>
+          <!-- Top celebratory / payment banner -->
+          <div id="ticketPaymentNotice" class="luxury-card p-4 rounded-2xl border border-gold-400/40 bg-gold-950/40 mb-6 text-center shadow-xl">
+            <div class="inline-flex items-center space-x-2 text-xs uppercase tracking-widest text-gold-300 font-bold mb-2">
+              <i class="fa-solid fa-credit-card"></i>
+              <span>Buyurtma & To'lov Ma'lumotlari</span>
             </div>
-            <h3 class="font-serif text-2xl sm:text-3xl font-bold gold-gradient-text">Tashrifingiz Tasdiqlandi!</h3>
-            <p class="text-xs sm:text-sm text-slate-300 mt-1">
-              Sizga maxsus raqamli taklifnoma rasmiylashtirildi. Ushbu bilet Telegram botingizga ham yuborildi.
+            <div class="text-xl font-serif font-bold text-white">
+              To'lov uchun summa: <span id="paymentTotalSum" class="gold-gradient-text">0 so'm</span>
+            </div>
+            <p id="paymentUnitNotice" class="text-xs text-slate-300 mt-1">Donasi 2 000 so'mdan hisoblandi</p>
+            
+            <div class="mt-3 p-3 bg-black/60 rounded-xl border border-gold-400/30 text-left text-xs font-mono space-y-1.5">
+              <div class="flex justify-between items-center text-slate-300">
+                <span>Karta raqami:</span>
+                <span class="text-gold-300 font-bold text-sm tracking-wider select-all cursor-pointer" onclick="navigator.clipboard.writeText('5614681426172270'); alert('Karta raqami nusxalandi!')">5614 6814 2617 2270</span>
+              </div>
+              <div class="flex justify-between items-center text-slate-400 text-[11px]">
+                <span>Tizim:</span>
+                <span class="text-slate-200">Uzcard</span>
+              </div>
+              <div class="flex justify-between items-center text-slate-400 text-[11px]">
+                <span>Karta egasi:</span>
+                <span class="text-white font-semibold">Nosirov Nuriddin</span>
+              </div>
+            </div>
+
+            <p class="mt-3 text-xs text-amber-300 font-medium leading-relaxed">
+              📸 Iltimos, pulni o'tkazib, <b>chek rasmini Telegram botga yuboring</b>.<br>Admin uni tekshirib, 1 soat ichida taklifnomangiz havolasini yuboradi!
             </p>
           </div>
 
@@ -1471,7 +1491,7 @@
           if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
           // Render ticket
-          renderInvitationTicket(result.ticket, result.invite_url);
+          renderInvitationTicket(result.ticket, result.invite_url, result);
         } else {
           throw new Error(result.error || "Ro'yxatdan o'tishda xatolik yuz berdi");
         }
@@ -1489,9 +1509,19 @@
     });
 
     // 7. Render Invitation Ticket Card with Dynamic QR
-    function renderInvitationTicket(ticket, inviteUrl) {
+    function renderInvitationTicket(ticket, inviteUrl, paymentInfo) {
       const formContainer = document.getElementById('registrationFormContainer');
       const ticketContainer = document.getElementById('invitationCardContainer');
+
+      // Populate Payment Notice
+      if (document.getElementById('paymentTotalSum')) {
+        const total = paymentInfo?.formatted_amount || ((ticket.guests_count || 1) * 2000).toLocaleString('uz-UZ');
+        document.getElementById('paymentTotalSum').textContent = `${total} so'm`;
+      }
+      if (document.getElementById('paymentUnitNotice')) {
+        const count = ticket.guests_count || 1;
+        document.getElementById('paymentUnitNotice').textContent = `${count} ta taklifnoma x 2 000 so'm`;
+      }
 
       // Populate card data
       document.getElementById('ticketDisplayId').textContent = ticket.unique_ticket_id;
