@@ -187,7 +187,7 @@ function setupBotCommands(botInstance) {
     const paidList = db.getPaidParticipantsByTelegramId(user?.id);
 
     if (unpaidList.length > 0) {
-      const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || (t.guests_count || 1) * 2000), 0);
+      const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
       if (unpaidList.length > 1) {
         welcomeText += `🧾 <b>Sizda ${unpaidList.length} ta to'lanmagan taklifnoma mavjud:</b>\n`;
         unpaidList.forEach((t, idx) => {
@@ -406,7 +406,7 @@ function setupBotCommands(botInstance) {
     }
 
     const totalTicketsCount = pendingTickets.length;
-    const totalAmount = pendingTickets.reduce((sum, t) => sum + (t.total_price || (t.guests_count || 1) * 2000), 0);
+    const totalAmount = pendingTickets.reduce((sum, t) => sum + (t.total_price || 2000), 0);
     const formattedTotalAmount = totalAmount.toLocaleString('uz-UZ');
     const cleanTicketId = `TG_${userId}`;
 
@@ -722,8 +722,9 @@ app.post('/api/register', async (req, res) => {
       attempts++;
     }
 
+    // Narx: har bitta taklifnoma mehmonlar sonidan (1 kishi, juftlik yoki oila) qat'i nazar 2 000 so'm
     const pricePerInvite = 2000;
-    const totalAmount = cleanGuestsCount * pricePerInvite;
+    const totalAmount = pricePerInvite;
     const formattedAmount = totalAmount.toLocaleString('uz-UZ');
 
     const ticketRecord = db.createParticipant({
@@ -751,7 +752,7 @@ app.post('/api/register', async (req, res) => {
     // Unpaid tickets for this user (including this newly registered one)
     const unpaidTickets = cleanTgId ? db.getUnpaidParticipantsByTelegramId(cleanTgId) : [ticketRecord];
     const totalUnpaidCount = unpaidTickets.length;
-    const totalUnpaidAmount = unpaidTickets.reduce((sum, t) => sum + (t.total_price || (t.guests_count || 1) * pricePerInvite), 0);
+    const totalUnpaidAmount = unpaidTickets.reduce((sum, t) => sum + (t.total_price || pricePerInvite), 0);
     const formattedTotalAmount = totalUnpaidAmount.toLocaleString('uz-UZ');
 
     // 1. Narxni avtomatik hisoblash va bot orqali foydalanuvchiga to'lov ma'lumotlarini yuborish
