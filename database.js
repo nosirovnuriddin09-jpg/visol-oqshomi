@@ -74,6 +74,26 @@ class DatabaseManager {
       );
       CREATE INDEX IF NOT EXISTS idx_ticket_id ON participants(unique_ticket_id);
       CREATE INDEX IF NOT EXISTS idx_tg_id ON participants(telegram_id);
+
+      CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider TEXT NOT NULL,
+        trans_id TEXT UNIQUE NOT NULL,
+        merchant_trans_id TEXT NOT NULL,
+        amount REAL NOT NULL,
+        state INTEGER NOT NULL DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'pending',
+        telegram_id TEXT,
+        ticket_id TEXT,
+        create_time INTEGER DEFAULT 0,
+        perform_time INTEGER DEFAULT 0,
+        cancel_time INTEGER DEFAULT 0,
+        reason INTEGER,
+        raw_payload TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_trans_id ON transactions(trans_id);
+      CREATE INDEX IF NOT EXISTS idx_trans_merchant ON transactions(merchant_trans_id);
     `);
     this.ensureColumns();
   }
@@ -96,6 +116,26 @@ class DatabaseManager {
       );
       CREATE INDEX IF NOT EXISTS idx_ticket_id ON participants(unique_ticket_id);
       CREATE INDEX IF NOT EXISTS idx_tg_id ON participants(telegram_id);
+
+      CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider TEXT NOT NULL,
+        trans_id TEXT UNIQUE NOT NULL,
+        merchant_trans_id TEXT NOT NULL,
+        amount REAL NOT NULL,
+        state INTEGER NOT NULL DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'pending',
+        telegram_id TEXT,
+        ticket_id TEXT,
+        create_time INTEGER DEFAULT 0,
+        perform_time INTEGER DEFAULT 0,
+        cancel_time INTEGER DEFAULT 0,
+        reason INTEGER,
+        raw_payload TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_trans_id ON transactions(trans_id);
+      CREATE INDEX IF NOT EXISTS idx_trans_merchant ON transactions(merchant_trans_id);
     `);
     this.ensureColumns();
   }
@@ -384,6 +424,134 @@ class DatabaseManager {
     const filtered = list.filter(p => p.id !== cleanId);
     this.writeJson(filtered);
     return true;
+  }
+
+  // -------------------------------------------------------------
+  // PAYMENT TRANSACTIONS MANAGEMENT
+  // -------------------------------------------------------------
+
+  createTransaction({ provider, trans_id, merchant_trans_id, amount, state = 1, status = 'pending', telegram_id = null, ticket_id = null, create_time = 0, raw_payload = null }) {
+    const p = String(provider).toLowerCase();
+    const tId = String(trans_id);
+    const mId = String(merchant_trans_id);
+    const amt = parseFloat(amount) || 0;
+    const st = parseInt(state, 10) || 1;
+    const stat = String(status || 'pending');
+    const tgId = telegram_id ? String(telegram_id) : null;
+    const tickId = ticket_id ? String(ticket_id) : null;
+    const crTime = parseInt(create_time, 10) || Math.floor(Date.now());
+    const payload = raw_payload ? (typeof raw_payload === 'string' ? raw_payload : JSON.stringify(raw_payload)) : null;
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare(`
+        INSERT INTO transactions (
+          provider, trans_id, merchant_trans_id, amount, state, status, telegram_id, ticket_id, create_time, raw_payload
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      stmt.run(p, tId, mId, amt, st, stat, tgId, tickId, crTime, payload);
+      return this.getTransactionByTransId(tId);
+    }
+
+    // JSON fallback
+    const list = this.readTransactionsJson();
+    const newTx = {
+      id: list.length + 1,
+      provider: p,
+      trans_id: tId,
+      merchant_trans_id: mId,
+      amount: amt,
+      state: st,
+      status: stat,
+      telegram_id: tgId,
+      ticket_id: tickId,
+      create_time: crTime,
+      perform_time: 0,
+      cancel_time: 0,
+      reason: null,
+      raw_payload: payload,
+      created_at: new Date().toISOString()
+    };
+    list.push(newTx);
+    this.writeTransactionsJson(list);
+    return newTx;
+  }
+
+  getTransactionByTransId(trans_id) {
+    const tId = String(trans_id);
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare('SELECT * FROM transactions WHERE trans_id = ?');
+      return stmt.get(tId) || null;
+    }
+    const list = this.readTransactionsJson();
+    return list.find(t => String(t.trans_id) === tId) || null;
+  }
+
+  getTransactionByMerchantTransId(merchant_trans_id) {
+    const mId = String(merchant_trans_id);
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare('SELECT * FROM transactions WHERE merchant_trans_id = ? ORDER BY id DESC LIMIT 1');
+      return stmt.get(mId) || null;
+    }
+    const list = this.readTransactionsJson();
+    const found = list.filter(t => String(t.merchant_trans_id) === mId);
+    return found.length > 0 ? found[found.length - 1] : null;
+  }
+
+  updateTransaction(trans_id, updates = {}) {
+    const tId = String(trans_id);
+    const existing = this.getTransactionByTransId(tId);
+    if (!existing) return null;
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const fields = [];
+      const values = [];
+      for (const [k, v] of Object.entries(updates)) {
+        fields.push(`${k} = ?`);
+        values.push(v);
+      }
+      values.push(tId);
+      const sql = `UPDATE transactions SET ${fields.join(', ')} WHERE trans_id = ?`;
+      this.db.prepare(sql).run(...values);
+      return this.getTransactionByTransId(tId);
+    }
+
+    const list = this.readTransactionsJson();
+    const idx = list.findIndex(t => String(t.trans_id) === tId);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...updates };
+      this.writeTransactionsJson(list);
+      return list[idx];
+    }
+    return null;
+  }
+
+  getAllTransactions(limit = 100) {
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare('SELECT * FROM transactions ORDER BY id DESC LIMIT ?');
+      return stmt.all(limit);
+    }
+    const list = this.readTransactionsJson();
+    return list.slice(-limit).reverse();
+  }
+
+  readTransactionsJson() {
+    const TX_FILE = path.join(DB_DIR, 'transactions.json');
+    try {
+      if (fs.existsSync(TX_FILE)) {
+        return JSON.parse(fs.readFileSync(TX_FILE, 'utf-8'));
+      }
+    } catch {}
+    return [];
+  }
+
+  writeTransactionsJson(data) {
+    const TX_FILE = path.join(DB_DIR, 'transactions.json');
+    try {
+      fs.writeFileSync(TX_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    } catch (err) {
+      console.error('[Database] Failed to write transactions JSON:', err);
+    }
   }
 
   /**
