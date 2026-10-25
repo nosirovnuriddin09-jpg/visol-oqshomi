@@ -150,7 +150,11 @@ class DatabaseManager {
       'groom_bride',
       'guest_name',
       'event_date',
-      'event_type'
+      'event_type',
+      'payment_status',
+      'total_price',
+      'receipt_file_id',
+      'username'
     ];
     for (const c of cols) {
       try {
@@ -162,7 +166,7 @@ class DatabaseManager {
   /**
    * Save a newly registered participant
    */
-  createParticipant({ telegram_id, full_name, guest_name, phone, guests_count, comment, unique_ticket_id, ticket_id, couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date, event_type }) {
+  createParticipant({ telegram_id, full_name, guest_name, phone, guests_count, comment, unique_ticket_id, ticket_id, couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date, event_type, payment_status, total_price, username }) {
     const cleanTgId = telegram_id ? String(telegram_id) : null;
     const cleanFullName = String(full_name || guest_name || '').trim();
     const cleanPhone = String(phone || '').trim();
@@ -174,6 +178,9 @@ class DatabaseManager {
     const cleanAddr = venue_address ? String(venue_address).trim() : null;
     const cleanDateTime = event_date_time || event_date ? String(event_date_time || event_date).trim() : null;
     const cleanEventType = event_type ? String(event_type).trim() : 'Nikoh toʻyi';
+    const cleanPaymentStatus = payment_status || 'pending_payment';
+    const cleanTotalPrice = total_price !== undefined ? parseFloat(total_price) : (cleanCount * 2000);
+    const cleanUsername = username ? String(username).trim() : null;
     const now = new Date().toISOString();
 
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
@@ -182,15 +189,15 @@ class DatabaseManager {
           telegram_id, full_name, guest_name, phone, guests_count, comment, 
           unique_ticket_id, ticket_id, created_at, 
           couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date,
-          event_type
+          event_type, payment_status, total_price, username
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       stmt.run(
         cleanTgId, cleanFullName, cleanFullName, cleanPhone, cleanCount, cleanComment,
         cleanTicketId, cleanTicketId, now,
         cleanCouple, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanDateTime,
-        cleanEventType
+        cleanEventType, cleanPaymentStatus, cleanTotalPrice, cleanUsername
       );
       return this.getParticipantByTicketId(cleanTicketId);
     }
@@ -214,6 +221,9 @@ class DatabaseManager {
       event_date_time: cleanDateTime,
       event_date: cleanDateTime,
       event_type: cleanEventType,
+      payment_status: cleanPaymentStatus,
+      total_price: cleanTotalPrice,
+      username: cleanUsername,
       created_at: now
     };
     list.push(newEntry);
@@ -267,6 +277,10 @@ class DatabaseManager {
       phone: row.phone,
       guests_count: row.guests_count,
       comment: row.comment,
+      payment_status: row.payment_status || 'unpaid',
+      total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : ((row.guests_count || 1) * 2000),
+      receipt_file_id: row.receipt_file_id || null,
+      username: row.username || null,
       created_at: row.created_at
     };
   }
@@ -306,8 +320,52 @@ class DatabaseManager {
       phone: row.phone,
       guests_count: row.guests_count,
       comment: row.comment,
+      payment_status: row.payment_status || 'unpaid',
+      total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : ((row.guests_count || 1) * 2000),
+      receipt_file_id: row.receipt_file_id || null,
+      username: row.username || null,
       created_at: row.created_at
     };
+  }
+
+  /**
+   * Update payment status and receipt for a participant ticket
+   */
+  updateParticipantPaymentStatus(ticketId, { payment_status, receipt_file_id, username }) {
+    const cleanId = String(ticketId).trim();
+    const withHash = cleanId.startsWith('#') ? cleanId : `#${cleanId}`;
+    const withoutHash = cleanId.replace(/^#/, '');
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare(`
+        UPDATE participants 
+        SET payment_status = ?, 
+            receipt_file_id = COALESCE(?, receipt_file_id),
+            username = COALESCE(?, username)
+        WHERE unique_ticket_id = ? OR unique_ticket_id = ? OR ticket_id = ? OR ticket_id = ?
+      `);
+      stmt.run(
+        payment_status, 
+        receipt_file_id || null, 
+        username || null, 
+        withHash, withoutHash, withHash, withoutHash
+      );
+      return this.getParticipantByTicketId(cleanId);
+    }
+
+    const list = this.readJson();
+    const item = list.slice().reverse().find(p => {
+      const pid = String(p.unique_ticket_id || p.ticket_id || '').toUpperCase();
+      return pid === withHash.toUpperCase() || pid === withoutHash.toUpperCase();
+    });
+    if (item) {
+      if (payment_status) item.payment_status = payment_status;
+      if (receipt_file_id) item.receipt_file_id = receipt_file_id;
+      if (username) item.username = username;
+      this.writeJson(list);
+      return item;
+    }
+    return null;
   }
 
   /**
