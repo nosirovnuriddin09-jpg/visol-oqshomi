@@ -171,10 +171,21 @@ function setupBotCommands(botInstance) {
     const inviteUrl = existing ? `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(existing.unique_ticket_id.replace('#', ''))}` : null;
 
     if (existing) {
-      welcomeText += `🎫 <b>Sizning VIP Chiptangiz:</b> <code>${existing.unique_ticket_id}</code> (${existing.guests_count} kishi)\n`;
-      welcomeText += `🔗 <b>Shaxsiy Taklifnoma Silkasi:</b>\n<code>${inviteUrl}</code>\n\n`;
-      welcomeText += `<i>(Silkani nusxalash uchun ustiga bosing)</i>\n\n`;
-      welcomeText += `Ro'yxatdan o'tish yoki ma'lumotlarni o'zgartirish uchun quyidagi tugmani bosing:`;
+      if (existing.payment_status === 'paid') {
+        welcomeText += `🎫 <b>Sizning VIP Chiptangiz:</b> <code>${existing.unique_ticket_id}</code> (${existing.guests_count} kishi)\n`;
+        welcomeText += `🔗 <b>Shaxsiy Taklifnoma Silkasi:</b>\n<code>${inviteUrl}</code>\n\n`;
+        welcomeText += `<i>(Silkani nusxalash uchun ustiga bosing)</i>\n\n`;
+      } else if (existing.payment_status === 'pending_verification') {
+        welcomeText += `⏳ <b>To'lov chekingiz adminga yuborilgan va tekshirilmoqda.</b>\n`;
+        welcomeText += `Admin 1 soat ichida chekni tekshirib, taklifnomangiz havolasini yuboradi. Iltimos, kuting.\n\n`;
+      } else {
+        const count = existing.guests_count || 1;
+        const totalAmount = (count * 2000).toLocaleString('uz-UZ');
+        welcomeText += `To'lov uchun summa: <b>${totalAmount} so'm</b>\n`;
+        welcomeText += `Karta raqami: <code>5614 6814 2617 2270</code> (Uzcard)\n`;
+        welcomeText += `Karta egasi: <b>Nosirov Nuriddin</b>\n\n`;
+        welcomeText += `Iltimos, pulni o'tkazib, chek rasmini shu botga yuboring.\n\n`;
+      }
     } else {
       welcomeText += `Ushbu quvonchli kunimizda biz bilan birga bo'lishingiz uchun quyidagi tugma orqali ro'yxatdan o'ting va shaxsiy raqamli taklifnomangizni qabul qilib oling:`;
     }
@@ -186,7 +197,7 @@ function setupBotCommands(botInstance) {
       ]
     ];
 
-    if (existing && inviteUrl) {
+    if (existing && existing.payment_status === 'paid' && inviteUrl) {
       buttons.push([
         Markup.button.webApp("💌 Taklifnomani Ochish", inviteUrl),
         Markup.button.url("🌐 Brauzerda", inviteUrl)
@@ -289,6 +300,148 @@ function setupBotCommands(botInstance) {
     buttons.push([Markup.button.webApp("🎟️ Ro'yxatdan o'tish", WEBAPP_URL)]);
 
     await ctx.replyWithHTML(locText, Markup.inlineKeyboard(buttons));
+  });
+
+  // -------------------------------------------------------------
+  // RECEIPT SUBMISSION & ADMIN APPROVAL FLOW
+  // -------------------------------------------------------------
+
+  // 2. Chek rasmini qabul qilish va mijozga javob
+  botInstance.on('photo', async (ctx) => {
+    const user = ctx.from;
+    const userId = String(user.id);
+    const username = user.username ? `@${user.username}` : "Mavjud emas";
+    const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || "Mijoz";
+
+    // 2.1 Mijoz chek rasmini yuborganda, bot unga darhol javob beradi:
+    await ctx.reply(
+      "✅ Chekingiz qabul qilindi! Admin uni tekshirib, 1 soat ichida taklifnomangiz havolasini yuboradi. Iltimos, kuting."
+    );
+
+    // Rasmni olish
+    const photos = ctx.message.photo;
+    const photo = photos[photos.length - 1];
+    const fileId = photo.file_id;
+
+    // Mijozning oxirgi buyurtmasini bazadan topish
+    const ticket = db.getParticipantByTelegramId(userId);
+    const count = ticket ? (ticket.guests_count || 1) : 1;
+    const totalAmount = ((ticket && ticket.total_price) ? ticket.total_price : count * 2000).toLocaleString('uz-UZ');
+    const ticketId = ticket ? ticket.unique_ticket_id : "Yangi buyurtma";
+
+    if (ticket) {
+      db.updateParticipantPaymentStatus(ticket.unique_ticket_id, {
+        payment_status: 'pending_verification',
+        receipt_file_id: fileId,
+        username: user.username || null
+      });
+    }
+
+    // 2.2 Chek rasmi va mijoz ma'lumotlarini admin guruhiga yuborish
+    const adminChatId = ADMIN_CHAT_ID || process.env.ADMIN_CHAT_ID;
+    if (adminChatId) {
+      const cleanTicketId = ticket ? ticket.unique_ticket_id.replace('#', '') : `TG_${userId}`;
+      const adminCaption = `🧾 <b>YANGI TO‘LOV CHEKI QABUL QILINDI!</b>\n\n` +
+        `👤 <b>Mijoz:</b> ${fullName}\n` +
+        `📱 <b>Telegram ID:</b> <code>${userId}</code>\n` +
+        `🌐 <b>Username:</b> ${username}\n` +
+        `💌 <b>Taklifnomalar soni:</b> ${count} ta\n` +
+        `💰 <b>To‘lov summasi:</b> <b>${totalAmount} so'm</b>\n` +
+        `🎫 <b>Chipta ID:</b> <code>${ticketId}</code>\n` +
+        `⏰ <b>Vaqt:</b> ${new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n\n` +
+        `Chekni tekshirib, quyidagi tugma orqali tasdiqlang:`;
+
+      const adminKeyboard = Markup.inlineKeyboard([
+        [
+          Markup.button.callback("✅ Tasdiqlash", `approve_payment:${cleanTicketId}`)
+        ]
+      ]);
+
+      try {
+        await botInstance.telegram.sendPhoto(adminChatId, fileId, {
+          caption: adminCaption,
+          parse_mode: 'HTML',
+          ...adminKeyboard
+        });
+        console.log(`[Receipt] Successfully forwarded receipt to admin chat: ${adminChatId}`);
+      } catch (err) {
+        console.warn(`[Receipt] Failed to send receipt to admin chat ${adminChatId}:`, err.message);
+      }
+    } else {
+      console.warn('[Receipt] Warning: ADMIN_CHAT_ID is not set in .env!');
+    }
+  });
+
+  // 3. Admin guruhida tasdiqlash va mijozga havola yuborish
+  botInstance.action(/^approve_payment:(.+)$/, async (ctx) => {
+    try {
+      await ctx.answerCbQuery("Tasdiqlanmoqda...");
+      const rawTicketId = ctx.match[1];
+      const admin = ctx.from;
+      const adminName = admin.username ? `@${admin.username}` : (admin.first_name || 'Admin');
+
+      let ticket = null;
+      if (rawTicketId.startsWith('TG_')) {
+        const tgId = rawTicketId.replace('TG_', '');
+        ticket = db.getParticipantByTelegramId(tgId);
+      } else {
+        ticket = db.getParticipantByTicketId(rawTicketId);
+      }
+
+      if (!ticket) {
+        return ctx.reply(`⚠️ Chipta (${rawTicketId}) topilmadi!`);
+      }
+
+      // To'lovni tasdiqlash (status: 'paid')
+      db.updateParticipantPaymentStatus(ticket.unique_ticket_id, {
+        payment_status: 'paid'
+      });
+
+      // Admin guruhidagi xabarni yangilash (tasdiqlanganligini ko'rsatish)
+      try {
+        const origCaption = ctx.callbackQuery.message.caption || '';
+        const updatedCaption = `${origCaption}\n\n━━━━━━━━━━━━━━━━━━━━\n✅ <b>TO‘LOV TASDIQLANDI!</b>\n👨‍💼 <b>Admin:</b> ${adminName}\n⏰ <b>Vaqt:</b> ${new Date().toLocaleTimeString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n🚀 <i>Mijozga taklifnoma havolasi yuborildi.</i>`;
+        await ctx.editMessageCaption(updatedCaption, { parse_mode: 'HTML' });
+      } catch (e) {
+        console.warn('[Edit Admin Caption]:', e.message);
+      }
+
+      // Mijozning shaxsiy chatiga taklifnoma havolasini yuborish
+      if (ticket.telegram_id) {
+        const cleanTicketId = ticket.unique_ticket_id.replace('#', '');
+        const inviteUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
+
+        const clientSuccessMsg = 
+          `🎉 <b>Xushxabar! To'lovingiz tasdiqlandi!</b>\n\n` +
+          `Hurmatli <b>${ticket.full_name}</b>!\n` +
+          `Sizning buyurtmangiz muvaffaqiyatli tasdiqlandi va tayyor taklifnomangiz havolasi ochildi.\n\n` +
+          `🔗 <b>Sizning shaxsiy taklifnoma havolangiz:</b>\n` +
+          `<code>${inviteUrl}</code>\n\n` +
+          `Quyidagi tugma orqali taklifnomangizni ochishingiz va mehmonlaringizga yuborishingiz mumkin:`;
+
+        const clientKeyboard = Markup.inlineKeyboard([
+          [
+            Markup.button.webApp("💌 Taklifnomani Ochish", inviteUrl),
+            Markup.button.url("🌐 Brauzerda Ko'rish", inviteUrl)
+          ],
+          [
+            Markup.button.url("✈️ Mehmonga Ulashish", `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(`Assalomu alaykum! Sizni to'yimizga taklif etamiz. Shaxsiy taklifnomangiz:`)}`)
+          ]
+        ]);
+
+        await botInstance.telegram.sendMessage(ticket.telegram_id, clientSuccessMsg, {
+          parse_mode: 'HTML',
+          ...clientKeyboard
+        });
+
+        // Rasmiy taklifnoma chiptasi va QR kodni ham yuborish
+        await sendTicketToUser(ticket.telegram_id, ticket);
+        console.log(`[Approved] Successfully delivered invitation to user ${ticket.telegram_id}`);
+      }
+    } catch (err) {
+      console.error('[Approve Payment Error]:', err);
+      ctx.reply(`❌ Xatolik: ${err.message}`).catch(() => {});
+    }
   });
 
   // Intelligent Gemini AI Conversation Handler
@@ -431,6 +584,10 @@ app.post('/api/register', async (req, res) => {
       attempts++;
     }
 
+    const pricePerInvite = 2000;
+    const totalAmount = cleanGuestsCount * pricePerInvite;
+    const formattedAmount = totalAmount.toLocaleString('uz-UZ');
+
     const ticketRecord = db.createParticipant({
       telegram_id: cleanTgId,
       full_name: guestFullName,
@@ -446,28 +603,39 @@ app.post('/api/register', async (req, res) => {
       venue_address: cleanVenueAddress,
       event_date_time: cleanEventDateTime,
       event_date: cleanEventDateTime,
-      event_type: cleanEventType
+      event_type: cleanEventType,
+      payment_status: 'pending_payment',
+      total_price: totalAmount
     });
 
-    console.log(`[Registration] Brand new unique invitation created: ${ticketRecord.full_name} (${ticketRecord.unique_ticket_id})`);
+    console.log(`[Registration] New order created: ${ticketRecord.full_name} (${ticketRecord.unique_ticket_id}), Total: ${totalAmount} UZS`);
 
-    // Instant Bot Notification: Send invitation card replica to user's Telegram chat
+    // 1. Narxni avtomatik hisoblash va bot orqali foydalanuvchiga to'lov ma'lumotlarini yuborish
     if (cleanTgId && bot && isBotActive) {
-      sendTicketToUser(cleanTgId, ticketRecord).catch((e) => {
-        console.warn('[Notification Error]:', e.message);
+      const paymentMsg = 
+        `To'lov uchun summa: <b>${formattedAmount} so'm</b>\n` +
+        `Karta raqami: <code>5614 6814 2617 2270</code> (Uzcard)\n` +
+        `Karta egasi: <b>Nosirov Nuriddin</b>\n\n` +
+        `Iltimos, pulni o'tkazib, chek rasmini shu botga yuboring.`;
+
+      bot.telegram.sendMessage(cleanTgId, paymentMsg, { parse_mode: 'HTML' }).catch((e) => {
+        console.warn('[Payment Message Warning]:', e.message);
       });
     }
 
-    // Optional: Notify organizer / admin chat
-    if (ADMIN_CHAT_ID && bot && isBotActive && !existing) {
-      const adminMsg = `🔔 <b>Yangi Mehmon Ro'yxatdan O'tdi!</b>\n\n` +
-        `👤 <b>Ism:</b> ${ticketRecord.full_name}\n` +
+    // Admin guruhiga yangi buyurtma haqida xabarnoma
+    const adminChatId = ADMIN_CHAT_ID || process.env.ADMIN_CHAT_ID;
+    if (adminChatId && bot && isBotActive) {
+      const adminOrderMsg = `🔔 <b>YANGI BUYURTMA KELIB TUSHDI!</b>\n\n` +
+        `👤 <b>Mijoz:</b> ${ticketRecord.full_name}\n` +
         `📞 <b>Telefon:</b> ${ticketRecord.phone}\n` +
-        `👥 <b>Mehmonlar soni:</b> ${ticketRecord.guests_count} kishi\n` +
+        `💌 <b>Taklifnomalar soni:</b> ${ticketRecord.guests_count} ta\n` +
+        `💰 <b>To'lov summasi:</b> ${formattedAmount} so'm\n` +
         `🎫 <b>Chipta ID:</b> <code>${ticketRecord.unique_ticket_id}</code>\n` +
-        `💬 <b>Tilak:</b> ${ticketRecord.comment || "—"}`;
+        `📱 <b>Telegram ID:</b> <code>${cleanTgId || 'Nomaʼlum'}</code>\n` +
+        `⏳ <i>Mijoz chek yuborishi kutilmoqda...</i>`;
 
-      bot.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg, { parse_mode: 'HTML' }).catch(() => {});
+      bot.telegram.sendMessage(adminChatId, adminOrderMsg, { parse_mode: 'HTML' }).catch(() => {});
     }
 
     const cleanTicketId = (ticketRecord.unique_ticket_id || ticketRecord.ticket_id || '').replace('#', '');
@@ -475,7 +643,13 @@ app.post('/api/register', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi!",
+      payment_required: true,
+      price_per_unit: pricePerInvite,
+      total_price: totalAmount,
+      formatted_amount: formattedAmount,
+      card_number: "5614 6814 2617 2270",
+      card_owner: "Nosirov Nuriddin",
+      message: `To'lov uchun summa: ${formattedAmount} so'm. Chek rasmini botga yuboring.`,
       ticket: ticketRecord,
       invitation: ticketRecord,
       ticket_id: ticketRecord.unique_ticket_id,
