@@ -1515,12 +1515,16 @@
 
       // Populate Payment Notice
       if (document.getElementById('paymentTotalSum')) {
-        const total = paymentInfo?.formatted_amount || ((ticket.guests_count || 1) * 2000).toLocaleString('uz-UZ');
+        const total = paymentInfo?.formatted_total_amount || paymentInfo?.formatted_amount || ((ticket.guests_count || 1) * 2000).toLocaleString('uz-UZ');
         document.getElementById('paymentTotalSum').textContent = `${total} so'm`;
       }
       if (document.getElementById('paymentUnitNotice')) {
-        const count = ticket.guests_count || 1;
-        document.getElementById('paymentUnitNotice').textContent = `${count} ta taklifnoma x 2 000 so'm`;
+        if (paymentInfo && paymentInfo.total_unpaid_count > 1) {
+          document.getElementById('paymentUnitNotice').textContent = `Sizda jami ${paymentInfo.total_unpaid_count} ta to'lanmagan taklifnoma x 2 000 so'm`;
+        } else {
+          const count = ticket.guests_count || 1;
+          document.getElementById('paymentUnitNotice').textContent = `${count} ta taklifnoma x 2 000 so'm`;
+        }
       }
 
       // Populate card data
