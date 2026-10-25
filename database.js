@@ -180,7 +180,7 @@ class DatabaseManager {
     const cleanDateTime = event_date_time || event_date ? String(event_date_time || event_date).trim() : null;
     const cleanEventType = event_type ? String(event_type).trim() : 'Nikoh toʻyi';
     const cleanPaymentStatus = payment_status || 'pending_payment';
-    const cleanTotalPrice = total_price !== undefined ? parseFloat(total_price) : (cleanCount * 2000);
+    const cleanTotalPrice = total_price !== undefined ? parseFloat(total_price) : 2000;
     const cleanUsername = username ? String(username).trim() : null;
     const now = new Date().toISOString();
 
@@ -279,7 +279,7 @@ class DatabaseManager {
       guests_count: row.guests_count,
       comment: row.comment,
       payment_status: row.payment_status || 'unpaid',
-      total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : ((row.guests_count || 1) * 2000),
+      total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : 2000,
       receipt_file_id: row.receipt_file_id || null,
       username: row.username || null,
       created_at: row.created_at
@@ -306,7 +306,7 @@ class DatabaseManager {
       guests_count: row.guests_count,
       comment: row.comment,
       payment_status: row.payment_status || 'unpaid',
-      total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : ((row.guests_count || 1) * 2000),
+      total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : 2000,
       receipt_file_id: row.receipt_file_id || null,
       username: row.username || null,
       payment_msg_id: row.payment_msg_id || null,
