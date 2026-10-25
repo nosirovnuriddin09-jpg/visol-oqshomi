@@ -103,6 +103,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Keep-alive / Health-check endpoint for UptimeRobot, Render, and monitors
+app.get(['/ping', '/health'], (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    app: 'visol-oqshomi',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Serve static Mini App frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -1092,6 +1102,20 @@ async function startApp() {
     console.log(`📦 Database:          SQLite (${db.driver})`);
     console.log(`🤖 Telegram Bot:      ${isBotActive ? `@${bot?.botInfo?.username} (ACTIVE)` : 'Inactive'}`);
     console.log(`====================================================`);
+
+    // Self-ping every 10 minutes to prevent Render free-tier idle spin down
+    if (WEBAPP_URL && WEBAPP_URL.startsWith('https://')) {
+      const PING_INTERVAL = 10 * 60 * 1000; // 10 minutes
+      setInterval(async () => {
+        try {
+          const pingUrl = `${WEBAPP_URL}/ping`;
+          await fetch(pingUrl);
+          console.log(`[Keep-Alive] Pinged ${pingUrl} at ${new Date().toLocaleTimeString()}`);
+        } catch (err) {
+          console.warn('[Keep-Alive] Ping warning:', err.message);
+        }
+      }, PING_INTERVAL);
+    }
   });
 }
 
