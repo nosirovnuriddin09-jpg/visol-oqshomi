@@ -154,7 +154,8 @@ class DatabaseManager {
       'payment_status',
       'total_price',
       'receipt_file_id',
-      'username'
+      'username',
+      'payment_msg_id'
     ];
     for (const c of cols) {
       try {
@@ -285,24 +286,8 @@ class DatabaseManager {
     };
   }
 
-  /**
-   * Get participant by Telegram User ID
-   */
-  getParticipantByTelegramId(telegramId) {
-    if (!telegramId) return null;
-    const cleanTgId = String(telegramId).trim();
-    let row = null;
-
-    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
-      const stmt = this.db.prepare('SELECT * FROM participants WHERE telegram_id = ? ORDER BY id DESC LIMIT 1');
-      row = stmt.get(cleanTgId) || null;
-    } else {
-      const list = this.readJson();
-      row = list.filter((p) => p.telegram_id === cleanTgId).pop() || null;
-    }
-
+  _formatRow(row) {
     if (!row) return null;
-
     return {
       id: row.id,
       telegram_id: row.telegram_id,
@@ -324,8 +309,167 @@ class DatabaseManager {
       total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : ((row.guests_count || 1) * 2000),
       receipt_file_id: row.receipt_file_id || null,
       username: row.username || null,
+      payment_msg_id: row.payment_msg_id || null,
       created_at: row.created_at
     };
+  }
+
+  /**
+   * Get latest participant by Telegram User ID
+   */
+  getParticipantByTelegramId(telegramId) {
+    if (!telegramId) return null;
+    const cleanTgId = String(telegramId).trim();
+    let row = null;
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare('SELECT * FROM participants WHERE telegram_id = ? ORDER BY id DESC LIMIT 1');
+      row = stmt.get(cleanTgId) || null;
+    } else {
+      const list = this.readJson();
+      row = list.filter((p) => p.telegram_id === cleanTgId).pop() || null;
+    }
+
+    return this._formatRow(row);
+  }
+
+  /**
+   * Get all unpaid participants for a Telegram ID (pending_payment or unpaid)
+   */
+  getUnpaidParticipantsByTelegramId(telegramId) {
+    if (!telegramId) return [];
+    const cleanTgId = String(telegramId).trim();
+    let rows = [];
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare("SELECT * FROM participants WHERE telegram_id = ? AND (payment_status = 'pending_payment' OR payment_status = 'unpaid' OR payment_status IS NULL) ORDER BY id ASC");
+      rows = stmt.all ? stmt.all(cleanTgId) : [];
+    } else {
+      const list = this.readJson();
+      rows = list.filter((p) => p.telegram_id === cleanTgId && (!p.payment_status || p.payment_status === 'pending_payment' || p.payment_status === 'unpaid'));
+    }
+
+    return rows.map(r => this._formatRow(r));
+  }
+
+  /**
+   * Get all pending verification participants for a Telegram ID
+   */
+  getPendingVerificationParticipantsByTelegramId(telegramId) {
+    if (!telegramId) return [];
+    const cleanTgId = String(telegramId).trim();
+    let rows = [];
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare("SELECT * FROM participants WHERE telegram_id = ? AND payment_status = 'pending_verification' ORDER BY id ASC");
+      rows = stmt.all ? stmt.all(cleanTgId) : [];
+    } else {
+      const list = this.readJson();
+      rows = list.filter((p) => p.telegram_id === cleanTgId && p.payment_status === 'pending_verification');
+    }
+
+    return rows.map(r => this._formatRow(r));
+  }
+
+  /**
+   * Get all pending participants for a Telegram ID (unpaid or awaiting verification)
+   */
+  getPendingParticipantsByTelegramId(telegramId) {
+    if (!telegramId) return [];
+    const cleanTgId = String(telegramId).trim();
+    let rows = [];
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare("SELECT * FROM participants WHERE telegram_id = ? AND payment_status != 'paid' ORDER BY id ASC");
+      rows = stmt.all ? stmt.all(cleanTgId) : [];
+    } else {
+      const list = this.readJson();
+      rows = list.filter((p) => p.telegram_id === cleanTgId && p.payment_status !== 'paid');
+    }
+
+    return rows.map(r => this._formatRow(r));
+  }
+
+  /**
+   * Get all paid participants for a Telegram ID
+   */
+  getPaidParticipantsByTelegramId(telegramId) {
+    if (!telegramId) return [];
+    const cleanTgId = String(telegramId).trim();
+    let rows = [];
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare("SELECT * FROM participants WHERE telegram_id = ? AND payment_status = 'paid' ORDER BY id ASC");
+      rows = stmt.all ? stmt.all(cleanTgId) : [];
+    } else {
+      const list = this.readJson();
+      rows = list.filter((p) => p.telegram_id === cleanTgId && p.payment_status === 'paid');
+    }
+
+    return rows.map(r => this._formatRow(r));
+  }
+
+  /**
+   * Get all participants for a Telegram ID
+   */
+  getAllParticipantsByTelegramId(telegramId) {
+    if (!telegramId) return [];
+    const cleanTgId = String(telegramId).trim();
+    let rows = [];
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare("SELECT * FROM participants WHERE telegram_id = ? ORDER BY id ASC");
+      rows = stmt.all ? stmt.all(cleanTgId) : [];
+    } else {
+      const list = this.readJson();
+      rows = list.filter((p) => p.telegram_id === cleanTgId);
+    }
+
+    return rows.map(r => this._formatRow(r));
+  }
+
+  /**
+   * Set payment message ID for all unpaid tickets of a Telegram ID
+   */
+  setPaymentMsgId(telegramId, msgId) {
+    if (!telegramId) return;
+    const cleanTgId = String(telegramId).trim();
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      try {
+        const stmt = this.db.prepare("UPDATE participants SET payment_msg_id = ? WHERE telegram_id = ? AND (payment_status = 'pending_payment' OR payment_status = 'unpaid' OR payment_status IS NULL)");
+        stmt.run(String(msgId), cleanTgId);
+      } catch {}
+    } else {
+      const list = this.readJson();
+      list.forEach(p => {
+        if (p.telegram_id === cleanTgId && (!p.payment_status || p.payment_status === 'pending_payment' || p.payment_status === 'unpaid')) {
+          p.payment_msg_id = String(msgId);
+        }
+      });
+      this.writeJson(list);
+    }
+  }
+
+  /**
+   * Get last payment message ID for a Telegram ID
+   */
+  getLastPaymentMsgId(telegramId) {
+    if (!telegramId) return null;
+    const cleanTgId = String(telegramId).trim();
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      try {
+        const stmt = this.db.prepare("SELECT payment_msg_id FROM participants WHERE telegram_id = ? AND payment_msg_id IS NOT NULL ORDER BY id DESC LIMIT 1");
+        const row = stmt.get(cleanTgId);
+        return row ? row.payment_msg_id : null;
+      } catch {
+        return null;
+      }
+    } else {
+      const list = this.readJson();
+      const item = list.slice().reverse().find(p => p.telegram_id === cleanTgId && p.payment_msg_id);
+      return item ? item.payment_msg_id : null;
+    }
   }
 
   /**
