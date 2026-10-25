@@ -1515,15 +1515,14 @@
 
       // Populate Payment Notice
       if (document.getElementById('paymentTotalSum')) {
-        const total = paymentInfo?.formatted_total_amount || paymentInfo?.formatted_amount || ((ticket.guests_count || 1) * 2000).toLocaleString('uz-UZ');
+        const total = paymentInfo?.formatted_total_amount || paymentInfo?.formatted_amount || '2 000';
         document.getElementById('paymentTotalSum').textContent = `${total} so'm`;
       }
       if (document.getElementById('paymentUnitNotice')) {
         if (paymentInfo && paymentInfo.total_unpaid_count > 1) {
           document.getElementById('paymentUnitNotice').textContent = `Sizda jami ${paymentInfo.total_unpaid_count} ta to'lanmagan taklifnoma x 2 000 so'm`;
         } else {
-          const count = ticket.guests_count || 1;
-          document.getElementById('paymentUnitNotice').textContent = `${count} ta taklifnoma x 2 000 so'm`;
+          document.getElementById('paymentUnitNotice').textContent = `Har bir taklifnoma 2 000 so'm`;
         }
       }
 
