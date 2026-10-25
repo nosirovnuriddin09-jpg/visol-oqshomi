@@ -259,9 +259,34 @@ function setupBotCommands(botInstance) {
       `• /start - Botni ishga tushirish va taklifnoma olish\n` +
       `• /myticket - O'zingizning shaxsiy chiptangizni olish\n` +
       `• /admin - To'y ma'lumotlarini o'zgartirish paneli\n` +
+      `• /id - Ushbu chat yoki guruhning ID raqamini ko'rish\n` +
       `• /help - Ushbu yordam xabari\n\n` +
       `Savollar bo'yicha tadbir tashkilotchilariga murojaat qilishingiz mumkin.`;
     await ctx.replyWithHTML(helpText);
+  });
+
+  // Command: /id or /chatid - Easily get group ID
+  botInstance.command(['id', 'chatid'], async (ctx) => {
+    const chatId = ctx.chat.id;
+    const chatType = ctx.chat.type;
+    await ctx.replyWithHTML(
+      `🆔 <b>Ushbu guruh / chat ID raqami:</b>\n<code>${chatId}</code>\n\n` +
+      `<i>(Turi: ${chatType})</i>\n\n` +
+      `Ushbu raqamni nusxalab, Render.com dagi <b>ADMIN_CHAT_ID</b> ga qo'yishingiz mumkin.`
+    );
+  });
+
+  // When bot is added to a group, automatically greet and display the Group ID
+  botInstance.on('new_chat_members', async (ctx) => {
+    const newMembers = ctx.message?.new_chat_members || [];
+    const isThisBot = newMembers.some(m => m.id === botInstance.botInfo?.id);
+    if (isThisBot) {
+      await ctx.replyWithHTML(
+        `👋 <b>Assalomu alaykum! Bot guruhga muvaffaqiyatli qo'shildi.</b>\n\n` +
+        `🆔 <b>Guruh ID raqami:</b>\n<code>${ctx.chat.id}</code>\n\n` +
+        `Ushbu raqamni Render.com dagi <b>ADMIN_CHAT_ID</b> ga kiritib qo'ying!`
+      );
+    }
   });
 
   // Action handler: Dastur va Tafsilotlar
