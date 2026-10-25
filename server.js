@@ -11,6 +11,8 @@ const cors = require('cors');
 const { Telegraf, Markup } = require('telegraf');
 const QRCode = require('qrcode');
 const db = require('./database');
+const clickService = require('./payments/click.service');
+const paymeService = require('./payments/payme.service');
 
 // Configuration
 const PORT = process.env.PORT || 3000;
@@ -698,6 +700,132 @@ app.post('/api/settings', (req, res) => {
       success: false,
       error: "Sozlamalarni saqlashda xatolik yuz berdi."
     });
+  }
+});
+
+// -------------------------------------------------------------
+// PAYMENT GATEWAYS: CLICK & PAYME WEBHOOKS
+// -------------------------------------------------------------
+
+/**
+ * Helper: Send instant Telegram notification to user & admin upon successful payment
+ */
+async function sendPaymentSuccessNotification({ provider, transId, ticketId, amount, telegramId, guestName }) {
+  if (!bot || !isBotActive) return;
+
+  const cleanTicketId = String(ticketId || '').replace('#', '');
+  const inviteUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
+
+  const formattedAmount = (amount || 0).toLocaleString('uz-UZ');
+  let caption = `🎉 <b>TO‘LOV MUVAFFAQIYATLI QABUL QILINDI!</b> 🎉\n\n`;
+  caption += `Hurmatli <b>${guestName || 'Mehmon'}</b>!\n`;
+  caption += `Sizning <b>"${provider}"</b> orqali amalga oshirgan to‘lovingiz rasman tasdiqlandi.\n\n`;
+  caption += `💳 <b>To‘lov tizimi:</b> ${provider}\n`;
+  caption += `💰 <b>To‘langan summa:</b> ${formattedAmount} so‘m\n`;
+  caption += `🧾 <b>Tranzaksiya ID:</b> <code>${transId}</code>\n`;
+  if (ticketId) {
+    caption += `🎫 <b>Chipta / Taklifnoma:</b> <code>${ticketId}</code>\n`;
+  }
+  caption += `⭐ <b>Holat:</b> VIP Tasdiqlandi ✅\n\n`;
+  caption += `Elektron taklifnomangizni ko‘rish uchun quyidagi tugmani bosing:`;
+
+  const keyboard = Markup.inlineKeyboard([
+    [Markup.button.webApp("💌 Taklifnomani Ochish", inviteUrl)],
+    [Markup.button.url("🌐 Brauzerda Ko'rish", inviteUrl)]
+  ]);
+
+  if (telegramId) {
+    try {
+      await bot.telegram.sendMessage(telegramId, caption, {
+        parse_mode: 'HTML',
+        ...keyboard
+      });
+      console.log(`[Payment] Success notification sent to Telegram user: ${telegramId}`);
+    } catch (err) {
+      console.warn(`[Payment] Could not notify user ${telegramId}:`, err.message);
+    }
+  }
+
+  // Admin Notification
+  if (ADMIN_CHAT_ID) {
+    try {
+      const adminMsg = `💰 <b>YANGI TO‘LOV QABUL QILINDI!</b>\n\n` +
+        `👤 <b>Mijoz:</b> ${guestName || '—'}\n` +
+        `💳 <b>Tizim:</b> ${provider}\n` +
+        `💵 <b>Summa:</b> ${formattedAmount} so‘m\n` +
+        `🎫 <b>Chipta ID:</b> <code>${ticketId || '—'}</code>\n` +
+        `🧾 <b>Tranzaksiya:</b> <code>${transId}</code>`;
+      await bot.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg, { parse_mode: 'HTML' });
+    } catch {}
+  }
+}
+
+/**
+ * POST /api/click/webhook
+ * Handles Click Prepare & Complete webhook requests
+ */
+app.post('/api/click/webhook', async (req, res) => {
+  await clickService.handleWebhook(req, res, sendPaymentSuccessNotification);
+});
+
+/**
+ * POST /api/payme/webhook
+ * Handles Payme JSON-RPC 2.0 merchant webhook requests
+ */
+app.post('/api/payme/webhook', async (req, res) => {
+  await paymeService.handleWebhook(req, res, sendPaymentSuccessNotification);
+});
+
+/**
+ * GET /api/payment/generate-url
+ * Generate Click / Payme checkout link
+ * Query: ?provider=click|payme&ticketId=VO-XXX&amount=50000
+ */
+app.get('/api/payment/generate-url', (req, res) => {
+  const { provider, ticketId, amount } = req.query;
+  const prov = String(provider || 'click').toLowerCase();
+  const amt = parseFloat(amount) || 50000;
+  const tId = String(ticketId || '').trim();
+
+  if (!tId) {
+    return res.status(400).json({ success: false, error: "Chipta ID kiritilmagan." });
+  }
+
+  let paymentUrl = '';
+  if (prov === 'click') {
+    paymentUrl = clickService.generatePaymentUrl({
+      ticketId: tId,
+      amount: amt,
+      returnUrl: `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(tId.replace('#', ''))}`
+    });
+  } else if (prov === 'payme') {
+    paymentUrl = paymeService.generatePaymentUrl({
+      ticketId: tId,
+      amount: amt
+    });
+  } else {
+    return res.status(400).json({ success: false, error: "Noma'lum to'lov provayderi (click yoki payme tanlang)." });
+  }
+
+  return res.json({
+    success: true,
+    provider: prov,
+    ticketId: tId,
+    amount: amt,
+    payment_url: paymentUrl
+  });
+});
+
+/**
+ * GET /api/payment/transactions
+ * Get recent transactions for Admin
+ */
+app.get('/api/payment/transactions', (req, res) => {
+  try {
+    const transactions = db.getAllTransactions(100);
+    res.json({ success: true, count: transactions.length, transactions });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
