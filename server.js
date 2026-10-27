@@ -51,7 +51,7 @@ function getInvitationUrl(ticket) {
       date: ticket.event_date_time || ticket.event_date || '',
       venue: ticket.venue_name || ticket.venue_address || ''
     });
-    return `https://e-nikoh-oqshomi.netlify.app/?${params.toString()}`;
+    return `${WEBAPP_URL}/enikoh.html?${params.toString()}`;
   }
 
   // Default: Visol Oqshomi design
@@ -66,7 +66,7 @@ function getDesignSelectionKeyboard() {
       Markup.button.callback("💍 2) E-Nikoh Oqshomi", "design_select:enikoh")
     ],
     [
-      Markup.button.url("🌐 E-Nikoh Namunasini Ko'rish", "https://e-nikoh-oqshomi.netlify.app/")
+      Markup.button.url("🌐 E-Nikoh Namunasini Ko'rish", `${WEBAPP_URL}/enikoh.html`)
     ],
     [
       Markup.button.webApp("📱 Mini App orqali yaratish", `${WEBAPP_URL}/index.html`)
@@ -303,7 +303,7 @@ function setupBotCommands(botInstance) {
       `🎨 <b>Taklifnoma uchun dizayn variantini tanlang:</b>\n\n` +
       `1️⃣ <b>"Visol Oqshomi"</b> — Hashamatli qirollik uslubidagi eksklyuziv to'y taklifnomasi.\n` +
       `2️⃣ <b>"E-Nikoh Oqshomi"</b> — Zamonaviy va nafis elektron taklifnoma dizayni.\n` +
-      `🔗 Havolasi: https://e-nikoh-oqshomi.netlify.app/\n\n` +
+      `🔗 Havolasi: ${WEBAPP_URL}/enikoh.html\n\n` +
       `<i>O'zingizga ma'qul dizayn tugmasini bosing:</i>`;
 
     await ctx.replyWithHTML(intro, getDesignSelectionKeyboard());
@@ -372,7 +372,7 @@ function setupBotCommands(botInstance) {
         `O'zingizga yoqqan dizayn variantini tanlang:\n\n` +
         `1️⃣ <b>"Visol Oqshomi"</b> — Hashamatli qirollik uslubidagi oltin rangli dizayn\n` +
         `2️⃣ <b>"E-Nikoh Oqshomi"</b> — Nafis va zamonaviy to'y taklifnomasi dizayni\n` +
-        `🔗 <i>E-Nikoh namunasi: https://e-nikoh-oqshomi.netlify.app/</i>\n\n` +
+        `🔗 <i>E-Nikoh namunasi: ${WEBAPP_URL}/enikoh.html</i>\n\n` +
         `Kerakli dizayn tugmasini bosing:`;
 
       await ctx.replyWithHTML(welcomeText, getDesignSelectionKeyboard());

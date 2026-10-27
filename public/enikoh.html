@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1f47">
+<title>Taklifnoma — Baxodirjon va Mexrangizxon</title>
+<meta name="description" content="Baxodirjon va Mexrangizxon — «Fotiha» toʻylari. 2026-yil 10-avgust, soat 18:30. Moʻjiza restorani, Buxoro shahri.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Taklifnoma — Baxodirjon va Mexrangizxon">
+<meta property="og:description" content="«Fotiha» toʻylari · 2026-yil 10-avgust, soat 18:30 · Moʻjiza restorani, Buxoro">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Great+Vibes&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   TAKLIFNOMA — Baxodirjon va Mexrangizxon
+   Navy & Gold  ·  mobile-first  ·  single file
+   ============================================================ */
+
+:root{
+  --navy-900:#060f28;
+  --navy-800:#0b1f47;
+  --navy-700:#12306b;
+  --navy-600:#1b4090;
+  --navy-500:#2a56b0;
+
+  --gold-100:#fdf3d4;
+  --gold-200:#f5e2a8;
+  --gold-300:#e8c874;
+  --gold-400:#d4a94a;
+  --gold-500:#b8862f;
+  --gold-600:#8f631d;
+
+  --cream:#fbf7ec;
+  --cream-2:#f3ecda;
+  --ink:#132a56;
+  --ink-soft:#3a4f7d;
+
+  --shell: min(100vw, 480px);
+  --ease: cubic-bezier(.22,.9,.28,1);
+
+  /* light gold — for gold sitting ON navy */
+  --grad-gold: linear-gradient(160deg,
+      var(--gold-600) 0%, var(--gold-400) 18%, var(--gold-100) 38%,
+      var(--gold-300) 52%, var(--gold-500) 70%, var(--gold-200) 86%, var(--gold-500) 100%);
+
+  /* deep antique gold — for gold text sitting ON the cream card */
+  --grad-gold-ink: linear-gradient(160deg,
+      #6f4a11 0%, #a97c25 15%, #d9ae52 31%, #b8862f 47%,
+      #8a5f1a 63%, #cf9f38 81%, #6f4a11 100%);
+}
+
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+
+body{
+  margin:0;
+  font-family:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  background:var(--navy-900);
+  color:var(--ink);
+  overflow-x:hidden;
+  min-height:100svh;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+}
+body.locked{overflow:hidden;height:100svh}
+
+img,svg{display:block;max-width:100%}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+
+/* ---------- page backdrop (outside the card) ---------- */
+.backdrop{
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(120% 70% at 50% -10%, #1d4291 0%, #10275a 42%, #060f28 100%),
+    var(--navy-900);
+}
+.backdrop::after{
+  content:"";position:absolute;inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><g fill='none' stroke='%23ffffff' stroke-opacity='.055' stroke-width='1'><path d='M45 8c9 10 9 18 0 27-9-9-9-17 0-27zM45 82c-9-10-9-18 0-27 9 9 9 17 0 27zM8 45c10-9 18-9 27 0-9 9-17 9-27 0zM82 45c-10 9-18 9-27 0 9-9 17-9 27 0z'/><circle cx='45' cy='45' r='3.5'/><circle cx='0' cy='0' r='2.5'/><circle cx='90' cy='0' r='2.5'/><circle cx='0' cy='90' r='2.5'/><circle cx='90' cy='90' r='2.5'/></g></svg>");
+  background-size:90px 90px;
+  opacity:.9;
+}
+
+/* ---------- canvases ---------- */
+#petals,#sparks{
+  position:fixed;inset:0;width:100%;height:100%;
+  pointer-events:none;
+}
+#petals{z-index:2}
+#sparks{z-index:6}
+
+/* ============================================================
+   ENVELOPE — opening screen
+   ============================================================ */
+.opener{
+  position:fixed;inset:0;z-index:60;
+  display:grid;place-items:center;
+  padding:24px;
+  background:
+    radial-gradient(110% 70% at 50% 30%, #1e4699 0%, #0e2456 45%, #050c20 100%);
+  transition:opacity 1s var(--ease), visibility 1s;
+}
+.opener.gone{opacity:0;visibility:hidden;pointer-events:none}
+
+.opener-inner{
+  display:flex;flex-direction:column;align-items:center;gap:26px;
+  width:100%;max-width:340px;
+  perspective:1200px;
+}
+
+.env{
+  position:relative;width:100%;aspect-ratio:1/.68;
+  transform-style:preserve-3d;
+  filter:drop-shadow(0 26px 44px rgba(0,0,0,.55));
+  animation:envIn 1.1s var(--ease) both, envFloat 5.5s ease-in-out 1.1s infinite;
+}
+@keyframes envIn{from{opacity:0;transform:translateY(34px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes envFloat{0%,100%{translate:0 0}50%{translate:0 -9px}}
+
+.env-body{
+  position:absolute;inset:0;border-radius:10px;
+  background:linear-gradient(150deg,#17376f 0%,#12306b 30%,#0d2352 65%,#132c63 100%);
+  border:1px solid rgba(212,169,74,.55);
+  overflow:hidden;
+}
+.env-body::before{ /* inner gold hairline */
+  content:"";position:absolute;inset:7px;border:1px solid rgba(232,200,116,.32);border-radius:5px;
+}
+/* front panel: V-notch starts at the top corners so the flap covers it exactly */
+.env-pocket{
+  position:absolute;inset:0;border-radius:10px;z-index:3;pointer-events:none;
+  background:
+    linear-gradient(200deg,rgba(255,255,255,.09),transparent 44%),
+    linear-gradient(158deg,#1d3f7d 0%,#14306c 45%,#0a1c46 100%);
+  clip-path:polygon(0 0,50% 58%,100% 0,100% 100%,0 100%);
+  filter:drop-shadow(0 -1.5px 0 rgba(232,200,116,.55));
+}
+
+.env-flap{
+  position:absolute;left:0;right:0;top:0;height:60%;
+  transform-origin:top center;transform:rotateX(0deg);
+  transition:transform 1.05s var(--ease);
+  z-index:5;
+  clip-path:polygon(0 0,100% 0,50% 100%);
+  background:
+    linear-gradient(200deg,rgba(255,255,255,.13),transparent 52%),
+    linear-gradient(180deg,#2d5da8 0%,#1c3f81 55%,#102a5e 100%);
+  filter:drop-shadow(0 1.5px 0 rgba(232,200,116,.6))
+         drop-shadow(0 8px 12px rgba(4,10,28,.5));
+}
+.env.open .env-flap{transform:rotateX(-178deg);z-index:1}
+
+/* gold rim drawn over everything so the envelope edge always reads */
+.env-rim{
+  position:absolute;inset:0;z-index:6;pointer-events:none;
+  border:1.5px solid transparent;border-radius:10px;
+  background:var(--grad-gold) border-box;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+.env-rim::after{
+  content:"";position:absolute;inset:6px;border-radius:5px;
+  border:1px solid rgba(232,200,116,.3);
+}
+
+.env-letter{
+  position:absolute;left:7%;right:7%;top:14%;bottom:8%;
+  border-radius:6px;z-index:2;
+  background:linear-gradient(175deg,var(--cream) 0%,var(--cream-2) 100%);
+  box-shadow:0 8px 20px rgba(0,0,0,.32);
+  display:grid;place-items:center;
+  transition:transform 1s var(--ease) .28s, opacity .5s ease 1.15s;
+}
+.env.open .env-letter{transform:translateY(-58%) scale(1.03)}
+.env-letter .mono{
+  font-family:"Cinzel",serif;font-size:clamp(15px,4.4vw,19px);letter-spacing:.22em;
+  background:var(--grad-gold-ink);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+.seal{
+  position:absolute;left:50%;top:56%;translate:-50% -50%;
+  width:76px;height:76px;border-radius:50%;z-index:7;
+  display:grid;place-items:center;
+  background:radial-gradient(circle at 34% 30%,var(--gold-200),var(--gold-400) 45%,var(--gold-600) 100%);
+  box-shadow:0 6px 16px rgba(0,0,0,.45), inset 0 2px 5px rgba(255,255,255,.5), inset 0 -4px 9px rgba(0,0,0,.32);
+  font-family:"Cinzel",serif;font-weight:800;font-size:19px;letter-spacing:.03em;
+  color:#5d3f0c;line-height:1;
+  transition:transform .55s var(--ease), opacity .5s ease;
+}
+.seal-txt{display:block;white-space:nowrap}
+.seal-txt i{font-style:normal;font-size:13px;vertical-align:1px;opacity:.85;margin:0 1px}
+.seal::before{
+  content:"";position:absolute;inset:6px;border-radius:50%;
+  border:1.5px dashed rgba(93,63,12,.45);
+}
+.env.open .seal{transform:translate(-50%,-50%) scale(.4) rotate(-28deg);opacity:0}
+
+.opener-title{
+  font-family:"Cinzel",serif;font-weight:600;
+  font-size:clamp(11px,3.2vw,13px);letter-spacing:.5em;text-indent:.5em;
+  color:var(--gold-200);text-align:center;
+  animation:fadeUp .9s var(--ease) .35s both;
+}
+.opener-sub{
+  font-family:"Great Vibes",cursive;
+  font-size:clamp(30px,9vw,40px);line-height:1.1;text-align:center;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:fadeUp .9s var(--ease) .5s both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+.open-btn{
+  position:relative;
+  padding:14px 34px;border-radius:999px;
+  font-family:"Cinzel",serif;font-weight:600;font-size:13px;letter-spacing:.22em;
+  color:#3b2a06;
+  background:var(--grad-gold);
+  box-shadow:0 10px 26px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.6);
+  animation:fadeUp .9s var(--ease) .7s both, pulse 2.6s ease-in-out 1.6s infinite;
+  transition:transform .18s ease;
+}
+.open-btn:active{transform:scale(.95)}
+@keyframes pulse{
+  0%,100%{box-shadow:0 10px 26px rgba(0,0,0,.42),0 0 0 0 rgba(232,200,116,.45), inset 0 1px 0 rgba(255,255,255,.6)}
+  55%{box-shadow:0 10px 26px rgba(0,0,0,.42),0 0 0 16px rgba(232,200,116,0), inset 0 1px 0 rgba(255,255,255,.6)}
+}
+
+/* ============================================================
+   SHELL / CARD
+   ============================================================ */
+.shell{
+  position:relative;z-index:4;
+  width:var(--shell);margin-inline:auto;
+  padding:0;
+}
+
+.card{
+  position:relative;
+  background:
+    radial-gradient(100% 55% at 50% 0%, #ffffff 0%, var(--cream) 40%, var(--cream-2) 100%);
+  overflow:hidden;
+}
+/* damask watermark inside the cream card */
+.card::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%23b8862f' stroke-opacity='.10' stroke-width='1.1'><path d='M60 14c12 14 12 26 0 40-12-14-12-26 0-40zM60 106c-12-14-12-26 0-40 12 14 12 26 0 40zM14 60c14-12 26-12 40 0-14 12-26 12-40 0zM106 60c-14 12-26 12-40 0 14-12 26-12 40 0z'/><circle cx='60' cy='60' r='4.5'/></g></svg>");
+  background-size:120px 120px;opacity:.55;
+}
+
+/* navy + gold outer frame that hugs the whole card */
+.frame{
+  position:fixed;top:0;bottom:0;left:50%;translate:-50% 0;
+  width:var(--shell);z-index:5;pointer-events:none;
+}
+.frame span{position:absolute;background:var(--grad-gold)}
+.frame .t{top:10px;left:14px;right:14px;height:2px}
+.frame .b{bottom:10px;left:14px;right:14px;height:2px}
+.frame .l{left:10px;top:14px;bottom:14px;width:2px}
+.frame .r{right:10px;top:14px;bottom:14px;width:2px}
+.frame i{
+  position:absolute;width:28px;height:28px;
+  border:2px solid transparent;
+  background:var(--grad-gold);
+}
+.frame .c1{top:10px;left:10px;clip-path:polygon(0 0,100% 0,100% 2px,2px 2px,2px 100%,0 100%)}
+.frame .c2{top:10px;right:10px;clip-path:polygon(100% 0,100% 100%,calc(100% - 2px) 100%,calc(100% - 2px) 2px,0 2px,0 0)}
+.frame .c3{bottom:10px;left:10px;clip-path:polygon(0 0,2px 0,2px calc(100% - 2px),100% calc(100% - 2px),100% 100%,0 100%)}
+.frame .c4{bottom:10px;right:10px;clip-path:polygon(calc(100% - 2px) 0,100% 0,100% 100%,0 100%,0 calc(100% - 2px),calc(100% - 2px) calc(100% - 2px))}
+
+/* ---------- floral corner clusters ---------- */
+.floral{position:absolute;z-index:3;pointer-events:none;width:52%;max-width:230px}
+.fl-tl{top:-14px;left:-30px;transform:rotate(-4deg)}
+.fl-br{bottom:-24px;right:-34px;transform:rotate(178deg)}
+.fl-mr{top:34%;right:-58px;width:38%;transform:rotate(96deg);opacity:.95}
+.fl-ml{top:66%;left:-60px;width:34%;transform:rotate(-84deg);opacity:.9}
+
+@keyframes sway{0%,100%{transform:rotate(var(--rot,0deg)) translateY(0)}50%{transform:rotate(calc(var(--rot,0deg) + 1.4deg)) translateY(-5px)}}
+.floral{animation:sway 7s ease-in-out infinite}
+.fl-tl{--rot:-4deg}
+.fl-br{--rot:178deg;animation-delay:-2.2s}
+.fl-mr{--rot:96deg;animation-delay:-3.4s}
+.fl-ml{--rot:-84deg;animation-delay:-1.1s}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+section{position:relative;z-index:4;padding:0 30px}
+
+.hero{padding-top:64px;padding-bottom:34px;text-align:center;min-height:100svh;display:flex;flex-direction:column;justify-content:center}
+
+.arch{
+  width:min(300px,78%);margin:0 auto 6px;
+}
+.arch svg{width:100%;height:auto}
+
+.title{
+  font-family:"Cinzel",serif;font-weight:800;
+  font-size:clamp(34px,10.4vw,50px);
+  letter-spacing:.045em;line-height:1;
+  color:var(--navy-800);
+  margin:6px 0 0;
+  position:relative;
+}
+.title span{
+  background:linear-gradient(180deg,#1c3f86 0%,#0b1f47 60%,#12306b 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+.rule{display:flex;align-items:center;justify-content:center;gap:10px;margin:16px auto;width:78%}
+.rule::before,.rule::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--gold-400),transparent)}
+.rule svg{width:56px;height:auto;flex:none}
+
+.greet{
+  font-size:clamp(19px,5.4vw,23px);color:var(--ink-soft);
+  line-height:1.45;margin:10px 0 2px;
+}
+.guest{
+  font-family:"Great Vibes",cursive;
+  font-size:1.62em;line-height:1;
+  display:inline-block;padding:0 .04em;vertical-align:-.14em;
+  background:var(--grad-gold-ink);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.5));
+}
+
+.lead{
+  font-size:clamp(18px,5vw,21px);color:var(--ink-soft);
+  margin:18px 0 4px;letter-spacing:.01em;
+}
+
+.names{margin:6px 0 2px}
+.name{
+  font-family:"Great Vibes",cursive;
+  font-size:clamp(48px,15.4vw,74px);
+  line-height:1.06;
+  background:var(--grad-gold-ink);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.55));
+  background-size:220% 100%;
+  animation:shimmer 6s linear infinite;
+  padding:0 2px;
+}
+@keyframes shimmer{0%{background-position:0% 50%}100%{background-position:220% 50%}}
+
+.amp{
+  font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:600;
+  font-size:clamp(21px,6vw,26px);color:var(--navy-700);
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin:2px 0;
+}
+.amp::before,.amp::after{content:"";width:42px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-400))}
+.amp::after{background:linear-gradient(270deg,transparent,var(--gold-400))}
+
+.occasion{
+  font-size:clamp(18px,5.1vw,21px);color:var(--ink-soft);
+  line-height:1.75;margin:20px 0 0;
+  font-variant-numeric:lining-nums;font-feature-settings:"lnum" 1;
+}
+.occasion b{color:var(--navy-800);font-weight:700}
+.occasion .q{color:var(--navy-800);font-weight:700}
+
+.scroll-hint{
+  margin:30px auto 0;width:26px;color:var(--gold-500);
+  animation:bob 1.9s ease-in-out infinite;opacity:.85;
+}
+@keyframes bob{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(7px);opacity:1}}
+
+/* ---------- generic panel ---------- */
+.panel{padding-top:46px;padding-bottom:46px;text-align:center}
+.eyebrow{
+  font-family:"Cinzel",serif;font-weight:600;
+  font-size:11px;letter-spacing:.42em;text-indent:.42em;
+  color:var(--gold-500);margin:0 0 14px;
+}
+.h2{
+  font-family:"Cinzel",serif;font-weight:600;
+  font-size:clamp(20px,5.6vw,25px);letter-spacing:.06em;
+  color:var(--navy-800);margin:0 0 6px;
+}
+
+/* eyebrow flanked by long dashes  — AZIZ MEHMONIMIZ — */
+.eyebrow.dashed{display:flex;align-items:center;justify-content:center;gap:12px}
+.eyebrow.dashed::before,.eyebrow.dashed::after{
+  content:"";width:26px;height:1px;flex:none;
+  background:linear-gradient(90deg,transparent,var(--gold-400));
+}
+.eyebrow.dashed::after{background:linear-gradient(270deg,transparent,var(--gold-400))}
+
+/* ---------- invitation sentence ---------- */
+.invite-panel{padding-top:52px;padding-bottom:52px}
+.invite-line{
+  font-size:clamp(19px,5.4vw,23px);
+  line-height:2.05;color:var(--ink-soft);
+  max-width:335px;margin:18px auto 0;
+  letter-spacing:.005em;
+}
+.invite-line b{font-weight:700;color:var(--navy-800)}
+.invite-line .script{
+  font-family:"Great Vibes",cursive;font-style:normal;
+  font-size:1.62em;line-height:1;
+  display:inline-block;padding:0 .08em;vertical-align:-.12em;
+  background:var(--grad-gold-ink);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  background-size:220% 100%;
+  animation:shimmer 6.5s linear infinite;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.5));
+}
+
+/* ---------- countdown ---------- */
+.cd{display:flex;justify-content:center;gap:9px;margin:22px 0 6px}
+.cd-box{
+  flex:1;max-width:82px;padding:13px 4px 10px;border-radius:12px;
+  background:linear-gradient(165deg,var(--navy-700),var(--navy-800) 62%,var(--navy-900));
+  border:1px solid rgba(232,200,116,.45);
+  box-shadow:0 8px 20px rgba(11,31,71,.28), inset 0 1px 0 rgba(255,255,255,.10);
+  position:relative;overflow:hidden;
+}
+.cd-box::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(200deg,rgba(255,255,255,.16),transparent 46%);
+}
+.cd-num{
+  font-family:"Cinzel",serif;font-weight:600;
+  font-size:clamp(21px,6.4vw,27px);line-height:1;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent;
+  font-variant-numeric:tabular-nums;
+}
+.cd-lab{
+  margin-top:6px;font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:rgba(245,226,168,.75);
+}
+.cd-done{font-family:"Great Vibes",cursive;font-size:30px;color:var(--gold-500)}
+
+/* ---------- calendar ---------- */
+.cal{
+  margin:20px auto 0;max-width:320px;
+  background:rgba(255,255,255,.62);
+  border:1px solid rgba(184,134,47,.34);
+  border-radius:14px;padding:16px 14px 18px;
+  box-shadow:0 10px 26px rgba(19,42,86,.10);
+  backdrop-filter:blur(2px);
+}
+.cal-h{
+  font-family:"Cinzel",serif;font-size:13px;letter-spacing:.24em;
+  color:var(--navy-700);margin-bottom:12px;
+}
+.cal-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:5px;
+  font-variant-numeric:lining-nums;font-feature-settings:"lnum" 1;
+}
+.cal-grid .dow{
+  font-size:11px;letter-spacing:.06em;color:var(--gold-600);font-weight:700;
+  text-transform:uppercase;padding-bottom:5px;
+}
+.cal-grid .d{
+  aspect-ratio:1;display:grid;place-items:center;
+  font-size:14px;color:var(--ink-soft);border-radius:50%;
+}
+.cal-grid .d.mute{opacity:0}
+.cal-grid .d.on{
+  position:relative;color:#fdf3d4;font-weight:700;
+  background:radial-gradient(circle at 34% 28%,var(--navy-600),var(--navy-800));
+  box-shadow:0 4px 12px rgba(11,31,71,.4);
+}
+.cal-grid .d.on::after{
+  content:"";position:absolute;inset:-4px;border-radius:50%;
+  border:1.5px solid var(--gold-400);
+  animation:ring 2.4s ease-out infinite;
+}
+@keyframes ring{0%{transform:scale(.86);opacity:1}100%{transform:scale(1.4);opacity:0}}
+
+/* ---------- detail rows ---------- */
+.rows{margin:22px auto 0;max-width:330px;display:flex;flex-direction:column;gap:12px}
+.row{
+  display:flex;align-items:center;gap:14px;text-align:left;
+  padding:14px 16px;border-radius:14px;
+  background:rgba(255,255,255,.6);
+  border:1px solid rgba(184,134,47,.3);
+  box-shadow:0 8px 20px rgba(19,42,86,.08);
+}
+.row-ic{
+  flex:none;width:42px;height:42px;border-radius:11px;display:grid;place-items:center;
+  background:linear-gradient(160deg,var(--navy-700),var(--navy-900));
+  border:1px solid rgba(232,200,116,.45);
+  color:var(--gold-300);
+}
+.row-ic svg{width:20px;height:20px}
+.row-k{
+  font-family:"Cinzel",serif;font-size:10.5px;letter-spacing:.24em;
+  color:var(--gold-600);text-transform:uppercase;
+}
+.row-v{
+  font-size:18px;color:var(--navy-800);font-weight:600;line-height:1.35;margin-top:2px;
+  font-variant-numeric:lining-nums;font-feature-settings:"lnum" 1;
+}
+.row-v small{display:block;font-size:15px;font-weight:400;color:var(--ink-soft);margin-top:2px}
+
+/* ---------- buttons ---------- */
+.actions{display:flex;flex-direction:column;gap:11px;max-width:330px;margin:20px auto 0}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:14px 18px;border-radius:999px;
+  font-family:"Cinzel",serif;font-size:12.5px;letter-spacing:.15em;font-weight:600;
+  text-decoration:none;
+  transition:transform .16s ease, box-shadow .2s ease;
+}
+.btn svg{width:17px;height:17px;flex:none}
+.btn:active{transform:scale(.97)}
+.btn-gold{
+  color:#3b2a06;background:var(--grad-gold);
+  box-shadow:0 10px 22px rgba(184,134,47,.34), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.btn-navy{
+  color:var(--gold-200);
+  background:linear-gradient(160deg,var(--navy-700),var(--navy-900));
+  border:1px solid rgba(232,200,116,.45);
+  box-shadow:0 10px 22px rgba(11,31,71,.28);
+}
+
+/* ---------- quote / family ---------- */
+.quote{
+  font-style:italic;font-size:clamp(18px,5vw,20px);line-height:1.8;
+  color:var(--ink-soft);max-width:330px;margin:0 auto;
+}
+.family{
+  margin-top:16px;
+  font-family:"Cinzel",serif;font-weight:600;
+  font-size:clamp(17px,4.8vw,20px);letter-spacing:.05em;
+  color:var(--navy-800);
+}
+.respect{font-size:18px;color:var(--ink-soft);font-style:italic}
+
+/* ---------- final ---------- */
+.final{
+  position:relative;padding:56px 30px 70px;text-align:center;
+  background:linear-gradient(180deg,transparent 0%, rgba(11,31,71,.045) 30%, rgba(11,31,71,.10) 100%);
+}
+.final .big{
+  font-family:"Great Vibes",cursive;
+  font-size:clamp(38px,11.6vw,54px);line-height:1.15;
+  background:var(--grad-gold-ink);-webkit-background-clip:text;background-clip:text;color:transparent;
+  background-size:220% 100%;animation:shimmer 7s linear infinite;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.5));
+}
+.final .sm{
+  margin-top:10px;font-size:18px;color:var(--ink-soft);font-style:italic;
+  font-variant-numeric:lining-nums;font-feature-settings:"lnum" 1;
+}
+
+/* ---------- music toggle ---------- */
+.music{
+  position:fixed;z-index:20;
+  top:max(22px,env(safe-area-inset-top));
+  left:calc(50% + var(--shell)/2 - 62px);
+  width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;
+  background:linear-gradient(160deg,rgba(18,48,107,.92),rgba(6,15,40,.92));
+  border:1px solid rgba(232,200,116,.5);
+  color:var(--gold-300);
+  box-shadow:0 8px 20px rgba(0,0,0,.3);
+  opacity:0;transform:scale(.6);pointer-events:none;
+  transition:opacity .5s ease .3s, transform .5s var(--ease) .3s;
+  backdrop-filter:blur(6px);
+}
+.music.show{opacity:1;transform:none;pointer-events:auto}
+.music svg{width:19px;height:19px}
+.music .off{display:none}
+.music.muted .on{display:none}
+.music.muted .off{display:block}
+.music .bars{position:absolute;inset:0;border-radius:50%;border:1px solid transparent}
+.music:not(.muted) .bars{animation:ring2 2.6s ease-out infinite;border-color:rgba(232,200,116,.5)}
+@keyframes ring2{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+
+/* ---------- reveal ---------- */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .95s var(--ease),transform .95s var(--ease)}
+.rv.in{opacity:1;transform:none}
+.rv-d1{transition-delay:.10s}
+.rv-d2{transition-delay:.20s}
+.rv-d3{transition-delay:.30s}
+.rv-d4{transition-delay:.40s}
+.rv-z{transform:scale(.9)}
+.rv-z.in{transform:none}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;z-index:40;left:50%;bottom:34px;translate:-50% 0;
+  padding:11px 20px;border-radius:999px;
+  background:rgba(6,15,40,.94);color:var(--gold-200);
+  border:1px solid rgba(232,200,116,.42);
+  font-size:14px;letter-spacing:.04em;white-space:nowrap;
+  opacity:0;transform:translateY(14px);pointer-events:none;
+  transition:opacity .3s,transform .3s;
+  box-shadow:0 10px 26px rgba(0,0,0,.4);
+}
+.toast.show{opacity:1;transform:none}
+
+@media (max-width:359px){
+  section{padding-inline:22px}
+  .cd{gap:6px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.15s!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body class="locked">
+
+<!-- ═══════════ SVG asset library ═══════════ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gRoseNavy" cx="38%" cy="32%" r="72%">
+      <stop offset="0%"  stop-color="#3f6ec4"/>
+      <stop offset="42%" stop-color="#1e4694"/>
+      <stop offset="100%" stop-color="#0a1c44"/>
+    </radialGradient>
+    <radialGradient id="gRoseNavy2" cx="40%" cy="34%" r="70%">
+      <stop offset="0%"  stop-color="#5686d8"/>
+      <stop offset="55%" stop-color="#27529f"/>
+      <stop offset="100%" stop-color="#122f6b"/>
+    </radialGradient>
+    <radialGradient id="gRoseCream" cx="38%" cy="30%" r="74%">
+      <stop offset="0%"  stop-color="#fffdf6"/>
+      <stop offset="48%" stop-color="#f4ecd8"/>
+      <stop offset="100%" stop-color="#d9caa6"/>
+    </radialGradient>
+    <radialGradient id="gRoseCream2" cx="42%" cy="34%" r="70%">
+      <stop offset="0%"  stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#f8f2e2"/>
+      <stop offset="100%" stop-color="#e3d6b8"/>
+    </radialGradient>
+    <linearGradient id="gLeaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#2b5aa8"/>
+      <stop offset="55%" stop-color="#173a80"/>
+      <stop offset="100%" stop-color="#0a1e4c"/>
+    </linearGradient>
+    <linearGradient id="gLeafGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#f5e2a8"/>
+      <stop offset="45%" stop-color="#d4a94a"/>
+      <stop offset="100%" stop-color="#8f631d"/>
+    </linearGradient>
+    <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#8f631d"/>
+      <stop offset="22%" stop-color="#e8c874"/>
+      <stop offset="45%" stop-color="#fdf3d4"/>
+      <stop offset="68%" stop-color="#d4a94a"/>
+      <stop offset="100%" stop-color="#b8862f"/>
+    </linearGradient>
+    <!-- deeper gold for ornaments drawn on the cream card -->
+    <linearGradient id="gGoldInk" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#6f4a11"/>
+      <stop offset="24%" stop-color="#c9992f"/>
+      <stop offset="48%" stop-color="#e0b95c"/>
+      <stop offset="72%" stop-color="#a97c25"/>
+      <stop offset="100%" stop-color="#7a5314"/>
+    </linearGradient>
+
+    <!-- ── rose (top view, layered petals) ── -->
+    <symbol id="rose" viewBox="0 0 100 100">
+      <g class="r-outer">
+        <ellipse cx="50" cy="27" rx="23" ry="27" transform="rotate(0 50 50)"/>
+        <ellipse cx="50" cy="27" rx="23" ry="27" transform="rotate(51.4 50 50)"/>
+        <ellipse cx="50" cy="27" rx="23" ry="27" transform="rotate(102.8 50 50)"/>
+        <ellipse cx="50" cy="27" rx="23" ry="27" transform="rotate(154.2 50 50)"/>
+        <ellipse cx="50" cy="27" rx="23" ry="27" transform="rotate(205.6 50 50)"/>
+        <ellipse cx="50" cy="27" rx="23" ry="27" transform="rotate(257 50 50)"/>
+        <ellipse cx="50" cy="27" rx="23" ry="27" transform="rotate(308.4 50 50)"/>
+      </g>
+      <g class="r-mid">
+        <ellipse cx="50" cy="33" rx="17" ry="20" transform="rotate(26 50 50)"/>
+        <ellipse cx="50" cy="33" rx="17" ry="20" transform="rotate(98 50 50)"/>
+        <ellipse cx="50" cy="33" rx="17" ry="20" transform="rotate(170 50 50)"/>
+        <ellipse cx="50" cy="33" rx="17" ry="20" transform="rotate(242 50 50)"/>
+        <ellipse cx="50" cy="33" rx="17" ry="20" transform="rotate(314 50 50)"/>
+      </g>
+      <g class="r-in">
+        <ellipse cx="50" cy="39" rx="11.5" ry="13.5" transform="rotate(10 50 50)"/>
+        <ellipse cx="50" cy="39" rx="11.5" ry="13.5" transform="rotate(100 50 50)"/>
+        <ellipse cx="50" cy="39" rx="11.5" ry="13.5" transform="rotate(190 50 50)"/>
+        <ellipse cx="50" cy="39" rx="11.5" ry="13.5" transform="rotate(280 50 50)"/>
+      </g>
+      <g class="r-core">
+        <path d="M50 58c-6 0-10-4.4-10-9.4C40 43.8 44.4 40 50 40s10 3.8 10 8.6c0 4.2-3.4 7.4-7.6 7.4-3.6 0-6.4-2.6-6.4-5.8 0-2.8 2.2-5 5-5"/>
+      </g>
+    </symbol>
+
+    <!-- ── bud ── -->
+    <symbol id="bud" viewBox="0 0 60 80">
+      <path class="b-cup" d="M30 78C16 70 10 56 12 40c1.6-13 8.4-22 18-22s16.4 9 18 22c2 16-4 30-18 38z"/>
+      <path class="b-p1" d="M30 74c-8-8-11-20-9-32 1.4-8.6 5-14 9-14s7.6 5.4 9 14c2 12-1 24-9 32z"/>
+      <path class="b-p2" d="M30 68c-4.4-7-6-16-4.6-24C26.4 37 28 33 30 33s3.6 4 4.6 11c1.4 8-.2 17-4.6 24z"/>
+    </symbol>
+
+    <!-- ── leaf ── -->
+    <symbol id="leaf" viewBox="0 0 40 100">
+      <path class="l-body" d="M20 2C34 22 40 48 32 74c-3.2 10.4-8 20-12 24-4-4-8.8-13.6-12-24C0 48 6 22 20 2z"/>
+      <path class="l-vein" d="M20 6v90" stroke-width="1.4" fill="none" stroke-opacity=".38"/>
+      <path class="l-vein" d="M20 26l12 6M20 26L8 32M20 46l13 7M20 46L7 53M20 66l11 7M20 66L9 73" stroke-width="1.1" fill="none" stroke-opacity=".26"/>
+    </symbol>
+
+    <!-- ── gypsophila (baby's breath) sprig ── -->
+    <symbol id="sprig" viewBox="0 0 80 90">
+      <g stroke="#c8b98f" stroke-width="1.2" fill="none" opacity=".65">
+        <path d="M40 88C38 66 32 48 18 34M40 88c2-22 8-40 22-54M40 88c0-20 1-38 0-56"/>
+      </g>
+      <g fill="#fffdf4">
+        <circle cx="18" cy="32" r="4.6"/><circle cx="9" cy="22" r="3.4"/><circle cx="26" cy="22" r="3.8"/>
+        <circle cx="16" cy="14" r="3"/><circle cx="62" cy="32" r="4.6"/><circle cx="71" cy="22" r="3.4"/>
+        <circle cx="54" cy="22" r="3.8"/><circle cx="64" cy="13" r="3"/><circle cx="40" cy="30" r="5"/>
+        <circle cx="40" cy="18" r="3.6"/><circle cx="31" cy="10" r="3"/><circle cx="49" cy="10" r="3"/>
+        <circle cx="40" cy="5" r="2.6"/><circle cx="28" cy="42" r="3"/><circle cx="52" cy="42" r="3"/>
+      </g>
+      <g fill="#e8dcbd" opacity=".9">
+        <circle cx="18" cy="32" r="1.5"/><circle cx="62" cy="32" r="1.5"/><circle cx="40" cy="30" r="1.6"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="backdrop"></div>
+<canvas id="petals" aria-hidden="true"></canvas>
+
+<!-- ═══════════ ENVELOPE OPENER ═══════════ -->
+<div class="opener" id="opener">
+  <div class="opener-inner">
+    <p class="opener-title">TAKLIFNOMA</p>
+    <div class="env" id="env">
+      <div class="env-body"></div>
+      <div class="env-letter"><span class="mono">B &amp; M</span></div>
+      <div class="env-pocket"></div>
+      <div class="env-flap"></div>
+      <div class="env-rim"></div>
+      <div class="seal"><span class="seal-txt">B<i>&amp;</i>M</span></div>
+    </div>
+    <p class="opener-sub">Baxodirjon &amp; Mexrangizxon</p>
+    <button class="open-btn" id="openBtn" type="button">TAKLIFNOMANI OCHISH</button>
+  </div>
+</div>
+
+<!-- ═══════════ MUSIC ═══════════ -->
+<audio id="bgm" src="music.mp3" loop preload="auto" playsinline></audio>
+<button class="music muted" id="music" type="button" aria-label="Musiqa">
+  <span class="bars"></span>
+  <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>
+  <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/><path d="M3 3l18 18"/></svg>
+</button>
+
+<div class="frame" aria-hidden="true">
+  <span class="t"></span><span class="b"></span><span class="l"></span><span class="r"></span>
+  <i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i>
+</div>
+
+<!-- ═══════════ CARD ═══════════ -->
+<main class="shell">
+<div class="card">
+
+  <!-- floral corners -->
+  <div class="floral fl-tl" aria-hidden="true">
+    <svg viewBox="0 0 240 240">
+      <g class="leafset">
+        <use href="#leaf" x="8"   y="40"  width="34" height="86" transform="rotate(-38 25 83)" fill="url(#gLeaf)" stroke="#0a1e4c"/>
+        <use href="#leaf" x="96"  y="-6"  width="30" height="76" transform="rotate(24 111 32)" fill="url(#gLeaf)" stroke="#0a1e4c"/>
+        <use href="#leaf" x="140" y="34"  width="26" height="66" transform="rotate(66 153 67)" fill="url(#gLeafGold)" stroke="#8f631d"/>
+        <use href="#leaf" x="30"  y="118" width="28" height="70" transform="rotate(-72 44 153)" fill="url(#gLeafGold)" stroke="#8f631d"/>
+        <use href="#leaf" x="118" y="96"  width="24" height="60" transform="rotate(112 130 126)" fill="url(#gLeaf)" stroke="#0a1e4c"/>
+      </g>
+      <use href="#sprig" x="118" y="4"  width="66" height="74" opacity=".95"/>
+      <use href="#sprig" x="2"   y="96" width="58" height="66" transform="rotate(-40 31 129)" opacity=".9"/>
+      <g class="roses">
+        <use href="#rose" x="18"  y="6"   width="86" height="86"/>
+        <use href="#rose" x="86"  y="52"  width="70" height="70"/>
+        <use href="#rose" x="6"   y="82"  width="58" height="58"/>
+        <use href="#bud"  x="150" y="8"   width="34" height="46" transform="rotate(28 167 31)"/>
+        <use href="#bud"  x="70"  y="120" width="30" height="40" transform="rotate(-18 85 140)"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="floral fl-br" aria-hidden="true">
+    <svg viewBox="0 0 240 240">
+      <g class="leafset">
+        <use href="#leaf" x="10"  y="46"  width="32" height="80" transform="rotate(-34 26 86)" fill="url(#gLeaf)" stroke="#0a1e4c"/>
+        <use href="#leaf" x="100" y="0"   width="28" height="72" transform="rotate(28 114 36)" fill="url(#gLeafGold)" stroke="#8f631d"/>
+        <use href="#leaf" x="142" y="40"  width="26" height="64" transform="rotate(70 155 72)" fill="url(#gLeaf)" stroke="#0a1e4c"/>
+        <use href="#leaf" x="34"  y="120" width="26" height="66" transform="rotate(-68 47 153)" fill="url(#gLeaf)" stroke="#0a1e4c"/>
+      </g>
+      <use href="#sprig" x="112" y="8"  width="64" height="72" opacity=".95"/>
+      <use href="#sprig" x="6"   y="94" width="56" height="64" transform="rotate(-34 34 126)" opacity=".9"/>
+      <g class="roses">
+        <use href="#rose" x="14"  y="10"  width="82" height="82"/>
+        <use href="#rose" x="84"  y="58"  width="66" height="66"/>
+        <use href="#rose" x="4"   y="88"  width="54" height="54"/>
+        <use href="#bud"  x="146" y="14"  width="32" height="44" transform="rotate(32 162 36)"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="floral fl-mr" aria-hidden="true">
+    <svg viewBox="0 0 160 160">
+      <g class="leafset">
+        <use href="#leaf" x="6"   y="30" width="26" height="66" transform="rotate(-40 19 63)" fill="url(#gLeafGold)" stroke="#8f631d"/>
+        <use href="#leaf" x="92"  y="18" width="24" height="60" transform="rotate(44 104 48)" fill="url(#gLeaf)" stroke="#0a1e4c"/>
+      </g>
+      <use href="#sprig" x="76" y="6" width="52" height="58" opacity=".9"/>
+      <g class="roses">
+        <use href="#rose" x="20" y="8"  width="64" height="64"/>
+        <use href="#rose" x="66" y="52" width="48" height="48"/>
+        <use href="#bud"  x="8"  y="72" width="26" height="36" transform="rotate(-24 21 90)"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="floral fl-ml" aria-hidden="true">
+    <svg viewBox="0 0 160 160">
+      <g class="leafset">
+        <use href="#leaf" x="10" y="34" width="24" height="62" transform="rotate(-36 22 65)" fill="url(#gLeaf)" stroke="#0a1e4c"/>
+        <use href="#leaf" x="88" y="22" width="22" height="56" transform="rotate(48 99 50)" fill="url(#gLeafGold)" stroke="#8f631d"/>
+      </g>
+      <use href="#sprig" x="72" y="8" width="50" height="56" opacity=".88"/>
+      <g class="roses">
+        <use href="#rose" x="18" y="10" width="60" height="60"/>
+        <use href="#rose" x="62" y="54" width="44" height="44"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- ─────────── HERO ─────────── -->
+  <section class="hero">
+    <div class="arch rv rv-z" aria-hidden="true">
+      <svg viewBox="0 0 300 118" fill="none">
+        <!-- arched gold frame top -->
+        <path d="M6 116V72C6 34 40 6 150 6s144 28 144 66v44"
+              stroke="url(#gGoldInk)" stroke-width="2.4"/>
+        <path d="M15 116V74C15 40 46 15 150 15s135 25 135 59v42"
+              stroke="url(#gGoldInk)" stroke-width="1" stroke-opacity=".6"/>
+        <!-- crown ornament -->
+        <g stroke="url(#gGoldInk)" stroke-width="1.7" stroke-linecap="round" fill="none">
+          <path d="M150 20v14"/>
+          <path d="M150 34c-9-3-16 2-16 8s6 9 12 6 4-10-2-11"/>
+          <path d="M150 34c9-3 16 2 16 8s-6 9-12 6-4-10 2-11"/>
+          <path d="M150 48c-6 3-9 8-9 12M150 48c6 3 9 8 9 12"/>
+          <path d="M124 40c-8-2-14 2-15 7M176 40c8-2 14 2 15 7"/>
+          <path d="M112 47c-7 1-11 5-11 9M188 47c7 1 11 5 11 9"/>
+        </g>
+        <circle cx="150" cy="18" r="3" fill="url(#gGoldInk)"/>
+        <circle cx="150" cy="62" r="2.4" fill="url(#gGoldInk)"/>
+        <!-- corner curls -->
+        <g stroke="url(#gGoldInk)" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".85">
+          <path d="M30 62c10-8 20-4 22 4s-6 12-11 8 0-11 7-9"/>
+          <path d="M270 62c-10-8-20-4-22 4s6 12 11 8 0-11-7-9"/>
+        </g>
+      </svg>
+    </div>
+
+    <h1 class="title rv rv-d1"><span>TAKLIFNOMA</span></h1>
+
+    <div class="rule rv rv-d1" aria-hidden="true">
+      <svg viewBox="0 0 120 20" fill="none" stroke="url(#gGoldInk)" stroke-width="1.5" stroke-linecap="round">
+        <path d="M60 4c-7 0-11 4-11 7s4 5 7 3 1-8-5-8-9 4-15 4"/>
+        <path d="M60 4c7 0 11 4 11 7s-4 5-7 3-1-8 5-8 9 4 15 4"/>
+        <circle cx="60" cy="15" r="2" fill="url(#gGoldInk)" stroke="none"/>
+      </svg>
+    </div>
+
+    <p class="greet rv rv-d2">Hurmatli <span class="guest" id="guest">mehmonimiz</span>!</p>
+
+    <p class="lead rv rv-d2">Sizni aziz farzandlarimiz</p>
+
+    <div class="names">
+      <div class="name rv rv-d2">Baxodirjon</div>
+      <div class="amp rv rv-d3">va</div>
+      <div class="name rv rv-d3">Mexrangizxon</div>
+    </div>
+
+    <p class="occasion rv rv-d4">
+      <span class="q">«Fotiha»</span> toʻylari munosabati bilan<br>
+      <b>2026-yil 10-avgust</b> kuni soat <b>18:30</b> da<br>
+      yoziladigan dasturxonimizga taklif etamiz!
+    </p>
+
+    <div class="scroll-hint rv rv-d4" aria-hidden="true">
+      <svg viewBox="0 0 24 34" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 14l6 6 6-6"/><path d="M6 22l6 6 6-6"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ─────────── AZIZ MEHMONIMIZ ─────────── -->
+  <section class="panel invite-panel">
+    <p class="eyebrow dashed rv">AZIZ MEHMONIMIZ</p>
+
+    <p class="invite-line rv rv-d1">
+      Farzandlarimizning <b>nikoh toʻyi</b> munosabati bilan sizni
+      <em class="script">toʻy oqshomiga</em> lutfan taklif etamiz
+    </p>
+
+    <div class="rule rv rv-d2" style="margin-top:26px" aria-hidden="true">
+      <svg viewBox="0 0 120 20" fill="none" stroke="url(#gGoldInk)" stroke-width="1.5" stroke-linecap="round">
+        <path d="M60 4c-7 0-11 4-11 7s4 5 7 3 1-8-5-8-9 4-15 4"/>
+        <path d="M60 4c7 0 11 4 11 7s-4 5-7 3-1-8 5-8 9 4 15 4"/>
+        <circle cx="60" cy="15" r="2" fill="url(#gGoldInk)" stroke="none"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ─────────── COUNTDOWN ─────────── -->
+  <section class="panel" style="padding-top:18px">
+    <p class="eyebrow rv">BAYRAMGACHA</p>
+    <h2 class="h2 rv rv-d1">Qolgan vaqt</h2>
+
+    <div class="cd rv rv-d2" id="cd">
+      <div class="cd-box"><div class="cd-num" id="cdD">00</div><div class="cd-lab">kun</div></div>
+      <div class="cd-box"><div class="cd-num" id="cdH">00</div><div class="cd-lab">soat</div></div>
+      <div class="cd-box"><div class="cd-num" id="cdM">00</div><div class="cd-lab">daqiqa</div></div>
+      <div class="cd-box"><div class="cd-num" id="cdS">00</div><div class="cd-lab">soniya</div></div>
+    </div>
+
+    <div class="cal rv rv-d3">
+      <div class="cal-h">AVGUST 2026</div>
+      <div class="cal-grid" id="cal"></div>
+    </div>
+  </section>
+
+  <!-- ─────────── DETAILS ─────────── -->
+  <section class="panel">
+    <p class="eyebrow rv">MAROSIM TAFSILOTLARI</p>
+    <h2 class="h2 rv rv-d1">Manzil va vaqt</h2>
+
+    <div class="rows">
+      <div class="row rv rv-d1">
+        <div class="row-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="12" cy="15.5" r="1.6" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <div>
+          <div class="row-k">Sana</div>
+          <div class="row-v">2026-yil 10-avgust<small id="dowLabel">Dushanba</small></div>
+        </div>
+      </div>
+
+      <div class="row rv rv-d2">
+        <div class="row-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v5.4l3.4 2"/>
+          </svg>
+        </div>
+        <div>
+          <div class="row-k">Vaqt</div>
+          <div class="row-v">Soat 18:30 da<small>Marosim boshlanishi</small></div>
+        </div>
+      </div>
+
+      <div class="row rv rv-d3">
+        <div class="row-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
+          </svg>
+        </div>
+        <div>
+          <div class="row-k">Manzil</div>
+          <div class="row-v">Moʻjiza restorani<small>Buxoro shahri</small></div>
+        </div>
+      </div>
+
+      <div class="row rv rv-d4">
+        <div class="row-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/>
+          </svg>
+        </div>
+        <div>
+          <div class="row-k">Moʻljal</div>
+          <div class="row-v">Karvon bozor yonida<small>Buxoro shahri</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn btn-navy rv rv-d2" id="mapBtn"
+         href="https://www.google.com/maps/search/?api=1&query=Mo%CA%BBjiza%20restorani%2C%20Karvon%20bozor%2C%20Buxoro"
+         target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+        YOʻL XARITASI
+      </a>
+      <button class="btn btn-gold rv rv-d3" id="icsBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>
+        KALENDARGA QOʻSHISH
+      </button>
+    </div>
+  </section>
+
+  <!-- ─────────── FAMILY ─────────── -->
+  <section class="panel">
+    <div class="rule rv" aria-hidden="true">
+      <svg viewBox="0 0 120 20" fill="none" stroke="url(#gGoldInk)" stroke-width="1.5" stroke-linecap="round">
+        <path d="M60 4c-7 0-11 4-11 7s4 5 7 3 1-8-5-8-9 4-15 4"/>
+        <path d="M60 4c7 0 11 4 11 7s-4 5-7 3-1-8 5-8 9 4 15 4"/>
+        <circle cx="60" cy="15" r="2" fill="url(#gGoldInk)" stroke="none"/>
+      </svg>
+    </div>
+    <p class="quote rv rv-d1">
+      Bu quvonchli kunimizni siz bilan birga nishonlash biz uchun katta baxtdir.
+      Tashrifingizdan mamnun boʻlamiz.
+    </p>
+    <p class="respect rv rv-d2" style="margin-top:22px">Hurmat va ehtirom ila,</p>
+    <p class="family rv rv-d3">Ixtiyor Saidov oilasi</p>
+  </section>
+
+  <!-- ─────────── FINAL ─────────── -->
+  <section class="final">
+    <div class="rv rv-z" aria-hidden="true" style="width:72px;margin:0 auto 18px">
+      <svg viewBox="0 0 80 80" fill="none">
+        <circle cx="40" cy="40" r="30" stroke="url(#gGoldInk)" stroke-width="1.2" stroke-dasharray="3 5"/>
+        <g class="roses"><use href="#rose" x="18" y="18" width="44" height="44"/></g>
+      </svg>
+    </div>
+    <div class="big rv rv-d1">Sizni kutib qolamiz!</div>
+    <p class="sm rv rv-d2">Baxodirjon &amp; Mexrangizxon · 10.08.2026</p>
+    <div class="rule rv rv-d3" style="margin-top:26px" aria-hidden="true">
+      <svg viewBox="0 0 120 20" fill="none" stroke="url(#gGoldInk)" stroke-width="1.5" stroke-linecap="round">
+        <path d="M60 4c-7 0-11 4-11 7s4 5 7 3 1-8-5-8-9 4-15 4"/>
+        <path d="M60 4c7 0 11 4 11 7s-4 5-7 3-1-8 5-8 9 4 15 4"/>
+        <circle cx="60" cy="15" r="2" fill="url(#gGoldInk)" stroke="none"/>
+      </svg>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<canvas id="sparks" aria-hidden="true"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ══════════ paint the rose symbols (two colourways, alternating) ══════════ */
+(function paintRoses(){
+  document.querySelectorAll(".roses").forEach((g,gi)=>{
+    [...g.children].forEach((u,i)=>{
+      const navy = (gi + i) % 2 === 0;
+      u.style.setProperty("--rose-o", navy ? "url(#gRoseNavy)"  : "url(#gRoseCream)");
+      u.style.setProperty("--rose-i", navy ? "url(#gRoseNavy2)" : "url(#gRoseCream2)");
+      u.setAttribute("fill", navy ? "url(#gRoseNavy)" : "url(#gRoseCream)");
+      u.setAttribute("stroke", navy ? "#081735" : "#cdbb92");
+      u.setAttribute("stroke-width", "0.9");
+      u.style.filter = "drop-shadow(0 3px 5px rgba(6,15,40,.28))";
+    });
+  });
+})();
+
+/* ══════════ COUNTDOWN & DYNAMIC DATA INTEGRATION ══════════ */
+let TARGET = new Date("2026-08-10T18:30:00+05:00").getTime();
+let timer = null;
+const pad = n => String(n).padStart(2,"0");
+const el = {d:document.getElementById("cdD"), h:document.getElementById("cdH"),
+            m:document.getElementById("cdM"), s:document.getElementById("cdS")};
+
+function tick(){
+  let diff = TARGET - Date.now();
+  if(diff <= 0){
+    const cdEl = document.getElementById("cd");
+    if(cdEl) cdEl.innerHTML = '<div class="cd-done">Bugun — bayram kuni!</div>';
+    if(timer) clearInterval(timer);
+    return;
+  }
+  const s = Math.floor(diff/1000);
+  if(el.d) el.d.textContent = pad(Math.floor(s/86400));
+  if(el.h) el.h.textContent = pad(Math.floor(s%86400/3600));
+  if(el.m) el.m.textContent = pad(Math.floor(s%3600/60));
+  if(el.s) el.s.textContent = pad(s%60);
+}
+tick();
+if(TARGET > Date.now()) timer = setInterval(tick, 1000);
+
+(function setupDynamicData(){
+  const p = new URLSearchParams(location.search);
+  const ticketParam = p.get("ticket") || p.get("id");
+  const guestParam = p.get("ism") || p.get("name") || p.get("mehmon") || decodeURIComponent(location.hash.replace(/^#/, ""));
+  const coupleParam = p.get("couple") || p.get("kelin_kuyov");
+  const eventParam = p.get("event") || p.get("event_type") || p.get("tadbir");
+  const dateParam = p.get("date") || p.get("sana");
+  const timeParam = p.get("time") || p.get("vaqt");
+  const venueParam = p.get("venue") || p.get("restoran") || p.get("toyxona");
+  const addressParam = p.get("address") || p.get("manzil");
+
+  const UZ_MONTHS = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"];
+  const UZ_DOW = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
+
+  function applyData(details){
+    if(!details) return;
+
+    // 1. Mehmon ismi
+    const guestName = details.guest_name || details.full_name || details.name || guestParam;
+    if(guestName && String(guestName).trim()){
+      const cleanGuest = String(guestName).trim().replace(/[<>]/g, "");
+      const gEl = document.getElementById("guest");
+      if(gEl) gEl.textContent = cleanGuest;
+    }
+
+    // 2. Kelin va Kuyov ismlari
+    const coupleRaw = details.couple_names || details.groom_bride || details.couple || coupleParam;
+    if(coupleRaw && String(coupleRaw).trim()){
+      const cStr = String(coupleRaw).trim();
+      document.title = "Taklifnoma — " + cStr;
+      
+      let parts = cStr.split(/\s*&\s*|\s+va\s+/i);
+      let gName = parts[0] || cStr;
+      let bName = parts[1] || "";
+
+      const openerSub = document.querySelector(".opener-sub");
+      if(openerSub) openerSub.innerHTML = bName ? `${gName} &amp; ${bName}` : gName;
+
+      const sealTxt = document.querySelector(".seal-txt");
+      if(sealTxt){
+        const init1 = gName.charAt(0).toUpperCase();
+        const init2 = bName ? bName.charAt(0).toUpperCase() : "";
+        sealTxt.innerHTML = init2 ? `${init1}<i>&amp;</i>${init2}` : init1;
+      }
+      const envMono = document.querySelector(".env-letter .mono");
+      if(envMono){
+        const init1 = gName.charAt(0).toUpperCase();
+        const init2 = bName ? bName.charAt(0).toUpperCase() : "";
+        envMono.innerHTML = init2 ? `${init1} &amp; ${init2}` : init1;
+      }
+
+      const groomEl = document.querySelector(".names .name:first-child");
+      if(groomEl) groomEl.textContent = gName;
+      const brideEl = document.querySelector(".names .name:last-child");
+      if(brideEl && bName) brideEl.textContent = bName;
+
+      const footerCouple = document.querySelector(".final .sm");
+      if(footerCouple) footerCouple.innerHTML = bName ? `${gName} &amp; ${bName}` : gName;
+    }
+
+    // 3. Tadbir turi
+    const eventType = details.event_type || details.eventType || eventParam || "Nikoh toʻyi";
+    const evStr = String(eventType).trim();
+    const isPlov = /osh/i.test(evStr);
+    
+    const occEvent = document.querySelector(".occasion .q");
+    if(occEvent) occEvent.textContent = `«${evStr.replace(/[«»]/g, "")}»`;
+
+    const inviteLine = document.querySelector(".invite-line");
+    if(inviteLine){
+      inviteLine.innerHTML = `Farzandlarimizning <b>${evStr.toLowerCase()}</b> munosabati bilan sizni ` +
+        `<em class="script">${isPlov ? "toʻy oshimizga" : "toʻy oqshomiga"}</em> lutfan taklif etamiz`;
+    }
+
+    // 4. Sana va Vaqt
+    const dateRaw = details.event_date_time || details.event_date || dateParam;
+    if(dateRaw && String(dateRaw).trim()){
+      const rawDt = String(dateRaw).trim();
+      let dtMatch = rawDt.match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/);
+      let timeMatch = rawDt.match(/(\d{1,2}):(\d{2})/);
+      
+      let parsedYear = 2026, parsedMonthIdx = 7, parsedDay = 10, parsedHour = 18, parsedMinute = 30;
+      if(dtMatch){
+        parsedYear = parseInt(dtMatch[1], 10);
+        parsedMonthIdx = parseInt(dtMatch[2], 10) - 1;
+        parsedDay = parseInt(dtMatch[3], 10);
+      }
+      if(timeMatch){
+        parsedHour = parseInt(timeMatch[1], 10);
+        parsedMinute = parseInt(timeMatch[2], 10);
+      } else if(timeParam) {
+        let tM = String(timeParam).match(/(\d{1,2}):(\d{2})/);
+        if(tM){ parsedHour = parseInt(tM[1], 10); parsedMinute = parseInt(tM[2], 10); }
+      }
+
+      const mName = UZ_MONTHS[parsedMonthIdx] || "Avgust";
+      const padZero = n => String(n).padStart(2, "0");
+      const formattedDate = `${parsedYear}-yil ${parsedDay}-${mName.toLowerCase()}`;
+      const formattedTime = `${padZero(parsedHour)}:${padZero(parsedMinute)}`;
+
+      const occEl = document.querySelector(".occasion");
+      if(occEl){
+        occEl.innerHTML = `<span class="q">«${evStr.replace(/[«»]/g, "")}»</span> toʻylari munosabati bilan<br>` +
+          `<b>${formattedDate}</b> kuni soat <b>${formattedTime}</b> da<br>` +
+          `${isPlov ? "yoziladigan toʻy oshimizga" : "yoziladigan dasturxonimizga"} taklif etamiz!`;
+      }
+
+      const rows = document.querySelectorAll(".rows .row");
+      if(rows.length >= 2){
+        const dateRowVal = rows[0].querySelector(".row-v");
+        if(dateRowVal){
+          const dObj = new Date(parsedYear, parsedMonthIdx, parsedDay);
+          const dowName = UZ_DOW[dObj.getDay()] || "Dushanba";
+          dateRowVal.innerHTML = `${formattedDate}<small id="dowLabel">${dowName}</small>`;
+        }
+        const timeRowVal = rows[1].querySelector(".row-v");
+        if(timeRowVal){
+          timeRowVal.innerHTML = `Soat ${formattedTime} da<small>${isPlov ? "Osh dasturxoni" : "Marosim boshlanishi"}</small>`;
+        }
+      }
+
+      const targetTime = new Date(parsedYear, parsedMonthIdx, parsedDay, parsedHour, parsedMinute, 0).getTime();
+      if(!isNaN(targetTime)){
+        TARGET = targetTime;
+        if(timer) { clearInterval(timer); }
+        tick();
+        if(TARGET > Date.now()) timer = setInterval(tick, 1000);
+      }
+
+      const calTitle = document.querySelector(".cal .cal-h");
+      if(calTitle) calTitle.textContent = `${mName.toUpperCase()} ${parsedYear}`;
+      const grid = document.getElementById("cal");
+      if(grid){
+        const dows = ["Du","Se","Cho","Pa","Ju","Sha","Ya"];
+        let html = dows.map(d=>`<div class="dow">${d}</div>`).join("");
+        const first = new Date(parsedYear, parsedMonthIdx, 1).getDay();
+        const offset = (first + 6) % 7;
+        const total = new Date(parsedYear, parsedMonthIdx + 1, 0).getDate();
+        for(let i = 0; i < offset; i++) html += '<div class="d mute"></div>';
+        for(let d = 1; d <= total; d++){
+          html += `<div class="d${d === parsedDay ? " on" : ""}">${d}</div>`;
+        }
+        grid.innerHTML = html;
+      }
+
+      const footerCouple = document.querySelector(".final .sm");
+      if(footerCouple){
+        const cStr = coupleRaw || "Kelin va Kuyov";
+        footerCouple.textContent = `${cStr} · ${padZero(parsedDay)}.${padZero(parsedMonthIdx + 1)}.${parsedYear}`;
+      }
+    }
+
+    // 5. To'yxona va Manzil
+    const vName = details.venue_name || details.venue || venueParam;
+    const vAddr = details.venue_address || details.address || addressParam;
+    const rows = document.querySelectorAll(".rows .row");
+    if(rows.length >= 4){
+      if(vName && String(vName).trim()){
+        const venueRow = rows[2].querySelector(".row-v");
+        if(venueRow){
+          venueRow.innerHTML = `${String(vName).trim()}<small>${vAddr ? String(vAddr).trim().split(",")[0] : "Toshkent shahri"}</small>`;
+        }
+      }
+      if(vAddr && String(vAddr).trim()){
+        const addrRow = rows[3].querySelector(".row-v");
+        if(addrRow){
+          addrRow.innerHTML = `${String(vAddr).trim()}<small>Mo'ljal</small>`;
+        }
+      }
+    }
+
+    const mapBtn = document.getElementById("mapBtn");
+    if(mapBtn && (vName || vAddr)){
+      const q = [vName, vAddr].filter(Boolean).join(" ");
+      mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+    }
+
+    // 6. Taklif etuvchi oila
+    const family = details.family_names || details.family;
+    if(family && String(family).trim()){
+      const famEl = document.querySelector(".panel .family");
+      if(famEl) famEl.textContent = String(family).trim();
+    }
+  }
+
+  if(ticketParam){
+    const cleanTicket = ticketParam.replace("#", "").trim();
+    fetch("/api/invitation/" + encodeURIComponent(cleanTicket))
+      .then(r => r.json())
+      .then(data => {
+        if(data && data.success && (data.invitation || data.ticket)){
+          applyData(data.invitation || data.ticket);
+        }
+      })
+      .catch(e => {
+        console.warn("Backend ticket fetch error:", e);
+      });
+  } else {
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(data => {
+        if(data && data.success && data.settings){
+          applyData(data.settings);
+        }
+      })
+      .catch(() => {});
+  }
+
+  applyData({
+    full_name: guestParam,
+    couple_names: coupleParam,
+    event_type: eventParam,
+    event_date_time: dateParam,
+    venue_name: venueParam,
+    venue_address: addressParam
+  });
+})();
+
+/* ══════════ ENVELOPE OPENER ══════════ */
+const opener = document.getElementById("opener");
+const env    = document.getElementById("env");
+let opened   = false;
+
+function openInvite(){
+  if(opened) return;
+  opened = true;
+  env.classList.add("open");
+  burst(innerWidth/2, innerHeight*0.46, 46);
+  setTimeout(()=>{
+    opener.classList.add("gone");
+    document.body.classList.remove("locked");
+    document.getElementById("music").classList.add("show");
+    reveal();
+    startMusic();
+  }, RM ? 200 : 1000);
+  setTimeout(()=>opener.remove(), 2400);
+}
+document.getElementById("openBtn").addEventListener("click", openInvite);
+env.addEventListener("click", openInvite);
+
+/* ══════════ CALENDAR — August 2026, Monday-first ══════════ */
+(function calendar(){
+  const grid = document.getElementById("cal");
+  const dows = ["Du","Se","Cho","Pa","Ju","Sha","Ya"];
+  const Y = 2026, M = 7, DAY = 10;               // M: 0-indexed → 7 = August
+  let html = dows.map(d=>`<div class="dow">${d}</div>`).join("");
+  const first  = new Date(Y, M, 1).getDay();     // 0 = Sunday
+  const offset = (first + 6) % 7;                // shift to Monday-first
+  const total  = new Date(Y, M+1, 0).getDate();
+  for(let i=0;i<offset;i++) html += '<div class="d mute"></div>';
+  for(let d=1; d<=total; d++)
+    html += `<div class="d${d===DAY?" on":""}">${d}</div>`;
+  grid.innerHTML = html;
+
+  const names = ["Yakshanba","Dushanba","Seshanba","Chorshanba","Payshanba","Juma","Shanba"];
+  document.getElementById("dowLabel").textContent = names[new Date(Y,M,DAY).getDay()];
+})();
+
+/* ══════════ SCROLL REVEAL ══════════ */
+let io;
+function reveal(){
+  const items = document.querySelectorAll(".rv");
+  if(!("IntersectionObserver" in window)){
+    items.forEach(n=>n.classList.add("in")); return;
+  }
+  io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
+    });
+  }, {threshold:.14, rootMargin:"0px 0px -8% 0px"});
+  items.forEach(n=>io.observe(n));
+}
+
+/* ══════════ ADD TO CALENDAR (.ics) ══════════ */
+document.getElementById("icsBtn").addEventListener("click", ()=>{
+  const ics = [
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Taklifnoma//UZ","CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    "UID:fotiha-baxodirjon-mexrangizxon@taklifnoma",
+    "DTSTAMP:20260101T000000Z",
+    "DTSTART:20260810T133000Z",              // 18:30 (UTC+5)
+    "DTEND:20260810T173000Z",
+    "SUMMARY:Baxodirjon va Mexrangizxon — «Fotiha» toʻylari",
+    "LOCATION:Moʻjiza restorani\\, Karvon bozor yonida\\, Buxoro shahri",
+    "DESCRIPTION:Ixtiyor Saidov oilasi sizni toʻy oqshomiga taklif etadi. Soat 18:30.",
+    "BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY","DESCRIPTION:Ertaga toʻy!","END:VALARM",
+    "END:VEVENT","END:VCALENDAR"
+  ].join("\r\n");
+
+  const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "taklifnoma-10-avgust-2026.ics";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  toast("Kalendarga qoʻshildi ✦");
+  burst(innerWidth/2, innerHeight*0.7, 22);
+});
+
+/* ══════════ TOAST ══════════ */
+let toastT;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+/* ══════════════════════════════════════════════
+   CANVAS 1 — falling rose petals
+   ══════════════════════════════════════════════ */
+const pc = document.getElementById("petals");
+const px = pc.getContext("2d");
+let PW=0, PH=0, DPR=1;
+
+const PAL = [
+  ["#eef5ff","#cddcf5","#a9bfe4"],   // white rose
+  ["#fdf8ea","#efe2c2","#d8c69a"],   // cream rose
+  ["#4a7ad1","#2a56b0","#173a80"],   // navy rose
+  ["#f5e2a8","#d4a94a","#a97c25"]    // gold
+];
+
+function resize(){
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  PW = innerWidth; PH = innerHeight;
+  [pc, sc].forEach(c=>{
+    c.width  = Math.floor(PW*DPR);
+    c.height = Math.floor(PH*DPR);
+    c.style.width = PW+"px"; c.style.height = PH+"px";
+    c.getContext("2d").setTransform(DPR,0,0,DPR,0,0);
+  });
+}
+
+function mkPetal(seeded){
+  const pal = PAL[(Math.random()*PAL.length)|0];
+  return {
+    x: Math.random()*PW,
+    y: seeded ? Math.random()*PH : -40 - Math.random()*160,
+    s: 8 + Math.random()*13,
+    vy: .32 + Math.random()*.62,
+    sway: 16 + Math.random()*34,
+    freq: .0009 + Math.random()*.0016,
+    ph: Math.random()*Math.PI*2,
+    rot: Math.random()*Math.PI*2,
+    vr: (Math.random()-.5)*.014,
+    flip: .5 + Math.random()*1.2,
+    fs: .0008 + Math.random()*.0014,
+    a: .5 + Math.random()*.45,
+    pal
+  };
+}
+
+let petals = [];
+function seedPetals(){
+  const n = RM ? 0 : Math.min(22, Math.round(PW/22));
+  petals = Array.from({length:n}, ()=>mkPetal(true));
+}
+
+function drawPetal(ctx, p, t){
+  const w = p.s, h = p.s*1.28;
+  const squash = Math.abs(Math.cos(t*p.fs + p.ph)) * .85 + .15;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.rot);
+  ctx.scale(1, squash);
+  ctx.globalAlpha = p.a * (.55 + .45*squash);
+
+  const g = ctx.createLinearGradient(0,-h/2,0,h/2);
+  g.addColorStop(0, p.pal[0]);
+  g.addColorStop(.55, p.pal[1]);
+  g.addColorStop(1, p.pal[2]);
+  ctx.fillStyle = g;
+
+  ctx.beginPath();
+  ctx.moveTo(0, -h/2);
+  ctx.bezierCurveTo( w*.86, -h*.40,  w*.72,  h*.36, 0, h/2);
+  ctx.bezierCurveTo(-w*.72,  h*.36, -w*.86, -h*.40, 0, -h/2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(255,255,255,.28)";
+  ctx.lineWidth = .7;
+  ctx.beginPath(); ctx.moveTo(0,-h/2); ctx.lineTo(0,h*.42); ctx.stroke();
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════════════
+   CANVAS 2 — gold sparkles + tap bursts
+   ══════════════════════════════════════════════ */
+const sc = document.getElementById("sparks");
+const sx = sc.getContext("2d");
+let sparks = [], bursts = [];
+
+function seedSparks(){
+  const n = RM ? 0 : Math.min(30, Math.round(PW/16));
+  sparks = Array.from({length:n}, ()=>({
+    x: Math.random()*PW, y: Math.random()*PH,
+    r: .8 + Math.random()*1.9,
+    ph: Math.random()*Math.PI*2,
+    sp: .0011 + Math.random()*.0026,
+    dy: -(.05 + Math.random()*.16),
+    dx: (Math.random()-.5)*.09
+  }));
+}
+
+function burst(x, y, n){
+  if(RM) return;
+  for(let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, v = 1.1 + Math.random()*4.4;
+    bursts.push({
+      x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v - 1.1,
+      life:1, r: .9 + Math.random()*2.4,
+      c: Math.random()<.62 ? "232,200,116" : (Math.random()<.5 ? "255,253,246" : "120,160,235")
+    });
+  }
+}
+
+/* ══════════ MAIN LOOP ══════════ */
+let last = 0;
+function frame(t){
+  const dt = Math.min(t - last, 48) || 16; last = t;
+
+  /* petals */
+  px.clearRect(0,0,PW,PH);
+  for(const p of petals){
+    p.y += p.vy * dt * .062;
+    p.x += Math.sin(t*p.freq + p.ph) * p.sway * .0034 * dt;
+    p.rot += p.vr * dt * .06;
+    if(p.y > PH + 50){ Object.assign(p, mkPetal(false)); }
+    if(p.x < -60) p.x = PW + 50;
+    if(p.x > PW + 60) p.x = -50;
+    drawPetal(px, p, t);
+  }
+
+  /* sparkles */
+  sx.clearRect(0,0,PW,PH);
+  for(const s of sparks){
+    s.y += s.dy * dt * .062;
+    s.x += s.dx * dt * .062;
+    if(s.y < -12){ s.y = PH + 10; s.x = Math.random()*PW; }
+    if(s.x < -12) s.x = PW + 8;
+    if(s.x > PW + 12) s.x = -8;
+    const tw = (Math.sin(t*s.sp + s.ph) + 1) / 2;
+    const a = .12 + tw*.72;
+    const r = s.r * (.65 + tw*.75);
+    const g = sx.createRadialGradient(s.x, s.y, 0, s.x, s.y, r*4.6);
+    g.addColorStop(0, `rgba(255,250,224,${a})`);
+    g.addColorStop(.42, `rgba(232,200,116,${a*.55})`);
+    g.addColorStop(1, "rgba(232,200,116,0)");
+    sx.fillStyle = g;
+    sx.beginPath(); sx.arc(s.x, s.y, r*4.6, 0, 6.284); sx.fill();
+    /* 4-point star glint */
+    if(tw > .82){
+      sx.save(); sx.globalAlpha = (tw-.82)/.18 * .85;
+      sx.strokeStyle = "rgba(255,252,236,.95)"; sx.lineWidth = .8;
+      sx.beginPath();
+      sx.moveTo(s.x - r*3.4, s.y); sx.lineTo(s.x + r*3.4, s.y);
+      sx.moveTo(s.x, s.y - r*3.4); sx.lineTo(s.x, s.y + r*3.4);
+      sx.stroke(); sx.restore();
+    }
+  }
+
+  /* bursts */
+  for(let i=bursts.length-1;i>=0;i--){
+    const b = bursts[i];
+    b.x += b.vx * dt*.062; b.y += b.vy * dt*.062;
+    b.vy += .052 * dt*.062;
+    b.vx *= .988;
+    b.life -= .011 * dt*.062;
+    if(b.life <= 0){ bursts.splice(i,1); continue; }
+    sx.globalAlpha = Math.max(b.life, 0);
+    const g = sx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*3.4);
+    g.addColorStop(0, `rgba(${b.c},1)`);
+    g.addColorStop(1, `rgba(${b.c},0)`);
+    sx.fillStyle = g;
+    sx.beginPath(); sx.arc(b.x,b.y,b.r*3.4,0,6.284); sx.fill();
+    sx.globalAlpha = 1;
+  }
+
+  requestAnimationFrame(frame);
+}
+
+/* ══════════ MUSIC (audio.mp3) ══════════ */
+const bgm = document.getElementById("bgm");
+const musicBtn = document.getElementById("music");
+const VOL = .85;          /* target volume */
+let playing = false, fadeTimer = null;
+
+bgm.volume = 0;
+
+/* gentle volume ramp so it never snaps in or out */
+function fadeTo(target, ms, done){
+  clearInterval(fadeTimer);
+  const from = bgm.volume, delta = target - from;
+  const t0 = performance.now();
+  fadeTimer = setInterval(()=>{
+    const k = Math.min((performance.now() - t0) / ms, 1);
+    bgm.volume = Math.min(Math.max(from + delta*k, 0), 1);
+    if(k >= 1){ clearInterval(fadeTimer); fadeTimer = null; done && done(); }
+  }, 40);
+}
+
+function setPlaying(on){
+  playing = on;
+  musicBtn.classList.toggle("muted", !on);
+}
+
+function playMusic(){
+  const p = bgm.play();
+  if(p && p.catch){
+    p.then(()=>{ setPlaying(true); fadeTo(VOL, 1100); })
+     .catch(()=>{ setPlaying(false); });   /* autoplay blocked — wait for a tap */
+  }else{
+    setPlaying(true); fadeTo(VOL, 1100);
+  }
+}
+
+function stopMusic(){
+  fadeTo(0, 500, ()=> bgm.pause());
+  setPlaying(false);
+}
+
+/* try to start right after the envelope opens; browsers may still require a tap */
+function startMusic(){ playMusic(); }
+
+function toggleMusic(){
+  if(playing) stopMusic();
+  else playMusic();
+}
+musicBtn.addEventListener("click", toggleMusic);
+
+bgm.addEventListener("error", ()=>{
+  setPlaying(false);
+  toast("Musiqa yuklanmadi");
+});
+
+/* ══════════ tap sparkle anywhere ══════════ */
+document.addEventListener("pointerdown", e=>{
+  if(!opened) return;
+  if(e.target.closest(".btn, .music, a, button")) return;
+  burst(e.clientX, e.clientY, 12);
+}, {passive:true});
+
+/* ══════════ subtle parallax on the floral corners ══════════ */
+if(!RM){
+  const fl = [...document.querySelectorAll(".floral")];
+  let ticking = false;
+  addEventListener("scroll", ()=>{
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(()=>{
+      const y = scrollY;
+      fl.forEach((n,i)=>{ n.style.translate = `0 ${y * (i%2 ? .045 : -.032)}px`; });
+      ticking = false;
+    });
+  }, {passive:true});
+}
+
+/* ══════════ boot ══════════ */
+resize();
+seedPetals();
+seedSparks();
+requestAnimationFrame(frame);
+
+let rt;
+addEventListener("resize", ()=>{
+  clearTimeout(rt);
+  rt = setTimeout(()=>{ resize(); seedPetals(); seedSparks(); }, 180);
+});
+
+/* pause the track when the tab is hidden, resume when it comes back */
+document.addEventListener("visibilitychange", ()=>{
+  if(!playing) return;
+  if(document.hidden) bgm.pause();
+  else bgm.play().catch(()=>{});
+});
+
+})();
+</script>
+</body>
+</html>
