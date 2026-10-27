@@ -424,7 +424,7 @@ function setupBotCommands(botInstance) {
       `<i>(Masalan: Akmal Razzoqov yoki Alisher va Ziyoda)</i>`;
 
     await ctx.replyWithHTML(step1Prompt, Markup.inlineKeyboard([
-      [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+      [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
     ]));
   });
 
@@ -434,14 +434,47 @@ function setupBotCommands(botInstance) {
       const ticketId = ctx.match[1];
       const userId = String(ctx.from.id);
 
+      const beforeList = db.getUnpaidParticipantsByTelegramId(userId);
+      const targetTicket = beforeList.find(t => 
+        t.unique_ticket_id.replace('#', '') === ticketId.replace('#', '')
+      );
+      const oldCount = beforeList.length;
+      const oldSum = beforeList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+
       db.deleteParticipantByTicketId(ticketId);
-      await ctx.answerCbQuery("Taklifnoma muvaffaqiyatli bekor qilindi ❌");
+      await ctx.answerCbQuery("Taklifnoma bekor qilindi ❌").catch(() => {});
+
+      const afterList = db.getUnpaidParticipantsByTelegramId(userId);
+      const newCount = afterList.length;
+      const newSum = afterList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+
+      const ticketName = targetTicket ? targetTicket.full_name : 'Taklifnoma';
+
+      let confirmMsg = `🗑️ <b>"${ticketName}" taklifnomasi bekor qilindi!</b>\n\n`;
+      if (newCount > 0) {
+        confirmMsg += `📊 <b>Hisob-kitob yangilandi:</b>\n` +
+          `• Oldin: <b>${oldCount} ta</b> taklifnoma (${oldSum.toLocaleString('uz-UZ')} so'm)\n` +
+          `• <b>Hozir: ${newCount} ta taklifnoma qoldi (${newSum.toLocaleString('uz-UZ')} so'm bo'ldi)</b>\n\n` +
+          `💰 <b>To'lov uchun yangi summa: ${newSum.toLocaleString('uz-UZ')} so'm</b>\n` +
+          `💳 Karta raqami: <code>5614 6814 2617 2270</code> (Uzcard)\n` +
+          `👤 Karta egasi: <b>Nosirov Nuriddin</b>\n\n` +
+          `<i>💡 Yana boshqa taklifnomani bekor qilish uchun quyidagi tugmalardan birini bosing:</i>`;
+      } else {
+        confirmMsg += `✨ <b>Barcha to'lanmagan taklifnomalaringiz bekor qilindi!</b>\n` +
+          `To'lov summasi: <b>0 so'm</b> bo'ldi.\n\n` +
+          `Yangi taklifnoma yaratish uchun quyidagi dizaynlardan birini tanlang:`;
+      }
 
       const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
-      await ctx.editMessageText(view.text, {
-        parse_mode: 'HTML',
-        ...view.keyboard
-      });
+
+      await ctx.replyWithHTML(confirmMsg, newCount > 0 ? view.keyboard : getDesignSelectionKeyboard());
+
+      try {
+        await ctx.editMessageText(confirmMsg, {
+          parse_mode: 'HTML',
+          ...(newCount > 0 ? view.keyboard : getDesignSelectionKeyboard())
+        });
+      } catch (e) {}
     } catch (err) {
       console.warn('[Cancel Ticket Error]:', err.message);
       ctx.answerCbQuery("Xatolik yuz berdi").catch(() => {});
@@ -452,14 +485,25 @@ function setupBotCommands(botInstance) {
   botInstance.action('cancel_all_unpaid', async (ctx) => {
     try {
       const userId = String(ctx.from.id);
-      db.deleteAllUnpaidParticipants(userId);
-      await ctx.answerCbQuery("Barcha taklifnomalar bekor qilindi 🗑️");
+      const beforeList = db.getUnpaidParticipantsByTelegramId(userId);
+      const oldCount = beforeList.length;
+      const oldSum = beforeList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
 
-      const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
-      await ctx.editMessageText(view.text, {
-        parse_mode: 'HTML',
-        ...view.keyboard
-      });
+      db.deleteAllUnpaidParticipants(userId);
+      await ctx.answerCbQuery("Barcha taklifnomalar bekor qilindi 🗑️").catch(() => {});
+
+      const confirmMsg = `🗑️ <b>Barcha to'lanmagan taklifnomalaringiz (${oldCount} ta — ${oldSum.toLocaleString('uz-UZ')} so'm) bekor qilindi!</b>\n\n` +
+        `To'lov summasi: <b>0 so'm</b> bo'ldi.\n\n` +
+        `Yangi taklifnoma yaratish uchun dizayn tanlang:`;
+
+      await ctx.replyWithHTML(confirmMsg, getDesignSelectionKeyboard());
+
+      try {
+        await ctx.editMessageText(confirmMsg, {
+          parse_mode: 'HTML',
+          ...getDesignSelectionKeyboard()
+        });
+      } catch (e) {}
     } catch (err) {
       console.warn('[Cancel All Unpaid Error]:', err.message);
       ctx.answerCbQuery("Xatolik yuz berdi").catch(() => {});
@@ -477,13 +521,17 @@ function setupBotCommands(botInstance) {
         return ctx.reply("Sizda bekor qilish uchun to'lanmagan taklifnoma yo'q.");
       }
 
+      const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+
       userWizardStates.set(userId, {
         step: 'waiting_cancel_indices'
       });
 
-      let prompt = `🗑️ <b>Qaysi taklifnomalarni bekor qilmoqchisiz?</b>\n\n`;
+      let prompt = `🧾 <b>Sizda ${unpaidList.length} ta to'lanmagan taklifnoma mavjud!</b>\n` +
+        `💰 <b>Umumiy summa: ${totalSum.toLocaleString('uz-UZ')} so'm</b>\n\n` +
+        `🗑️ <b>Qaysi taklifnomalarni bekor qilmoqchisiz?</b>\n\n`;
       unpaidList.forEach((t, idx) => {
-        prompt += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
+        prompt += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
       });
       prompt += `\nBekor qilmoqchi bo'lgan taklifnoma raqamini yozing:\n` +
         `• Bitta xat uchun: <code>2</code>\n` +
@@ -491,7 +539,7 @@ function setupBotCommands(botInstance) {
         `• Barchasini bekor qilish uchun: <code>hammasi</code> deb yozing.`;
 
       await ctx.replyWithHTML(prompt, Markup.inlineKeyboard([
-        [Markup.button.callback("❌ Bekor qilish", "cancel_index_input")]
+        [Markup.button.callback("❌ Chiqish", "cancel_index_input")]
       ]));
     } catch (e) {
       console.warn('[Cancel By Number Prompt Error]:', e.message);
@@ -500,7 +548,7 @@ function setupBotCommands(botInstance) {
 
   // Action: Exit number cancel mode
   botInstance.action('cancel_index_input', async (ctx) => {
-    await ctx.answerCbQuery("Bekor qilindi");
+    await ctx.answerCbQuery("Chiqildi");
     const userId = String(ctx.from.id);
     userWizardStates.delete(userId);
     const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
@@ -517,13 +565,24 @@ function setupBotCommands(botInstance) {
 
   // Action: Cancel creation wizard
   botInstance.action('cancel_wizard', async (ctx) => {
-    await ctx.answerCbQuery("Bekor qilindi");
+    await ctx.answerCbQuery("To'xtatildi").catch(() => {});
     const userId = String(ctx.from.id);
     userWizardStates.delete(userId);
-    await ctx.replyWithHTML(
-      `❌ Taklifnoma yaratish bekor qilindi.\n\nQaytadan boshlash uchun dizayn tanlang:`,
-      getDesignSelectionKeyboard()
-    );
+
+    const unpaidList = db.getUnpaidParticipantsByTelegramId(userId);
+    if (unpaidList && unpaidList.length > 0) {
+      const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+      await ctx.replyWithHTML(
+        `🛑 <b>Yangi taklifnoma yaratish to'xtatildi.</b>\n\n` +
+        `Sizda avvaldan yaratilgan to'lanmagan taklifnomalar mavjud:\n\n` + view.text,
+        view.keyboard
+      );
+    } else {
+      await ctx.replyWithHTML(
+        `❌ Taklifnoma yaratish to'xtatildi.\n\nYangi taklifnoma yaratish uchun dizayn tanlang:`,
+        getDesignSelectionKeyboard()
+      );
+    }
   });
 
   // Action: Skip wizard fields
@@ -537,7 +596,7 @@ function setupBotCommands(botInstance) {
       `3️⃣ <b>To'y sanasi va vaqtini</b> kiriting:\n<i>(Masalan: 2026-11-20 18:00)</i>`,
       Markup.inlineKeyboard([
         [Markup.button.callback("⏭️ Standart sanani qoldirish", "skip_date")],
-        [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+        [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
       ])
     );
   });
@@ -552,7 +611,7 @@ function setupBotCommands(botInstance) {
       `4️⃣ <b>To'yxona nomi va manzilini</b> kiriting:\n<i>(Masalan: "Yulduzlar Qasri", Toshkent shahri)</i>`,
       Markup.inlineKeyboard([
         [Markup.button.callback("⏭️ Standart manzilni qoldirish", "skip_venue")],
-        [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+        [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
       ])
     );
   });
@@ -566,7 +625,7 @@ function setupBotCommands(botInstance) {
     await ctx.replyWithHTML(
       `5️⃣ <b>Bog'lanish uchun telefon raqamingizni</b> kiriting:\n<i>(Masalan: +998901234567)</i>`,
       Markup.inlineKeyboard([
-        [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+        [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
       ])
     );
   });
@@ -957,17 +1016,20 @@ function setupBotCommands(botInstance) {
         );
       }
 
+      const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+
       userWizardStates.set(userId, { step: 'waiting_cancel_indices' });
 
-      let prompt = `🗑️ <b>Qaysi taklifnomalarni bekor qilmoqchisiz?</b>\n\n`;
+      let prompt = `🧾 <b>Sizda ${unpaidList.length} ta to'lanmagan taklifnoma mavjud!</b>\n` +
+        `💰 <b>Umumiy to'lov summasi: ${totalSum.toLocaleString('uz-UZ')} so'm</b>\n\n` +
+        `🗑️ <b>Qaysi taklifnomalarni bekor qilmoqchisiz?</b>\n\n`;
       unpaidList.forEach((t, idx) => {
         prompt += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
       });
-      prompt += `\nBekor qilmoqchi bo'lgan taklifnoma raqamini yozing:\n` +
-        `• Bitta xat uchun: <code>2</code>\n` +
-        `• Bir nechta xat uchun: <code>1, 3</code> yoki <code>2 4</code>\n` +
-        `• Barchasini bekor qilish uchun: <code>hammasi</code> deb yozing.\n\n` +
-        `<i>Yoki quyidagi tugmalardan birini bosing:</i>`;
+      prompt += `\nBekor qilish uchun:\n` +
+        `• <b>Pastdagi "❌ 1-sini bekor qilish" tugmasini bosing</b>\n` +
+        `• Yoki raqamini yozing (masalan: <code>2</code> yoki <code>1, 3</code>)\n` +
+        `• Hammasini o'chirish uchun: <code>hammasi</code> deb yozing:`;
 
       const cancelButtons = [];
       for (let i = 0; i < unpaidList.length; i += 2) {
@@ -1038,12 +1100,16 @@ function setupBotCommands(botInstance) {
           return ctx.replyWithHTML(view.text, view.keyboard);
         }
 
+        const oldSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+        const oldCount = unpaidList.length;
+
         if (cleanText === 'hammasi' || cleanText === 'barchasi' || cleanText === 'all') {
           db.deleteAllUnpaidParticipants(userId);
           userWizardStates.delete(userId);
-          await ctx.reply("✅ Barcha to'lanmagan taklifnomalaringiz muvaffaqiyatli bekor qilindi!");
-          const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
-          return ctx.replyWithHTML(view.text, view.keyboard);
+          const confirmMsg = `🗑️ <b>Barcha to'lanmagan taklifnomalaringiz (${oldCount} ta — ${oldSum.toLocaleString('uz-UZ')} so'm) bekor qilindi!</b>\n\n` +
+            `To'lov summasi: <b>0 so'm</b> bo'ldi.\n\n` +
+            `Yangi taklifnoma yaratish uchun dizayn tanlang:`;
+          return ctx.replyWithHTML(confirmMsg, getDesignSelectionKeyboard());
         }
 
         // Matndan barcha raqamlarni ajratib olish (masalan: "2" yoki "1, 3" yoki "2 4 5")
@@ -1051,7 +1117,7 @@ function setupBotCommands(botInstance) {
         if (!matches || matches.length === 0) {
           return ctx.replyWithHTML(
             `⚠️ Iltimos, bekor qilmoqchi bo'lgan taklifnoma raqamini yozing (masalan: <code>2</code> yoki <code>1, 3</code>):`,
-            Markup.inlineKeyboard([[Markup.button.callback("❌ Jarayonni bekor qilish", "cancel_index_input")]])
+            Markup.inlineKeyboard([[Markup.button.callback("❌ Chiqish", "cancel_index_input")]])
           );
         }
 
@@ -1059,7 +1125,7 @@ function setupBotCommands(botInstance) {
         if (numbers.length === 0) {
           return ctx.replyWithHTML(
             `⚠️ Noto'g'ri raqam kiritildi. Ro'yxatdagi 1 dan ${unpaidList.length} gacha bo'lgan raqamni kiriting:`,
-            Markup.inlineKeyboard([[Markup.button.callback("❌ Jarayonni bekor qilish", "cancel_index_input")]])
+            Markup.inlineKeyboard([[Markup.button.callback("❌ Chiqish", "cancel_index_input")]])
           );
         }
 
@@ -1072,11 +1138,27 @@ function setupBotCommands(botInstance) {
 
         userWizardStates.delete(userId);
 
+        const afterList = db.getUnpaidParticipantsByTelegramId(userId);
+        const newCount = afterList.length;
+        const newSum = afterList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+
         const deletedListText = ticketsToDelete.map((t, i) => `${i + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>)`).join('\n');
-        await ctx.replyWithHTML(`✅ <b>${ticketsToDelete.length} ta</b> taklifnoma muvaffaqiyatli bekor qilindi:\n\n${deletedListText}`);
+        
+        let confirmMsg = `✅ <b>${ticketsToDelete.length} ta taklifnoma bekor qilindi:</b>\n\n${deletedListText}\n\n`;
+        if (newCount > 0) {
+          confirmMsg += `📊 <b>Hisob-kitob yangilandi:</b>\n` +
+            `• Oldin: <b>${oldCount} ta</b> taklifnoma (${oldSum.toLocaleString('uz-UZ')} so'm)\n` +
+            `• <b>Hozir: ${newCount} ta taklifnoma qoldi (${newSum.toLocaleString('uz-UZ')} so'm bo'ldi)</b>\n\n` +
+            `💰 <b>To'lov uchun yangi summa: ${newSum.toLocaleString('uz-UZ')} so'm</b>\n` +
+            `💳 Karta: <code>5614 6814 2617 2270</code> (Uzcard)\n` +
+            `👤 Karta egasi: <b>Nosirov Nuriddin</b>`;
+        } else {
+          confirmMsg += `✨ <b>Barcha to'lanmagan taklifnomalaringiz bekor qilindi!</b>\n` +
+            `To'lov summasi: <b>0 so'm</b> bo'ldi.`;
+        }
 
         const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
-        return ctx.replyWithHTML(view.text, view.keyboard);
+        return ctx.replyWithHTML(confirmMsg, newCount > 0 ? view.keyboard : getDesignSelectionKeyboard());
       }
 
       const s = getSettings();
@@ -1092,7 +1174,7 @@ function setupBotCommands(botInstance) {
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
           [Markup.button.callback(`⏭️ Standart qoldirish (${s.groom_name} va ${s.bride_name})`, "skip_couple")],
-          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+          [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
         ]));
       }
 
@@ -1106,7 +1188,7 @@ function setupBotCommands(botInstance) {
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
           [Markup.button.callback("⏭️ Standart sanani qoldirish", "skip_date")],
-          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+          [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
         ]));
       }
 
@@ -1120,7 +1202,7 @@ function setupBotCommands(botInstance) {
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
           [Markup.button.callback("⏭️ Standart manzilni qoldirish", "skip_venue")],
-          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+          [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
         ]));
       }
 
@@ -1133,7 +1215,7 @@ function setupBotCommands(botInstance) {
           `<i>(Masalan: +998901234567)</i>`;
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
-          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+          [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
         ]));
       }
 
@@ -1147,7 +1229,7 @@ function setupBotCommands(botInstance) {
           `<i>(Iltimos, kerakli taklifnomalar sonini kiriting, masalan: 1, 5, 10, 50):</i>`;
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
-          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+          [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
         ]));
       }
 
