@@ -704,11 +704,47 @@
             <!-- Hidden Telegram ID field -->
             <input type="hidden" id="telegramIdInput" name="telegram_id" value="" />
 
+            <!-- SECTION 0: TAKLIFNOMA DIZAYN VARIANTINI TANLASH -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-navy-950/80 border border-gold-400/40 space-y-3">
+              <div class="flex items-center space-x-2 text-gold-400 border-b border-gold-400/20 pb-2">
+                <i class="fa-solid fa-palette text-xs"></i>
+                <span class="text-xs font-bold uppercase tracking-widest">1. Taklifnoma Dizaynini Tanlang</span>
+              </div>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <!-- Design 1: Visol Oqshomi -->
+                <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all border-gold-400 bg-gold-400/10" id="designVisolLabel">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center space-x-2">
+                      <input type="radio" name="design" value="visol" checked class="text-gold-400 focus:ring-0" id="designVisolRadio" />
+                      <span class="font-bold text-sm text-gold-300">✨ 1) Visol Oqshomi</span>
+                    </div>
+                    <span class="text-[10px] uppercase px-2 py-0.5 rounded bg-gold-400/20 text-gold-300 border border-gold-400/30">VIP Oltin</span>
+                  </div>
+                  <p class="text-xs text-slate-400">Hashamatli qirollik uslubidagi eksklyuziv oltin rangli dizayn.</p>
+                </label>
+
+                <!-- Design 2: E-Nikoh Oqshomi -->
+                <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all border-slate-700 bg-navy-900 hover:border-gold-400/50" id="designEnikohLabel">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center space-x-2">
+                      <input type="radio" name="design" value="enikoh" class="text-gold-400 focus:ring-0" id="designEnikohRadio" />
+                      <span class="font-bold text-sm text-slate-200">💍 2) E-Nikoh Oqshomi</span>
+                    </div>
+                    <a href="https://e-nikoh-oqshomi.netlify.app/" target="_blank" class="text-[11px] text-gold-400 underline hover:text-gold-300 flex items-center space-x-1" onclick="event.stopPropagation()">
+                      <span>Namuna</span> <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                    </a>
+                  </div>
+                  <p class="text-xs text-slate-400">Nafis va zamonaviy elektron to'y taklifnomasi dizayni.</p>
+                </label>
+              </div>
+            </div>
+
             <!-- SECTION 1: MAROSIM VA TADBIR TAFSILOTLARI -->
             <div class="p-4 sm:p-5 rounded-2xl bg-navy-950/70 border border-gold-400/30 space-y-4">
               <div class="flex items-center space-x-2 text-gold-400 border-b border-gold-400/20 pb-2">
                 <i class="fa-solid fa-gem text-xs"></i>
-                <span class="text-xs font-bold uppercase tracking-widest">1. Marosim va Tadbir Tafsilotlari</span>
+                <span class="text-xs font-bold uppercase tracking-widest">2. Marosim va Tadbir Tafsilotlari</span>
               </div>
 
               <!-- Input: Tadbir / Marosim Turi (To'y yoki Nahor oshi) -->
@@ -896,6 +932,34 @@
                   </select>
                   <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gold-400/70">
                     <i class="fa-solid fa-chevron-down text-xs"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Input: Taklifnomalar Soni & Narx (Donasi 2000 so'm) -->
+              <div class="p-4 rounded-xl bg-gold-400/10 border border-gold-400/30 space-y-2">
+                <div class="flex items-center justify-between">
+                  <label for="quantityInput" class="block text-xs uppercase tracking-wider text-gold-300 font-bold">
+                    Nechta taklifnoma yasaysiz? <span class="text-red-400">*</span>
+                  </label>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded bg-gold-400/20 text-gold-400">2 000 so'm / dona</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <div class="relative w-28">
+                    <input
+                      type="number"
+                      id="quantityInput"
+                      name="quantity"
+                      min="1"
+                      max="1000"
+                      value="1"
+                      required
+                      class="w-full px-3 py-2 bg-navy-900 border border-gold-400/40 rounded-xl text-slate-100 font-extrabold text-base text-center focus:outline-none focus:border-gold-400"
+                    />
+                  </div>
+                  <div class="flex-1 text-right">
+                    <span class="text-[10px] uppercase text-slate-400 block">Jami summa:</span>
+                    <span id="livePriceDisplay" class="text-base sm:text-lg font-black text-gold-400">2 000 so'm</span>
                   </div>
                 </div>
               </div>
@@ -1145,6 +1209,50 @@
         <span class="font-royal text-lg font-bold gold-gradient-text tracking-widest">VISOL OQSHOMI</span>
         <i class="fa-solid fa-ring text-gold-400"></i>
       </div>
+
+      <!-- Zakaz qilish uchun bo'lim -->
+      <div class="max-w-xl mx-auto my-6 p-5 sm:p-6 rounded-2xl bg-navy-900/90 border border-gold-400/30 text-center shadow-2xl">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-[11px] uppercase tracking-wider font-semibold mb-3">
+          <i class="fa-solid fa-crown text-gold-400 text-xs"></i>
+          <span>Taklifnoma Zakaz Qilish Uchun</span>
+          <i class="fa-solid fa-crown text-gold-400 text-xs"></i>
+        </div>
+        <p class="text-xs text-slate-300 mb-5 font-light leading-relaxed">
+          O'zingizning to'y va maxsus marosimlaringiz uchun zamonaviy elektron taklifnoma buyurtma bering:
+        </p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Telefon -->
+          <a href="tel:+998949125651" class="flex flex-col items-center justify-center p-3.5 rounded-xl bg-navy-950/80 border border-gold-400/25 hover:border-gold-400 hover:bg-gold-400/10 transition-all duration-300 group shadow-md hover:-translate-y-1">
+            <div class="w-10 h-10 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-400 flex items-center justify-center mb-2.5 group-hover:scale-110 group-hover:bg-gold-400 group-hover:text-navy-950 transition-all">
+              <i class="fa-solid fa-phone text-sm"></i>
+            </div>
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Telefon</span>
+            <span class="text-xs font-bold text-slate-200 group-hover:text-gold-300 transition-colors mt-0.5">+998(94)912-56-51</span>
+            <span class="text-[10px] text-emerald-400 mt-1">Qo'ng'iroq qilish</span>
+          </a>
+
+          <!-- Telegram -->
+          <a href="https://t.me/nuri1ddin" target="_blank" rel="noopener" class="flex flex-col items-center justify-center p-3.5 rounded-xl bg-navy-950/80 border border-[#24A1DE]/30 hover:border-[#24A1DE] hover:bg-[#24A1DE]/10 transition-all duration-300 group shadow-md hover:-translate-y-1">
+            <div class="w-10 h-10 rounded-full bg-[#24A1DE]/10 border border-[#24A1DE]/30 text-[#24A1DE] flex items-center justify-center mb-2.5 group-hover:scale-110 group-hover:bg-[#24A1DE] group-hover:text-white transition-all">
+              <i class="fa-brands fa-telegram text-base"></i>
+            </div>
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Telegram</span>
+            <span class="text-xs font-bold text-slate-200 group-hover:text-[#68c6ff] transition-colors mt-0.5">@nuri1ddin</span>
+            <span class="text-[10px] text-sky-400 mt-1">Yozish</span>
+          </a>
+
+          <!-- Telegram Bot -->
+          <a href="https://t.me/VisoloqshomiBot" target="_blank" rel="noopener" class="flex flex-col items-center justify-center p-3.5 rounded-xl bg-navy-950/80 border border-gold-400/25 hover:border-gold-400 hover:bg-gold-400/10 transition-all duration-300 group shadow-md hover:-translate-y-1">
+            <div class="w-10 h-10 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-400 flex items-center justify-center mb-2.5 group-hover:scale-110 group-hover:bg-gold-400 group-hover:text-navy-950 transition-all">
+              <i class="fa-solid fa-robot text-sm"></i>
+            </div>
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Telegram Bot</span>
+            <span class="text-xs font-bold text-slate-200 group-hover:text-gold-300 transition-colors mt-0.5">@VisoloqshomiBot</span>
+            <span class="text-[10px] text-gold-400 mt-1">Bot orqali buyurtma</span>
+          </a>
+        </div>
+      </div>
       <p class="text-xs text-slate-400 max-w-md mx-auto">
         Tantanali nikoh kechasi va rasmiy taklifnoma tizimi. Barcha huquqlar himoyalangan © 2026.
       </p>
@@ -1310,6 +1418,59 @@
       });
     }
 
+    // 4.1 Design Selection Visual Highlight & URL Parameter Sync
+    const designVisolRadio = document.getElementById('designVisolRadio');
+    const designEnikohRadio = document.getElementById('designEnikohRadio');
+    const designVisolLabel = document.getElementById('designVisolLabel');
+    const designEnikohLabel = document.getElementById('designEnikohLabel');
+
+    function syncDesignVisuals() {
+      if (designEnikohRadio && designEnikohRadio.checked) {
+        if (designEnikohLabel) {
+          designEnikohLabel.classList.add('border-gold-400', 'bg-gold-400/10');
+          designEnikohLabel.classList.remove('border-slate-700', 'bg-navy-900');
+        }
+        if (designVisolLabel) {
+          designVisolLabel.classList.remove('border-gold-400', 'bg-gold-400/10');
+          designVisolLabel.classList.add('border-slate-700', 'bg-navy-900');
+        }
+      } else if (designVisolLabel) {
+        designVisolLabel.classList.add('border-gold-400', 'bg-gold-400/10');
+        designVisolLabel.classList.remove('border-slate-700', 'bg-navy-900');
+        if (designEnikohLabel) {
+          designEnikohLabel.classList.remove('border-gold-400', 'bg-gold-400/10');
+          designEnikohLabel.classList.add('border-slate-700', 'bg-navy-900');
+        }
+      }
+    }
+
+    if (designVisolRadio && designEnikohRadio) {
+      designVisolRadio.addEventListener('change', syncDesignVisuals);
+      designEnikohRadio.addEventListener('change', syncDesignVisuals);
+
+      // Check URL query parameter (e.g. ?design=enikoh)
+      const urlParams = new URLSearchParams(window.location.search);
+      const designParam = urlParams.get('design');
+      if (designParam && (designParam.toLowerCase() === 'enikoh' || designParam.toLowerCase() === 'e-nikoh')) {
+        designEnikohRadio.checked = true;
+        syncDesignVisuals();
+      }
+    }
+
+    // 4.2 Live Price Calculator (2 000 so'm per invitation)
+    const quantityInput = document.getElementById('quantityInput');
+    const livePriceDisplay = document.getElementById('livePriceDisplay');
+    function updateLivePrice() {
+      if (!quantityInput || !livePriceDisplay) return;
+      const count = Math.max(1, parseInt(quantityInput.value, 10) || 1);
+      const total = count * 2000;
+      livePriceDisplay.textContent = `${total.toLocaleString('uz-UZ')} so'm`;
+    }
+    if (quantityInput) {
+      quantityInput.addEventListener('input', updateLivePrice);
+      quantityInput.addEventListener('change', updateLivePrice);
+    }
+
     // 5. Check if user already registered
     async function checkExistingTicket(telegramId) {
       if (!telegramId) return;
@@ -1437,6 +1598,10 @@
       const comment = document.getElementById('commentInput').value.trim();
       const telegramId = document.getElementById('telegramIdInput').value.trim();
 
+      // Selected Design & Quantity
+      const designVal = document.querySelector('input[name="design"]:checked')?.value || 'visol';
+      const quantityVal = Math.max(1, parseInt(document.getElementById('quantityInput')?.value, 10) || 1);
+
       // Validation
       let hasError = false;
       if (!fullName || fullName.length < 3) {
@@ -1461,6 +1626,8 @@
 
       try {
         const payload = {
+          design: designVal,
+          quantity: quantityVal,
           event_type: eventTypeVal,
           couple_names: coupleNames,
           groom_bride: coupleNames,

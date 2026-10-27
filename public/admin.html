@@ -270,6 +270,7 @@
                 <th class="py-3.5 px-4">Chipta ID</th>
                 <th class="py-3.5 px-4">Mehmon Ismi</th>
                 <th class="py-3.5 px-4">Telefon</th>
+                <th class="py-3.5 px-4">Dizayn</th>
                 <th class="py-3.5 px-4">Soni</th>
                 <th class="py-3.5 px-4">Izoh / Tilak</th>
                 <th class="py-3.5 px-4 text-center">Amallar</th>
@@ -476,13 +477,21 @@
 
       tbody.innerHTML = list.map(g => {
         const cleanTicket = (g.unique_ticket_id || '').replace('#', '');
-        const inviteUrl = `/invite.html?ticket=${encodeURIComponent(cleanTicket)}`;
+        const isEnikoh = g.design === 'enikoh' || g.design === 'e-nikoh';
+        const inviteUrl = isEnikoh 
+          ? `https://e-nikoh-oqshomi.netlify.app/?ticket=${encodeURIComponent(cleanTicket)}&name=${encodeURIComponent(g.full_name || '')}`
+          : `/invite.html?ticket=${encodeURIComponent(cleanTicket)}`;
+        const designBadge = isEnikoh
+          ? `<span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-bold border border-blue-400/30">💍 E-Nikoh</span>`
+          : `<span class="px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-300 text-[10px] font-bold border border-gold-400/30">✨ Visol</span>`;
+
         return `
           <tr class="hover:bg-navy-800/60 transition-colors">
             <td class="py-3 px-4 font-mono font-bold text-gold-300 whitespace-nowrap">${escapeHtml(g.unique_ticket_id || '')}</td>
             <td class="py-3 px-4 font-semibold text-slate-100 whitespace-nowrap">${escapeHtml(g.full_name || '')}</td>
             <td class="py-3 px-4 text-slate-300 font-mono whitespace-nowrap">${escapeHtml(g.phone || '')}</td>
-            <td class="py-3 px-4 whitespace-nowrap"><span class="px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-300 text-[11px] font-bold">${g.guests_count || 1} kishi</span></td>
+            <td class="py-3 px-4 whitespace-nowrap">${designBadge}</td>
+            <td class="py-3 px-4 whitespace-nowrap"><span class="px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-300 text-[11px] font-bold">${g.quantity || g.guests_count || 1} ta</span></td>
             <td class="py-3 px-4 text-slate-400 max-w-xs truncate" title="${escapeHtml(g.comment || '')}">${escapeHtml(g.comment || '—')}</td>
             <td class="py-3 px-4 text-center whitespace-nowrap">
               <div class="inline-flex items-center gap-1.5">

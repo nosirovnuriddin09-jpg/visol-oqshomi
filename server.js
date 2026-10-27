@@ -24,6 +24,145 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JN6cT8qet4kdBzHnB
 // Active payment message tracking per user to allow deleting previous message when new orders arrive
 const userPaymentMessages = new Map();
 
+// Active interactive wizard states for creating invitations via bot
+// key: userId (string), value: { step: string, data: object }
+const userWizardStates = new Map();
+
+// Helper: Get readable display name of design
+function getDesignDisplayName(design) {
+  const d = String(design || 'visol').toLowerCase();
+  if (d === 'enikoh' || d === 'e-nikoh' || d === 'e_nikoh') {
+    return '💍 "E-Nikoh Oqshomi"';
+  }
+  return '✨ "Visol Oqshomi"';
+}
+
+// Helper: Generate proper invite URL based on chosen design
+function getInvitationUrl(ticket) {
+  if (!ticket) return WEBAPP_URL;
+  const cleanTicketId = (ticket.unique_ticket_id || ticket.ticket_id || '').replace('#', '');
+  const design = String(ticket.design || 'visol').toLowerCase();
+
+  if (design === 'enikoh' || design === 'e-nikoh' || design === 'e_nikoh') {
+    const params = new URLSearchParams({
+      ticket: cleanTicketId,
+      name: ticket.full_name || ticket.guest_name || '',
+      couple: ticket.couple_names || ticket.groom_bride || '',
+      date: ticket.event_date_time || ticket.event_date || '',
+      venue: ticket.venue_name || ticket.venue_address || ''
+    });
+    return `https://e-nikoh-oqshomi.netlify.app/?${params.toString()}`;
+  }
+
+  // Default: Visol Oqshomi design
+  return `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
+}
+
+// Helper: Build Design Selection Inline Keyboard
+function getDesignSelectionKeyboard() {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback("✨ 1) Visol Oqshomi", "design_select:visol"),
+      Markup.button.callback("💍 2) E-Nikoh Oqshomi", "design_select:enikoh")
+    ],
+    [
+      Markup.button.url("🌐 E-Nikoh Namunasini Ko'rish", "https://e-nikoh-oqshomi.netlify.app/")
+    ],
+    [
+      Markup.button.webApp("📱 Mini App orqali yaratish", `${WEBAPP_URL}/index.html`)
+    ]
+  ]);
+}
+
+// Helper: Main Persistent Bottom Reply Keyboard for quick user actions
+function getMainReplyKeyboard() {
+  return Markup.keyboard([
+    ["🎟️ Yangi taklifnoma yaratish", "❌ Bekor qilish (Atmen)"],
+    ["📋 Mening taklifnomalarim", "📞 Bog'lanish / Yordam"]
+  ]).resize();
+}
+
+// Helper: Build Unpaid Orders Payment View with Cancellation buttons
+function buildUnpaidOrderDetails(userId, firstName = 'Hurmatli mehmon') {
+  const unpaidList = db.getUnpaidParticipantsByTelegramId(userId);
+
+  if (!unpaidList || unpaidList.length === 0) {
+    return {
+      hasUnpaid: false,
+      text: `✨ <b>Barcha to'lanmagan taklifnomalaringiz bekor qilindi.</b>\n\nYangi taklifnoma yaratish uchun dizayn tanlang:`,
+      keyboard: getDesignSelectionKeyboard()
+    };
+  }
+
+  const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+  const formattedTotal = totalSum.toLocaleString('uz-UZ');
+
+  let text = '';
+  const inlineButtons = [];
+
+  if (unpaidList.length > 1) {
+    text = `🧾 <b>Sizda ${unpaidList.length} ta to'lanmagan taklifnoma mavjud!</b>\n\n`;
+    unpaidList.forEach((t, idx) => {
+      text += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
+    });
+    text += `\n💰 <b>To'lov uchun umumiy summa: ${formattedTotal} so'm</b>\n`;
+    text += `💳 Karta raqami: <code>5614 6814 2617 2270</code> (Uzcard)\n`;
+    text += `👤 Karta egasi: <b>Nosirov Nuriddin</b>\n\n`;
+    text += `Iltimos, umumiy pulni o'tkazib, <b>bitta umumiy chek rasmini</b> shu botga yuboring.\n\n`;
+    text += `<i>💡 Test yoki ortiqcha taklifnomalarni bekor qilish (atmen) uchun quyidagi tugmalardan birini bosing:</i>`;
+
+    // Har bir xat uchun "❌ 1-sini bekor qilish", "❌ 2-sini bekor qilish"... tugmalari (2 tadan)
+    for (let i = 0; i < unpaidList.length; i += 2) {
+      const row = [];
+      const t1 = unpaidList[i];
+      const cleanId1 = t1.unique_ticket_id.replace('#', '');
+      row.push(Markup.button.callback(`❌ ${i + 1}-sini bekor qilish`, `cancel_ticket:${cleanId1}`));
+
+      if (i + 1 < unpaidList.length) {
+        const t2 = unpaidList[i + 1];
+        const cleanId2 = t2.unique_ticket_id.replace('#', '');
+        row.push(Markup.button.callback(`❌ ${i + 2}-sini bekor qilish`, `cancel_ticket:${cleanId2}`));
+      }
+      inlineButtons.push(row);
+    }
+
+    // Bitta yoki bir nechta xatni raqami bilan va barchasini atmen qilish
+    inlineButtons.push([
+      Markup.button.callback("✍️ Raqam yozib bekor qilish", "cancel_by_number_prompt"),
+      Markup.button.callback("🗑️ Barchasini bekor qilish", "cancel_all_unpaid")
+    ]);
+
+  } else {
+    // 1 ta to'lanmagan taklifnoma
+    const singleTicket = unpaidList[0];
+    const cleanId = singleTicket.unique_ticket_id.replace('#', '');
+
+    text = `To'lov uchun summa: <b>${formattedTotal} so'm</b>\n` +
+      `Karta raqami: <code>5614 6814 2617 2270</code> (Uzcard)\n` +
+      `Karta egasi: <b>Nosirov Nuriddin</b>\n\n` +
+      `Iltimos, pulni o'tkazib, chek rasmini shu botga yuboring.`;
+
+    inlineButtons.push([
+      Markup.button.callback("❌ Ushbu taklifnomani bekor qilish", `cancel_ticket:${cleanId}`)
+    ]);
+  }
+
+  inlineButtons.push([
+    Markup.button.callback("🎨 Yangi Dizayn Tanlash", "create_new_invite"),
+    Markup.button.webApp("📱 Mini App orqali", `${WEBAPP_URL}/index.html`)
+  ]);
+
+  return {
+    hasUnpaid: true,
+    totalSum,
+    formattedTotal,
+    count: unpaidList.length,
+    text,
+    keyboard: Markup.inlineKeyboard(inlineButtons),
+    unpaidList
+  };
+}
+
 // Helper: Ask Gemini AI for wedding questions and wishes
 async function askGeminiAI(userMessage) {
   if (!GEMINI_API_KEY) return null;
@@ -157,100 +296,279 @@ async function updateChatMenuButton(chatId, text, url) {
 }
 
 function setupBotCommands(botInstance) {
+  // Helper to send design choices to user
+  const sendDesignSelection = async (ctx, customIntro) => {
+    const s = getSettings();
+    const intro = customIntro || 
+      `🎨 <b>Taklifnoma uchun dizayn variantini tanlang:</b>\n\n` +
+      `1️⃣ <b>"Visol Oqshomi"</b> — Hashamatli qirollik uslubidagi eksklyuziv to'y taklifnomasi.\n` +
+      `2️⃣ <b>"E-Nikoh Oqshomi"</b> — Zamonaviy va nafis elektron taklifnoma dizayni.\n` +
+      `🔗 Havolasi: https://e-nikoh-oqshomi.netlify.app/\n\n` +
+      `<i>O'zingizga ma'qul dizayn tugmasini bosing:</i>`;
+
+    await ctx.replyWithHTML(intro, getDesignSelectionKeyboard());
+  };
+
   // Bot /start command
   botInstance.start(async (ctx) => {
     const user = ctx.from;
+    const userId = String(user?.id);
     const firstName = user?.first_name || 'Hurmatli mehmon';
     const s = getSettings();
 
-    // Check if user already registered
-    const existing = db.getParticipantByTelegramId(user?.id);
+    // Set persistent bottom reply keyboard for easy access to "Atmen" and "Create"
+    await ctx.reply(`Assalomu alaykum, ${firstName}!`, getMainReplyKeyboard()).catch(() => {});
 
-    const eventType = existing?.event_type || s.event_type || "Nikoh toʻyi";
-    const coupleText = existing?.couple_names || `${s.groom_name} va ${s.bride_name}`;
-    const eventTitle = `${coupleText} — ${eventType}`;
-    const eventDate = existing?.event_date_time || `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`;
-    const eventVenue = (existing?.venue_name || existing?.venue_address)
-      ? [existing.venue_name, existing.venue_address].filter(Boolean).join(', ')
-      : `${s.venue_name}, ${s.venue_address}`;
-
-    let welcomeText = `✨ <b>Assalomu alaykum va xush kelibsiz, ${firstName}!</b> ✨\n\n`;
-    welcomeText += `Sizni muhtaram <b>"${eventTitle}"</b> tantanali marosimiga lutfan taklif etamiz.\n\n`;
-    welcomeText += `📅 <b>Sana:</b> ${eventDate} (${s.day_of_week})\n`;
-    welcomeText += `📍 <b>Manzil:</b> ${eventVenue}\n`;
-    welcomeText += `👨‍👩‍👧‍👦 <b>Taklif etuvchilar:</b> ${s.family_names}\n\n`;
+    // Check existing tickets for this user
+    const unpaidList = db.getUnpaidParticipantsByTelegramId(userId);
+    const pendingVerList = db.getPendingVerificationParticipantsByTelegramId(userId);
+    const paidList = db.getPaidParticipantsByTelegramId(userId);
 
     const regUrl = `${WEBAPP_URL}/index.html`;
 
-    const unpaidList = db.getUnpaidParticipantsByTelegramId(user?.id);
-    const pendingVerList = db.getPendingVerificationParticipantsByTelegramId(user?.id);
-    const paidList = db.getPaidParticipantsByTelegramId(user?.id);
-
+    // 1. Agar foydalanuvchida to'lanmagan buyurtma bo'lsa, to'lov ma'lumotlarini va atmen tugmalarini chiqaramiz
     if (unpaidList.length > 0) {
-      const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
-      if (unpaidList.length > 1) {
-        welcomeText += `🧾 <b>Sizda ${unpaidList.length} ta to'lanmagan taklifnoma mavjud:</b>\n`;
-        unpaidList.forEach((t, idx) => {
-          welcomeText += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
-        });
-        welcomeText += `\n💰 <b>To'lov uchun umumiy summa: ${totalSum.toLocaleString('uz-UZ')} so'm</b>\n`;
-      } else {
-        welcomeText += `To'lov uchun summa: <b>${totalSum.toLocaleString('uz-UZ')} so'm</b>\n`;
-      }
-      welcomeText += `Karta raqami: <code>5614 6814 2617 2270</code> (Uzcard)\n`;
-      welcomeText += `Karta egasi: <b>Nosirov Nuriddin</b>\n\n`;
-      welcomeText += `Iltimos, umumiy pulni o'tkazib, <b>bitta umumiy chek rasmini</b> shu botga yuboring.\n\n`;
+      const unpaidView = buildUnpaidOrderDetails(userId, firstName);
+      await ctx.replyWithHTML(unpaidView.text, unpaidView.keyboard);
     } else if (pendingVerList.length > 0) {
-      welcomeText += `⏳ <b>To'lov chekingiz adminga yuborilgan va tekshirilmoqda (${pendingVerList.length} ta taklifnoma).</b>\n`;
-      welcomeText += `Admin 1 soat ichida chekni tekshirib, taklifnomalaringiz havolasini yuboradi. Iltimos, kuting.\n\n`;
+      // 2. Chek adminga yuborilgan va tekshiruv jarayonida
+      let pendingText = `⏳ <b>Chekingiz qabul qilingan va tekshirilmoqda (${pendingVerList.length} ta taklifnoma).</b>\n\n` +
+        `Admin uni tekshirib, 1 soat ichida taklifnomangiz havolasini yuboradi. Iltimos, kuting.\n\n` +
+        `Yana boshqa taklifnoma yaratmoqchi bo'lsangiz, quyidagi tugmani bosing:`;
+
+      await ctx.replyWithHTML(pendingText, Markup.inlineKeyboard([
+        [Markup.button.callback("✨ Yangi Taklifnoma Yaratish", "create_new_invite")]
+      ]));
+
     } else if (paidList.length > 0) {
-      welcomeText += `🎉 <b>Sizning rasmiy taklifnomalaringiz:</b>\n\n`;
+      // 3. Tasdiqlangan taklifnomalar mavjud
+      let successListText = `🎉 <b>Assalomu alaykum, ${firstName}!</b>\n\n` +
+        `Sizning tasdiqlangan rasmiy taklifnomalaringiz:\n\n`;
+
+      const inviteButtons = [];
       paidList.forEach((p, idx) => {
-        const cId = p.unique_ticket_id.replace('#', '');
-        const invUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cId)}`;
-        welcomeText += `${idx + 1}. <b>${p.full_name}</b> (<code>${p.unique_ticket_id}</code>)\n🔗 <code>${invUrl}</code>\n\n`;
-      });
-    } else {
-      welcomeText += `Ushbu quvonchli kunimizda biz bilan birga bo'lishingiz uchun quyidagi tugma orqali ro'yxatdan o'ting va shaxsiy raqamli taklifnomangizni qabul qilib oling:`;
-    }
-
-    // Inline keyboard: "Ro'yxatdan O'tish" opens the Mini App registration form (index.html)
-    const buttons = [
-      [
-        Markup.button.webApp("🎟️ Ro'yxatdan O'tish", regUrl)
-      ]
-    ];
-
-    if (paidList.length > 0) {
-      paidList.slice(0, 3).forEach((p, idx) => {
-        const cId = p.unique_ticket_id.replace('#', '');
-        const invUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cId)}`;
-        buttons.push([
-          Markup.button.webApp(`💌 ${p.full_name.slice(0, 16)} taklifnomasi`, invUrl),
-          Markup.button.url("🌐 Brauzerda", invUrl)
+        const invUrl = getInvitationUrl(p);
+        const dName = getDesignDisplayName(p.design);
+        successListText += `${idx + 1}. <b>${p.full_name}</b> (${dName})\n🔗 <code>${invUrl}</code>\n\n`;
+        inviteButtons.push([
+          Markup.button.url(`💌 ${p.full_name.slice(0, 15)} taklifnomasi`, invUrl),
+          Markup.button.url("🌐 Ochish", invUrl)
         ]);
       });
-      const firstPaid = paidList[0];
-      const cleanFirstId = firstPaid.unique_ticket_id.replace('#', '');
-      const firstUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanFirstId)}`;
-      buttons.push([
-        Markup.button.url("✈️ Mehmonga Ulashish", `https://t.me/share/url?url=${encodeURIComponent(firstUrl)}&text=${encodeURIComponent(`Assalomu alaykum! Sizni to'yimizga taklif etamiz. Shaxsiy taklifnomangiz:`)}`)
+
+      inviteButtons.push([
+        Markup.button.callback("✨ Yangi Taklifnoma Yaratish", "create_new_invite"),
+        Markup.button.webApp("📱 Mini App", regUrl)
       ]);
+
+      await ctx.replyWithHTML(successListText, Markup.inlineKeyboard(inviteButtons));
+
+    } else {
+      // 4. Yangi foydalanuvchi — Dizayn tanlash bosqichini taqdim etish
+      const welcomeText = 
+        `✨ <b>Assalomu alaykum va xush kelibsiz, ${firstName}!</b> ✨\n\n` +
+        `To'y va tantanalaringiz uchun eng chiroyli raqamli elektron taklifnomalarni tayyorlab beramiz.\n\n` +
+        `🎨 <b>1. Dizayn tanlash bosqichi:</b>\n` +
+        `O'zingizga yoqqan dizayn variantini tanlang:\n\n` +
+        `1️⃣ <b>"Visol Oqshomi"</b> — Hashamatli qirollik uslubidagi oltin rangli dizayn\n` +
+        `2️⃣ <b>"E-Nikoh Oqshomi"</b> — Nafis va zamonaviy to'y taklifnomasi dizayni\n` +
+        `🔗 <i>E-Nikoh namunasi: https://e-nikoh-oqshomi.netlify.app/</i>\n\n` +
+        `Kerakli dizayn tugmasini bosing:`;
+
+      await ctx.replyWithHTML(welcomeText, getDesignSelectionKeyboard());
     }
-
-    buttons.push([
-      Markup.button.callback("📜 Dastur va Tafsilotlar", "view_details"),
-      Markup.button.callback("📍 Manzil va Xarita", "view_location")
-    ]);
-
-    const keyboard = Markup.inlineKeyboard(buttons);
 
     // Auto update user's Chat Menu Button to latest active WebApp URL
     if (user?.id) {
       updateChatMenuButton(user.id, "Taklif noma", regUrl);
     }
+  });
 
-    await ctx.replyWithHTML(welcomeText, keyboard);
+  // Commands to start creating invitation
+  botInstance.command(['create', 'new', 'taklifnoma', 'dizayn'], async (ctx) => {
+    userWizardStates.delete(String(ctx.from.id));
+    await sendDesignSelection(ctx);
+  });
+
+  // Action: Create new invite button clicked
+  botInstance.action('create_new_invite', async (ctx) => {
+    await ctx.answerCbQuery();
+    userWizardStates.delete(String(ctx.from.id));
+    await sendDesignSelection(ctx);
+  });
+
+  // Action: Select design (Visol Oqshomi or E-Nikoh Oqshomi)
+  botInstance.action(/^design_select:(visol|enikoh)$/, async (ctx) => {
+    await ctx.answerCbQuery();
+    const design = ctx.match[1];
+    const userId = String(ctx.from.id);
+    const designDisplayName = getDesignDisplayName(design);
+    const s = getSettings();
+
+    // Initialize creation wizard for this user
+    userWizardStates.set(userId, {
+      step: 'waiting_fullname',
+      data: {
+        design,
+        event_type: s.event_type || 'Nikoh toʻyi',
+        couple_names: `${s.groom_name} va ${s.bride_name}`,
+        event_date_time: `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`,
+        venue_name: `${s.venue_name}, ${s.venue_address}`
+      }
+    });
+
+    const step1Prompt = 
+      `🎨 <b>Tanlangan dizayn:</b> <b>${designDisplayName}</b>\n\n` +
+      `Taklifnoma tayyorlash uchun kerakli ma'lumotlarni kiritamiz.\n\n` +
+      `1️⃣ <b>Ism va familiyangizni</b> (yoki taklifnomada ko'rinadigan mehmon/taklif etuvchi ismini) kiriting:\n` +
+      `<i>(Masalan: Akmal Razzoqov yoki Alisher va Ziyoda)</i>`;
+
+    await ctx.replyWithHTML(step1Prompt, Markup.inlineKeyboard([
+      [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+    ]));
+  });
+
+  // Action: Cancel specific unpaid ticket by ticket ID
+  botInstance.action(/^cancel_ticket:(.+)$/, async (ctx) => {
+    try {
+      const ticketId = ctx.match[1];
+      const userId = String(ctx.from.id);
+
+      db.deleteParticipantByTicketId(ticketId);
+      await ctx.answerCbQuery("Taklifnoma muvaffaqiyatli bekor qilindi ❌");
+
+      const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+      await ctx.editMessageText(view.text, {
+        parse_mode: 'HTML',
+        ...view.keyboard
+      });
+    } catch (err) {
+      console.warn('[Cancel Ticket Error]:', err.message);
+      ctx.answerCbQuery("Xatolik yuz berdi").catch(() => {});
+    }
+  });
+
+  // Action: Cancel all unpaid tickets at once
+  botInstance.action('cancel_all_unpaid', async (ctx) => {
+    try {
+      const userId = String(ctx.from.id);
+      db.deleteAllUnpaidParticipants(userId);
+      await ctx.answerCbQuery("Barcha taklifnomalar bekor qilindi 🗑️");
+
+      const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+      await ctx.editMessageText(view.text, {
+        parse_mode: 'HTML',
+        ...view.keyboard
+      });
+    } catch (err) {
+      console.warn('[Cancel All Unpaid Error]:', err.message);
+      ctx.answerCbQuery("Xatolik yuz berdi").catch(() => {});
+    }
+  });
+
+  // Action: Prompt user to type which item number(s) to cancel
+  botInstance.action('cancel_by_number_prompt', async (ctx) => {
+    try {
+      await ctx.answerCbQuery();
+      const userId = String(ctx.from.id);
+      const unpaidList = db.getUnpaidParticipantsByTelegramId(userId);
+
+      if (!unpaidList || unpaidList.length === 0) {
+        return ctx.reply("Sizda bekor qilish uchun to'lanmagan taklifnoma yo'q.");
+      }
+
+      userWizardStates.set(userId, {
+        step: 'waiting_cancel_indices'
+      });
+
+      let prompt = `🗑️ <b>Qaysi taklifnomalarni bekor qilmoqchisiz?</b>\n\n`;
+      unpaidList.forEach((t, idx) => {
+        prompt += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
+      });
+      prompt += `\nBekor qilmoqchi bo'lgan taklifnoma raqamini yozing:\n` +
+        `• Bitta xat uchun: <code>2</code>\n` +
+        `• Bir nechta xat uchun: <code>1, 3</code> yoki <code>2 4</code>\n` +
+        `• Barchasini bekor qilish uchun: <code>hammasi</code> deb yozing.`;
+
+      await ctx.replyWithHTML(prompt, Markup.inlineKeyboard([
+        [Markup.button.callback("❌ Bekor qilish", "cancel_index_input")]
+      ]));
+    } catch (e) {
+      console.warn('[Cancel By Number Prompt Error]:', e.message);
+    }
+  });
+
+  // Action: Exit number cancel mode
+  botInstance.action('cancel_index_input', async (ctx) => {
+    await ctx.answerCbQuery("Bekor qilindi");
+    const userId = String(ctx.from.id);
+    userWizardStates.delete(userId);
+    const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+    await ctx.replyWithHTML(view.text, view.keyboard);
+  });
+
+  // Commands to cancel/manage unpaid tickets
+  botInstance.command(['cancel', 'atmen', 'ochirish'], async (ctx) => {
+    const userId = String(ctx.from.id);
+    userWizardStates.delete(userId);
+    const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+    await ctx.replyWithHTML(view.text, view.keyboard);
+  });
+
+  // Action: Cancel creation wizard
+  botInstance.action('cancel_wizard', async (ctx) => {
+    await ctx.answerCbQuery("Bekor qilindi");
+    const userId = String(ctx.from.id);
+    userWizardStates.delete(userId);
+    await ctx.replyWithHTML(
+      `❌ Taklifnoma yaratish bekor qilindi.\n\nQaytadan boshlash uchun dizayn tanlang:`,
+      getDesignSelectionKeyboard()
+    );
+  });
+
+  // Action: Skip wizard fields
+  botInstance.action('skip_couple', async (ctx) => {
+    await ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    const state = userWizardStates.get(userId);
+    if (!state) return;
+    state.step = 'waiting_date';
+    await ctx.replyWithHTML(
+      `3️⃣ <b>To'y sanasi va vaqtini</b> kiriting:\n<i>(Masalan: 2026-11-20 18:00)</i>`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback("⏭️ Standart sanani qoldirish", "skip_date")],
+        [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+      ])
+    );
+  });
+
+  botInstance.action('skip_date', async (ctx) => {
+    await ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    const state = userWizardStates.get(userId);
+    if (!state) return;
+    state.step = 'waiting_venue';
+    await ctx.replyWithHTML(
+      `4️⃣ <b>To'yxona nomi va manzilini</b> kiriting:\n<i>(Masalan: "Yulduzlar Qasri", Toshkent shahri)</i>`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback("⏭️ Standart manzilni qoldirish", "skip_venue")],
+        [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+      ])
+    );
+  });
+
+  botInstance.action('skip_venue', async (ctx) => {
+    await ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    const state = userWizardStates.get(userId);
+    if (!state) return;
+    state.step = 'waiting_phone';
+    await ctx.replyWithHTML(
+      `5️⃣ <b>Bog'lanish uchun telefon raqamingizni</b> kiriting:\n<i>(Masalan: +998901234567)</i>`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+      ])
+    );
   });
 
   // Command: /admin - Open admin settings panel
@@ -290,10 +608,30 @@ function setupBotCommands(botInstance) {
       `• /start - Botni ishga tushirish va taklifnoma olish\n` +
       `• /myticket - O'zingizning shaxsiy chiptangizni olish\n` +
       `• /admin - To'y ma'lumotlarini o'zgartirish paneli\n` +
+      `• /contact - Taklifnoma buyurtma qilish va aloqa\n` +
       `• /id - Ushbu chat yoki guruhning ID raqamini ko'rish\n` +
       `• /help - Ushbu yordam xabari\n\n` +
-      `Savollar bo'yicha tadbir tashkilotchilariga murojaat qilishingiz mumkin.`;
+      `<b>📞 Taklifnoma buyurtma qilish uchun:</b>\n` +
+      `• Telefon: +998(94)912-56-51\n` +
+      `• Telegram: @nuri1ddin\n` +
+      `• Telegram Bot: @VisoloqshomiBot`;
     await ctx.replyWithHTML(helpText);
+  });
+
+  // Command: /contact, /zakaz, /boglanish
+  botInstance.command(['contact', 'zakaz', 'boglanish'], async (ctx) => {
+    const contactText = `✨ <b>Taklifnoma buyurtma qilish uchun bog'laning:</b>\n\n` +
+      `📞 <b>Telefon:</b> +998(94)912-56-51\n` +
+      `👤 <b>Telegram:</b> @nuri1ddin\n` +
+      `🤖 <b>Telegram Bot:</b> @VisoloqshomiBot\n\n` +
+      `<i>To'y va marosimlaringiz uchun eng chiroyli elektron taklifnomalarni tayyorlab beramiz!</i>`;
+    await ctx.replyWithHTML(contactText, {
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.url('👤 Telegram: @nuri1ddin', 'https://t.me/nuri1ddin')
+        ]
+      ])
+    });
   });
 
   // Command: /id or /chatid - Easily get group ID
@@ -369,7 +707,7 @@ function setupBotCommands(botInstance) {
     const username = user.username ? `@${user.username}` : "Mavjud emas";
     const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || "Mijoz";
 
-    // 2.1 Mijoz chek rasmini yuborganda, bot unga darhol javob beradi:
+    // 2.1 Mijoz chek rasmini yuborganda, bot unga darhol quyidagi javobni beradi:
     await ctx.reply(
       "✅ Chekingiz qabul qilindi! Admin uni tekshirib, 1 soat ichida taklifnomangiz havolasini yuboradi. Iltimos, kuting."
     );
@@ -410,12 +748,17 @@ function setupBotCommands(botInstance) {
     const formattedTotalAmount = totalAmount.toLocaleString('uz-UZ');
     const cleanTicketId = `TG_${userId}`;
 
-    // 2.2 Chek rasmi va mijoz ma'lumotlarini admin guruhiga yuborish
+    // Tanlangan dizaynni aniqlash
+    const primaryDesign = pendingTickets[0]?.design || 'visol';
+    const designDisplayName = getDesignDisplayName(primaryDesign);
+    const primaryPhone = pendingTickets[0]?.phone || "Noma'lum";
+
+    // 2.2 Chek rasmi, mijoz ma'lumotlari va u tanlagan dizaynni maxsus admin guruhiga yuborish
     const adminChatId = ADMIN_CHAT_ID || process.env.ADMIN_CHAT_ID;
     if (adminChatId) {
       let ticketsListText = '';
       if (pendingTickets.length > 1) {
-        ticketsListText = pendingTickets.map((t, idx) => `  ${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm`).join('\n');
+        ticketsListText = pendingTickets.map((t, idx) => `  ${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm`).join('\n');
       } else if (pendingTickets.length === 1) {
         ticketsListText = `<code>${pendingTickets[0].unique_ticket_id}</code> (${pendingTickets[0].full_name})`;
       } else {
@@ -426,6 +769,8 @@ function setupBotCommands(botInstance) {
         `👤 <b>Mijoz:</b> ${fullName}\n` +
         `📱 <b>Telegram ID:</b> <code>${userId}</code>\n` +
         `🌐 <b>Username:</b> ${username}\n` +
+        `📞 <b>Telefon:</b> ${primaryPhone}\n` +
+        `🎨 <b>Tanlangan dizayn:</b> <b>${designDisplayName}</b>\n` +
         `💌 <b>Taklifnomalar soni:</b> ${totalTicketsCount} ta\n` +
         `💰 <b>Umumiy to‘lov summasi:</b> <b>${formattedTotalAmount} so'm</b>\n` +
         `🎫 <b>Chiptalar:</b>\n${ticketsListText}\n` +
@@ -507,28 +852,28 @@ function setupBotCommands(botInstance) {
         console.warn('[Edit Admin Caption]:', e.message);
       }
 
-      // Mijozning shaxsiy chatiga taklifnoma havolasini yuborish
+      // Mijozning shaxsiy chatiga uning tanlagan dizayniga mos ravishda tayyor taklifnoma havolasini yuborish
       if (targetTgId) {
         if (ticketsToApprove.length === 1) {
           const ticket = ticketsToApprove[0];
-          const cleanTicketId = ticket.unique_ticket_id.replace('#', '');
-          const inviteUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
+          const inviteUrl = getInvitationUrl(ticket);
+          const designDisplayName = getDesignDisplayName(ticket.design);
 
           const clientSuccessMsg = 
             `🎉 <b>Xushxabar! To'lovingiz tasdiqlandi!</b>\n\n` +
             `Hurmatli <b>${ticket.full_name}</b>!\n` +
-            `Sizning buyurtmangiz muvaffaqiyatli tasdiqlandi va tayyor taklifnomangiz havolasi ochildi.\n\n` +
+            `Siz tanlagan <b>${designDisplayName}</b> dizaynidagi taklifnomangiz muvaffaqiyatli tasdiqlandi va tayyor bo'ldi.\n\n` +
             `🔗 <b>Sizning shaxsiy taklifnoma havolangiz:</b>\n` +
             `<code>${inviteUrl}</code>\n\n` +
-            `Quyidagi tugma orqali taklifnomangizni ochishingiz va mehmonlaringizga yuborishingiz mumkin:`;
+            `Quyidagi tugmalar orqali taklifnomangizni ochishingiz va mehmonlaringizga yuborishingiz mumkin:`;
 
           const clientKeyboard = Markup.inlineKeyboard([
             [
-              Markup.button.webApp("💌 Taklifnomani Ochish", inviteUrl),
+              Markup.button.url("💌 Taklifnomani Ochish", inviteUrl),
               Markup.button.url("🌐 Brauzerda Ko'rish", inviteUrl)
             ],
             [
-              Markup.button.url("✈️ Mehmonga Ulashish", `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(`Assalomu alaykum! Sizni to'yimizga taklif etamiz. Shaxsiy taklifnomangiz:`)}`)
+              Markup.button.url("✈️ Mehmonga Ulashish", `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(`Assalomu alaykum! Sizni to'yimizga taklif etamiz. Shaxsiy taklifnomangiz: `)}`)
             ]
           ]);
 
@@ -550,18 +895,19 @@ function setupBotCommands(botInstance) {
           const inlineButtons = [];
 
           ticketsToApprove.forEach((t, idx) => {
-            const cleanTicketId = t.unique_ticket_id.replace('#', '');
-            const inviteUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
-            multiSuccessMsg += `${idx + 1}️⃣ <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>):\n🔗 <code>${inviteUrl}</code>\n\n`;
+            const inviteUrl = getInvitationUrl(t);
+            const designDisplayName = getDesignDisplayName(t.design);
+            multiSuccessMsg += `${idx + 1}️⃣ <b>${t.full_name}</b> (${designDisplayName}):\n🔗 <code>${inviteUrl}</code>\n\n`;
 
             inlineButtons.push([
-              Markup.button.webApp(`💌 ${idx + 1}. Taklifnomani Ochish`, inviteUrl),
+              Markup.button.url(`💌 ${idx + 1}. Taklifnomani Ochish`, inviteUrl),
               Markup.button.url(`🌐 Brauzerda`, inviteUrl)
             ]);
           });
 
           inlineButtons.push([
-            Markup.button.webApp("🎟️ Ro'yxatdan O'tish / Yangi Taklifnoma", `${WEBAPP_URL}/index.html`)
+            Markup.button.callback("✨ Yangi Taklifnoma Yaratish", "create_new_invite"),
+            Markup.button.webApp("📱 Mini App", `${WEBAPP_URL}/index.html`)
           ]);
 
           await botInstance.telegram.sendMessage(targetTgId, multiSuccessMsg, {
@@ -569,7 +915,7 @@ function setupBotCommands(botInstance) {
             ...Markup.inlineKeyboard(inlineButtons)
           });
 
-          // Har bir tasdiqlangan chipta uchun alohida VIP QR kodli taklifnoma yuborish
+          // Har bir tasdiqlangan chipta uchun VIP QR kodli chiptani yuborish
           for (const t of ticketsToApprove) {
             await sendTicketToUser(targetTgId, t);
           }
@@ -582,11 +928,312 @@ function setupBotCommands(botInstance) {
     }
   });
 
-  // Intelligent Gemini AI Conversation Handler
+  // Text message handler: handles wizard steps or AI assistant
   botInstance.on('text', async (ctx) => {
-    const text = ctx.message?.text;
+    const text = ctx.message?.text?.trim();
     if (!text || text.startsWith('/')) return; // ignore slash commands
 
+    const userId = String(ctx.from.id);
+    const state = userWizardStates.get(userId);
+    const lowerText = text.toLowerCase();
+
+    // 1. Agar foydalanuvchi "atmen", "atemn", "bekor", "ochir", "o'chir" deb yozsa:
+    const isCancelRequest = lowerText.includes('atmen') || 
+                            lowerText.includes('atemn') || 
+                            lowerText.includes('otmen') || 
+                            lowerText.includes('bekor') || 
+                            lowerText.includes('ochir') || 
+                            lowerText.includes("o'chir") || 
+                            lowerText.includes('cancel');
+
+    if (isCancelRequest) {
+      userWizardStates.delete(userId);
+      const unpaidList = db.getUnpaidParticipantsByTelegramId(userId);
+
+      if (!unpaidList || unpaidList.length === 0) {
+        return ctx.replyWithHTML(
+          `✨ Sizda bekor qilish uchun to'lanmagan taklifnoma yo'q.\n\nYangi taklifnoma yaratish uchun quyidagi tugmani bosing:`,
+          getDesignSelectionKeyboard()
+        );
+      }
+
+      userWizardStates.set(userId, { step: 'waiting_cancel_indices' });
+
+      let prompt = `🗑️ <b>Qaysi taklifnomalarni bekor qilmoqchisiz?</b>\n\n`;
+      unpaidList.forEach((t, idx) => {
+        prompt += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
+      });
+      prompt += `\nBekor qilmoqchi bo'lgan taklifnoma raqamini yozing:\n` +
+        `• Bitta xat uchun: <code>2</code>\n` +
+        `• Bir nechta xat uchun: <code>1, 3</code> yoki <code>2 4</code>\n` +
+        `• Barchasini bekor qilish uchun: <code>hammasi</code> deb yozing.\n\n` +
+        `<i>Yoki quyidagi tugmalardan birini bosing:</i>`;
+
+      const cancelButtons = [];
+      for (let i = 0; i < unpaidList.length; i += 2) {
+        const row = [];
+        row.push(Markup.button.callback(`❌ ${i + 1}-sini bekor qilish`, `cancel_ticket:${unpaidList[i].unique_ticket_id.replace('#', '')}`));
+        if (i + 1 < unpaidList.length) {
+          row.push(Markup.button.callback(`❌ ${i + 2}-sini bekor qilish`, `cancel_ticket:${unpaidList[i + 1].unique_ticket_id.replace('#', '')}`));
+        }
+        cancelButtons.push(row);
+      }
+      cancelButtons.push([
+        Markup.button.callback("🗑️ Barchasini bekor qilish", "cancel_all_unpaid"),
+        Markup.button.callback("❌ Chiqish", "cancel_index_input")
+      ]);
+
+      return ctx.replyWithHTML(prompt, Markup.inlineKeyboard(cancelButtons));
+    }
+
+    // 2. Pastki doimiy menyu tugmalari
+    if (lowerText.includes('taklifnoma yaratish') || lowerText.includes('yangi taklifnoma')) {
+      userWizardStates.delete(userId);
+      return sendDesignSelection(ctx);
+    }
+
+    if (lowerText.includes('mening taklifnomalarim') || lowerText.includes('chiptalarim')) {
+      const paidList = db.getPaidParticipantsByTelegramId(userId);
+      const unpaidList = db.getUnpaidParticipantsByTelegramId(userId);
+      if (paidList.length === 0 && unpaidList.length === 0) {
+        return ctx.replyWithHTML("Sizda hali taklifnomalar yo'q. Yangi taklifnoma yaratish uchun dizayn tanlang:", getDesignSelectionKeyboard());
+      }
+      let myText = `📋 <b>Sizning taklifnomalaringiz:</b>\n\n`;
+      if (unpaidList.length > 0) {
+        myText += `⏳ <b>To'lanmagan (${unpaidList.length} ta):</b>\n`;
+        unpaidList.forEach((t, i) => myText += `${i + 1}. ${t.full_name} (${t.unique_ticket_id})\n`);
+        myText += `\n`;
+      }
+      if (paidList.length > 0) {
+        myText += `✅ <b>Tasdiqlangan (${paidList.length} ta):</b>\n`;
+        paidList.forEach((t, i) => myText += `${i + 1}. ${t.full_name} (${t.unique_ticket_id})\n🔗 ${getInvitationUrl(t)}\n\n`);
+      }
+      return ctx.replyWithHTML(myText, Markup.inlineKeyboard([
+        [Markup.button.callback("❌ To'lanmaganlarni bekor qilish", "cancel_by_number_prompt")],
+        [Markup.button.callback("✨ Yangi Taklifnoma", "create_new_invite")]
+      ]));
+    }
+
+    if (lowerText.includes("bog'lanish") || lowerText.includes("boglanish") || lowerText.includes("yordam")) {
+      return ctx.replyWithHTML(
+        `📞 <b>Aloqa va Yordam:</b>\n\n` +
+        `• Telefon: +998(94)912-56-51\n` +
+        `• Telegram: @nuri1ddin\n` +
+        `• Bot: @VisoloqshomiBot\n\n` +
+        `<i>Taklifnoma buyurtma qilish va savollaringiz bo'yicha bog'lanishingiz mumkin.</i>`,
+        Markup.inlineKeyboard([[Markup.button.url("👤 Telegram: @nuri1ddin", "https://t.me/nuri1ddin")]])
+      );
+    }
+
+    // Agar foydalanuvchi taklifnoma yaratish yoki bekor qilish bosqichida bo'lsa
+    if (state) {
+      // 0. Qaysi taklifnomalarni bekor qilish so'ralgan holat
+      if (state.step === 'waiting_cancel_indices') {
+        const cleanText = text.toLowerCase().trim();
+        const unpaidList = db.getUnpaidParticipantsByTelegramId(userId);
+
+        if (!unpaidList || unpaidList.length === 0) {
+          userWizardStates.delete(userId);
+          const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+          return ctx.replyWithHTML(view.text, view.keyboard);
+        }
+
+        if (cleanText === 'hammasi' || cleanText === 'barchasi' || cleanText === 'all') {
+          db.deleteAllUnpaidParticipants(userId);
+          userWizardStates.delete(userId);
+          await ctx.reply("✅ Barcha to'lanmagan taklifnomalaringiz muvaffaqiyatli bekor qilindi!");
+          const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+          return ctx.replyWithHTML(view.text, view.keyboard);
+        }
+
+        // Matndan barcha raqamlarni ajratib olish (masalan: "2" yoki "1, 3" yoki "2 4 5")
+        const matches = text.match(/\d+/g);
+        if (!matches || matches.length === 0) {
+          return ctx.replyWithHTML(
+            `⚠️ Iltimos, bekor qilmoqchi bo'lgan taklifnoma raqamini yozing (masalan: <code>2</code> yoki <code>1, 3</code>):`,
+            Markup.inlineKeyboard([[Markup.button.callback("❌ Jarayonni bekor qilish", "cancel_index_input")]])
+          );
+        }
+
+        const numbers = matches.map(m => parseInt(m, 10)).filter(n => n >= 1 && n <= unpaidList.length);
+        if (numbers.length === 0) {
+          return ctx.replyWithHTML(
+            `⚠️ Noto'g'ri raqam kiritildi. Ro'yxatdagi 1 dan ${unpaidList.length} gacha bo'lgan raqamni kiriting:`,
+            Markup.inlineKeyboard([[Markup.button.callback("❌ Jarayonni bekor qilish", "cancel_index_input")]])
+          );
+        }
+
+        const uniqueIndices = [...new Set(numbers)];
+        const ticketsToDelete = uniqueIndices.map(idx => unpaidList[idx - 1]).filter(Boolean);
+
+        for (const t of ticketsToDelete) {
+          db.deleteParticipantByTicketId(t.unique_ticket_id);
+        }
+
+        userWizardStates.delete(userId);
+
+        const deletedListText = ticketsToDelete.map((t, i) => `${i + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>)`).join('\n');
+        await ctx.replyWithHTML(`✅ <b>${ticketsToDelete.length} ta</b> taklifnoma muvaffaqiyatli bekor qilindi:\n\n${deletedListText}`);
+
+        const view = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+        return ctx.replyWithHTML(view.text, view.keyboard);
+      }
+
+      const s = getSettings();
+
+      // Step 1: Ism-familiya kiritildi
+      if (state.step === 'waiting_fullname') {
+        state.data.full_name = text;
+        state.step = 'waiting_couple';
+
+        const promptText = `Rahmat, <b>${text}</b>!\n\n` +
+          `2️⃣ <b>Kelin va kuyov ismlarini</b> kiriting:\n` +
+          `<i>(Masalan: Farrux va Sevara)</i>`;
+
+        return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
+          [Markup.button.callback(`⏭️ Standart qoldirish (${s.groom_name} va ${s.bride_name})`, "skip_couple")],
+          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+        ]));
+      }
+
+      // Step 2: Kelin-kuyov kiritildi
+      if (state.step === 'waiting_couple') {
+        state.data.couple_names = text;
+        state.step = 'waiting_date';
+
+        const promptText = `3️⃣ <b>To'y sanasi va vaqtini</b> kiriting:\n` +
+          `<i>(Masalan: 2026-11-20 18:00)</i>`;
+
+        return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
+          [Markup.button.callback("⏭️ Standart sanani qoldirish", "skip_date")],
+          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+        ]));
+      }
+
+      // Step 3: Sana kiritildi
+      if (state.step === 'waiting_date') {
+        state.data.event_date_time = text;
+        state.step = 'waiting_venue';
+
+        const promptText = `4️⃣ <b>To'yxona nomi va manzilini</b> kiriting:\n` +
+          `<i>(Masalan: "Yulduzlar Qasri", Toshkent shahri)</i>`;
+
+        return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
+          [Markup.button.callback("⏭️ Standart manzilni qoldirish", "skip_venue")],
+          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+        ]));
+      }
+
+      // Step 4: To'yxona kiritildi
+      if (state.step === 'waiting_venue') {
+        state.data.venue_name = text;
+        state.step = 'waiting_phone';
+
+        const promptText = `5️⃣ <b>Bog'lanish uchun telefon raqamingizni</b> kiriting:\n` +
+          `<i>(Masalan: +998901234567)</i>`;
+
+        return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
+          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+        ]));
+      }
+
+      // Step 5: Telefon raqam kiritildi -> Nechta taklifnoma ekanini so'rash
+      if (state.step === 'waiting_phone') {
+        state.data.phone = text;
+        state.step = 'waiting_quantity';
+
+        const promptText = `6️⃣ <b>Nechta taklifnoma yasamoqchisiz?</b>\n\n` +
+          `💰 <b>Donasi 2 000 so'mdan hisoblanadi.</b>\n\n` +
+          `<i>(Iltimos, kerakli taklifnomalar sonini kiriting, masalan: 1, 5, 10, 50):</i>`;
+
+        return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
+          [Markup.button.callback("❌ Bekor qilish", "cancel_wizard")]
+        ]));
+      }
+
+      // Step 6: Taklifnomalar soni kiritildi -> Narxni hisoblash va to'lov rekvizitlarini yuborish
+      if (state.step === 'waiting_quantity') {
+        const qty = parseInt(text, 10);
+        if (isNaN(qty) || qty < 1) {
+          return ctx.replyWithHTML(
+            `⚠️ Iltimos, faqat musbat butun son kiriting (masalan: 1, 5, 10, 50):`
+          );
+        }
+
+        state.data.quantity = qty;
+        const pricePerUnit = 2000;
+        const totalAmount = qty * pricePerUnit;
+        const formattedAmount = totalAmount.toLocaleString('uz-UZ');
+
+        // Yangi unikal chipta yaratish
+        let uniqueTicketId = generateUniqueTicketId();
+        let attempts = 0;
+        while (db.getParticipantByTicketId(uniqueTicketId) && attempts < 10) {
+          uniqueTicketId = generateUniqueTicketId();
+          attempts++;
+        }
+
+        const ticketRecord = db.createParticipant({
+          telegram_id: userId,
+          full_name: state.data.full_name,
+          guest_name: state.data.full_name,
+          phone: state.data.phone,
+          guests_count: 1,
+          couple_names: state.data.couple_names || `${s.groom_name} va ${s.bride_name}`,
+          groom_bride: state.data.couple_names || `${s.groom_name} va ${s.bride_name}`,
+          venue_name: state.data.venue_name || s.venue_name,
+          venue_address: state.data.venue_name || s.venue_address,
+          event_date_time: state.data.event_date_time || `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`,
+          event_date: state.data.event_date_time || s.event_date,
+          event_type: state.data.event_type || 'Nikoh toʻyi',
+          design: state.data.design,
+          quantity: qty,
+          total_price: totalAmount,
+          payment_status: 'pending_payment',
+          unique_ticket_id: uniqueTicketId,
+          username: ctx.from.username || null
+        });
+
+        // Jarayon yakunlandi, stateni o'chiramiz
+        userWizardStates.delete(userId);
+
+        console.log(`[Bot Wizard] Created order: ${ticketRecord.full_name} (${ticketRecord.unique_ticket_id}), Design: ${ticketRecord.design}, Qty: ${qty}, Sum: ${totalAmount}`);
+
+        // Oldingi to'lov xabari bo'lsa o'chirish
+        const prevMsgId = userPaymentMessages.get(userId) || db.getLastPaymentMsgId(userId);
+        if (prevMsgId) {
+          botInstance.telegram.deleteMessage(userId, prevMsgId).catch(() => {});
+        }
+
+        // TALAB 2: Narxni avtomatik hisoblash va to'lov xabarini yuborish (tagida atmen tugmalari bilan)
+        const unpaidView = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+        const sentMsg = await ctx.replyWithHTML(unpaidView.text, unpaidView.keyboard);
+        if (sentMsg && sentMsg.message_id) {
+          userPaymentMessages.set(userId, sentMsg.message_id);
+          db.setPaymentMsgId(userId, sentMsg.message_id);
+        }
+
+        // Admin guruhiga bildirishnoma
+        const adminChatId = ADMIN_CHAT_ID || process.env.ADMIN_CHAT_ID;
+        if (adminChatId) {
+          const adminOrderNotice = `🔔 <b>YANGI BUYURTMA QABUL QILINDI!</b>\n\n` +
+            `👤 <b>Mijoz:</b> ${ticketRecord.full_name}\n` +
+            `📞 <b>Telefon:</b> ${ticketRecord.phone}\n` +
+            `🎨 <b>Dizayn:</b> <b>${getDesignDisplayName(ticketRecord.design)}</b>\n` +
+            `💌 <b>Taklifnomalar soni:</b> ${qty} ta\n` +
+            `💰 <b>Summa:</b> ${formattedAmount} so'm\n` +
+            `🎫 <b>Chipta ID:</b> <code>${ticketRecord.unique_ticket_id}</code>\n` +
+            `📱 <b>Telegram ID:</b> <code>${userId}</code>\n` +
+            `⏳ <i>Mijoz to'lov chekini yuborishi kutilmoqda...</i>`;
+
+          botInstance.telegram.sendMessage(adminChatId, adminOrderNotice, { parse_mode: 'HTML' }).catch(() => {});
+        }
+
+        return;
+      }
+    }
+
+    // Wizard holatida bo'lmasa — Gemini AI savollarga javob beradi
     try {
       await ctx.sendChatAction('typing');
       const aiReply = await askGeminiAI(text);
@@ -618,10 +1265,11 @@ async function sendTicketToUser(telegramId, ticket) {
       : `${s.venue_name}, ${s.venue_address}`;
 
     const cleanTicketId = ticket.unique_ticket_id.replace('#', '');
-    const inviteUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
+    const inviteUrl = getInvitationUrl(ticket);
+    const designDisplayName = getDesignDisplayName(ticket.design);
 
     // Generate QR Code Buffer
-    const verificationUrl = `${WEBAPP_URL}/api/ticket/${encodeURIComponent(cleanTicketId)}`;
+    const verificationUrl = inviteUrl;
     const qrBuffer = await QRCode.toBuffer(verificationUrl, {
       errorCorrectionLevel: 'H',
       type: 'png',
@@ -692,7 +1340,7 @@ app.post('/api/register', async (req, res) => {
     const { 
       full_name, guest_name, phone, guests_count, comment, telegram_id,
       couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date,
-      event_type
+      event_type, design, quantity
     } = req.body;
 
     const guestFullName = String(full_name || guest_name || '').trim();
@@ -710,11 +1358,10 @@ app.post('/api/register', async (req, res) => {
     const cleanVenueAddress = (venue_address || '').trim() || null;
     const cleanEventDateTime = (event_date_time || event_date || '').trim() || null;
     const cleanEventType = (event_type || '').trim() || "Nikoh toʻyi";
+    const cleanDesign = design ? String(design).toLowerCase().trim() : 'visol';
+    const cleanQuantity = Math.max(1, parseInt(quantity, 10) || 1);
 
     // Requirement 1: Unique Entry Creation
-    // Ensure that every time a user submits the form with new details,
-    // a brand new record is saved in SQLite database with a unique ticket ID.
-    // Never reuse old records for new submissions.
     let uniqueTicketId = generateUniqueTicketId();
     let attempts = 0;
     while (db.getParticipantByTicketId(uniqueTicketId) && attempts < 10) {
@@ -722,9 +1369,9 @@ app.post('/api/register', async (req, res) => {
       attempts++;
     }
 
-    // Narx: har bitta taklifnoma mehmonlar sonidan (1 kishi, juftlik yoki oila) qat'i nazar 2 000 so'm
+    // Narx: har bitta taklifnoma donasi 2 000 so'mdan hisoblanadi
     const pricePerInvite = 2000;
-    const totalAmount = pricePerInvite;
+    const totalAmount = cleanQuantity * pricePerInvite;
     const formattedAmount = totalAmount.toLocaleString('uz-UZ');
 
     const ticketRecord = db.createParticipant({
@@ -743,11 +1390,13 @@ app.post('/api/register', async (req, res) => {
       event_date_time: cleanEventDateTime,
       event_date: cleanEventDateTime,
       event_type: cleanEventType,
+      design: cleanDesign,
+      quantity: cleanQuantity,
       payment_status: 'pending_payment',
       total_price: totalAmount
     });
 
-    console.log(`[Registration] New order created: ${ticketRecord.full_name} (${ticketRecord.unique_ticket_id}), Total: ${totalAmount} UZS`);
+    console.log(`[Registration] New order created: ${ticketRecord.full_name} (${ticketRecord.unique_ticket_id}), Design: ${cleanDesign}, Qty: ${cleanQuantity}, Total: ${totalAmount} UZS`);
 
     // Unpaid tickets for this user (including this newly registered one)
     const unpaidTickets = cleanTgId ? db.getUnpaidParticipantsByTelegramId(cleanTgId) : [ticketRecord];
@@ -765,25 +1414,12 @@ app.post('/api/register', async (req, res) => {
         });
       }
 
-      let paymentMsg = '';
-      if (totalUnpaidCount > 1) {
-        paymentMsg = 
-          `🧾 <b>Sizda ${totalUnpaidCount} ta to'lanmagan taklifnoma mavjud!</b>\n\n` +
-          unpaidTickets.map((t, idx) => `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm`).join('\n') +
-          `\n\n` +
-          `💰 <b>To'lov uchun umumiy summa: ${formattedTotalAmount} so'm</b>\n` +
-          `💳 Karta raqami: <code>5614 6814 2617 2270</code> (Uzcard)\n` +
-          `👤 Karta egasi: <b>Nosirov Nuriddin</b>\n\n` +
-          `Iltimos, umumiy pulni o'tkazib, <b>bitta umumiy chek rasmini</b> shu botga yuboring.`;
-      } else {
-        paymentMsg = 
-          `To'lov uchun summa: <b>${formattedTotalAmount} so'm</b>\n` +
-          `Karta raqami: <code>5614 6814 2617 2270</code> (Uzcard)\n` +
-          `Karta egasi: <b>Nosirov Nuriddin</b>\n\n` +
-          `Iltimos, pulni o'tkazib, chek rasmini shu botga yuboring.`;
-      }
+      const unpaidView = buildUnpaidOrderDetails(cleanTgId, guestFullName);
 
-      bot.telegram.sendMessage(cleanTgId, paymentMsg, { parse_mode: 'HTML' })
+      bot.telegram.sendMessage(cleanTgId, unpaidView.text, {
+        parse_mode: 'HTML',
+        ...unpaidView.keyboard
+      })
         .then((sentMsg) => {
           if (sentMsg && sentMsg.message_id) {
             userPaymentMessages.set(String(cleanTgId), sentMsg.message_id);
@@ -801,7 +1437,8 @@ app.post('/api/register', async (req, res) => {
       const adminOrderMsg = `🔔 <b>YANGI BUYURTMA KELIB TUSHDI!</b>\n\n` +
         `👤 <b>Mijoz:</b> ${ticketRecord.full_name}\n` +
         `📞 <b>Telefon:</b> ${ticketRecord.phone}\n` +
-        `💌 <b>Jami to'lanmagan taklifnomalar:</b> ${totalUnpaidCount} ta\n` +
+        `🎨 <b>Dizayn:</b> <b>${getDesignDisplayName(cleanDesign)}</b>\n` +
+        `💌 <b>Taklifnomalar soni:</b> ${cleanQuantity} ta\n` +
         `💰 <b>To'lov summasi:</b> ${formattedTotalAmount} so'm\n` +
         `🎫 <b>Oxirgi chipta ID:</b> <code>${ticketRecord.unique_ticket_id}</code>\n` +
         `📱 <b>Telegram ID:</b> <code>${cleanTgId || 'Nomaʼlum'}</code>\n` +
@@ -810,12 +1447,14 @@ app.post('/api/register', async (req, res) => {
       bot.telegram.sendMessage(adminChatId, adminOrderMsg, { parse_mode: 'HTML' }).catch(() => {});
     }
 
-    const cleanTicketId = (ticketRecord.unique_ticket_id || ticketRecord.ticket_id || '').replace('#', '');
-    const inviteUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
+    const inviteUrl = getInvitationUrl(ticketRecord);
 
     return res.status(200).json({
       success: true,
       payment_required: true,
+      design: cleanDesign,
+      design_name: getDesignDisplayName(cleanDesign),
+      quantity: cleanQuantity,
       price_per_unit: pricePerInvite,
       total_price: totalAmount,
       formatted_amount: formattedAmount,
@@ -857,7 +1496,7 @@ function handleGetInvitation(req, res) {
   }
 
   const cleanTicketId = (ticket.unique_ticket_id || ticket.ticket_id || '').replace('#', '');
-  const inviteUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
+  const inviteUrl = getInvitationUrl(ticket);
 
   const invitationData = {
     id: ticket.id,
@@ -872,6 +1511,9 @@ function handleGetInvitation(req, res) {
     event_date: ticket.event_date_time || ticket.event_date,
     event_date_time: ticket.event_date_time || ticket.event_date,
     event_type: ticket.event_type || "Nikoh toʻyi",
+    design: ticket.design || 'visol',
+    design_name: getDesignDisplayName(ticket.design),
+    quantity: ticket.quantity || 1,
     phone: ticket.phone,
     guests_count: ticket.guests_count,
     comment: ticket.comment,
@@ -1202,6 +1844,32 @@ app.get('*', (req, res) => {
 let server = null;
 
 async function startApp() {
+  // Start Express Server first
+  server = app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(`✨ VISOL OQSHOMI - TELEGRAM MINI APP SERVER IS LIVE!`);
+    console.log(`🌐 Local Web App:     http://localhost:${PORT}`);
+    if (WEBAPP_URL && WEBAPP_URL.startsWith('https://')) {
+      console.log(`🚀 Public HTTPS URL:  ${WEBAPP_URL}`);
+    }
+    console.log(`📦 Database:          SQLite (${db.driver})`);
+    console.log(`====================================================`);
+
+    // Self-ping every 10 minutes to prevent Render free-tier idle spin down
+    if (WEBAPP_URL && WEBAPP_URL.startsWith('https://')) {
+      const PING_INTERVAL = 10 * 60 * 1000; // 10 minutes
+      setInterval(async () => {
+        try {
+          const pingUrl = `${WEBAPP_URL}/ping`;
+          await fetch(pingUrl);
+          console.log(`[Keep-Alive] Pinged ${pingUrl} at ${new Date().toLocaleTimeString()}`);
+        } catch (err) {
+          console.warn('[Keep-Alive] Ping warning:', err.message);
+        }
+      }, PING_INTERVAL);
+    }
+  });
+
   // Initialize Telegram Bot
   if (BOT_TOKEN && BOT_TOKEN !== 'YOUR_TELEGRAM_BOT_TOKEN' && BOT_TOKEN !== 'your_telegram_bot_token_here') {
     try {
@@ -1224,39 +1892,12 @@ async function startApp() {
       await updateChatMenuButton(null, "Taklif noma", WEBAPP_URL);
       console.log(`[Telegram Bot] Chat Menu Button linked to: ${WEBAPP_URL}`);
     } catch (botErr) {
-      console.warn('[Telegram Bot] Failed to initialize bot with BOT_TOKEN:', botErr.message);
+      console.warn('[Telegram Bot] Notice initializing bot with BOT_TOKEN:', botErr.message);
       isBotActive = false;
     }
   } else {
     console.log('[Telegram Bot] Notice: BOT_TOKEN is not configured yet in .env');
   }
-
-  // Start Express Server
-  server = app.listen(PORT, () => {
-    console.log(`====================================================`);
-    console.log(`✨ VISOL OQSHOMI - TELEGRAM MINI APP SERVER IS LIVE!`);
-    console.log(`🌐 Local Web App:     http://localhost:${PORT}`);
-    if (WEBAPP_URL && WEBAPP_URL.startsWith('https://')) {
-      console.log(`🚀 Public HTTPS URL:  ${WEBAPP_URL}`);
-    }
-    console.log(`📦 Database:          SQLite (${db.driver})`);
-    console.log(`🤖 Telegram Bot:      ${isBotActive ? `@${bot?.botInfo?.username} (ACTIVE)` : 'Inactive'}`);
-    console.log(`====================================================`);
-
-    // Self-ping every 10 minutes to prevent Render free-tier idle spin down
-    if (WEBAPP_URL && WEBAPP_URL.startsWith('https://')) {
-      const PING_INTERVAL = 10 * 60 * 1000; // 10 minutes
-      setInterval(async () => {
-        try {
-          const pingUrl = `${WEBAPP_URL}/ping`;
-          await fetch(pingUrl);
-          console.log(`[Keep-Alive] Pinged ${pingUrl} at ${new Date().toLocaleTimeString()}`);
-        } catch (err) {
-          console.warn('[Keep-Alive] Ping warning:', err.message);
-        }
-      }, PING_INTERVAL);
-    }
-  });
 }
 
 // Graceful termination handling

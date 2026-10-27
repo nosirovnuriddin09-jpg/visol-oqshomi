@@ -389,7 +389,7 @@ h1.title{
 .map-btn svg{ width:15px; }
 
 /* ---------- FOOTER (SCREENSHOT 4) ---------- */
-#footer{ padding-bottom:120px; }
+#footer{ padding-bottom:150px; }
 .footer-lead{ font-size:1.25rem; font-style:italic; color:var(--ink-soft); }
 .footer-family{
   font-family:'Great Vibes', cursive;
@@ -403,6 +403,188 @@ h1.title{
 .credit{
   margin-top:34px; font-family:'Cinzel', serif; font-size:.56rem;
   letter-spacing:.3em; text-transform:uppercase; color:rgba(74,95,134,.55);
+}
+
+/* ---------- ORDER CONTACT BOX (ENG TAGIDA) ---------- */
+.order-box {
+  margin: 36px 14px 0;
+  padding: 24px 18px 22px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(207, 164, 82, 0.45);
+  border-radius: 22px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 12px 32px rgba(20, 45, 90, 0.08), inset 0 0 16px rgba(243, 224, 166, 0.25);
+  position: relative;
+  z-index: 5;
+  text-align: center;
+}
+
+.order-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-600);
+  background: rgba(243, 224, 166, 0.45);
+  border: 1px solid rgba(207, 164, 82, 0.55);
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.order-badge svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+.order-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--blue-900);
+  margin-bottom: 4px;
+}
+
+.order-subtitle {
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+  line-height: 1.35;
+}
+
+.order-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 14px;
+  text-decoration: none;
+  transition: all 0.25s var(--ease);
+  box-shadow: 0 4px 12px rgba(20, 45, 90, 0.05);
+  cursor: pointer;
+}
+
+.order-link-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(20, 45, 90, 0.12);
+}
+
+.order-link-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.order-link-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.order-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.order-icon-wrap svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+.order-text-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.order-link-title {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.order-link-sub {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 0.78rem;
+  font-style: italic;
+  opacity: 0.85;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.order-action-pill {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Button variants */
+.order-btn-phone {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(242, 247, 252, 0.95));
+  border: 1px solid rgba(74, 95, 134, 0.25);
+  color: var(--blue-900);
+}
+.order-btn-phone .order-icon-wrap {
+  background: rgba(38, 71, 124, 0.12);
+  color: var(--blue-700);
+}
+.order-btn-phone .order-action-pill {
+  background: rgba(38, 71, 124, 0.1);
+  color: var(--blue-800);
+}
+
+.order-btn-tg {
+  background: linear-gradient(135deg, rgba(36, 161, 222, 0.1), rgba(255, 255, 255, 0.95));
+  border: 1px solid rgba(36, 161, 222, 0.35);
+  color: #0b5783;
+}
+.order-btn-tg .order-icon-wrap {
+  background: #24a1de;
+  color: #fff;
+}
+.order-btn-tg .order-action-pill {
+  background: rgba(36, 161, 222, 0.15);
+  color: #0d6599;
+}
+
+.order-btn-bot {
+  background: linear-gradient(135deg, rgba(207, 164, 82, 0.14), rgba(255, 255, 255, 0.95));
+  border: 1px solid rgba(207, 164, 82, 0.45);
+  color: var(--gold-600);
+}
+.order-btn-bot .order-icon-wrap {
+  background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+  color: #fff;
+}
+.order-btn-bot .order-action-pill {
+  background: rgba(207, 164, 82, 0.2);
+  color: var(--gold-600);
 }
 
 /* ---------- corner flowers on sections ---------- */
@@ -612,6 +794,72 @@ h1.title{
       <div class="footer-family rv" data-d="1" id="footerFamily">Toʻy egalari va xonadon ahillari</div>
       <div class="footer-orn rv" data-d="2"><svg viewBox="0 0 160 26"><use href="#orn-divider"/></svg></div>
       <div class="credit rv" data-d="3" id="footerCredit">Taklifnoma · 2026</div>
+
+      <!-- Zakaz qilish uchun bo'lim -->
+      <div class="order-box rv" data-d="4">
+        <div class="order-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span>Buyurtma Berish</span>
+        </div>
+        <div class="order-title">Taklifnoma Zakaz Qilish Uchun</div>
+        <p class="order-subtitle">Toʻy va tantanalaringiz uchun shaxsiy elektron taklifnoma buyurtma bering:</p>
+
+        <div class="order-links">
+          <!-- Telefon raqam -->
+          <a href="tel:+998949125651" class="order-link-btn order-btn-phone" title="Qoʻngʻiroq qilish">
+            <div class="order-link-left">
+              <div class="order-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+              </div>
+              <div class="order-text-group">
+                <span class="order-link-title">+998(94)912-56-51</span>
+                <span class="order-link-sub">Telefon orqali bogʻlanish</span>
+              </div>
+            </div>
+            <span class="order-action-pill">Tel</span>
+          </a>
+
+          <!-- Shaxsiy Telegram -->
+          <a href="https://t.me/nuri1ddin" target="_blank" rel="noopener" class="order-link-btn order-btn-tg" title="Telegram orqali yozish">
+            <div class="order-link-left">
+              <div class="order-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.458c.538-.196 1.006.128.832.965z"/>
+                </svg>
+              </div>
+              <div class="order-text-group">
+                <span class="order-link-title">@nuri1ddin</span>
+                <span class="order-link-sub">Telegram: shaxsiy profil</span>
+              </div>
+            </div>
+            <span class="order-action-pill">Yozish</span>
+          </a>
+
+          <!-- Telegram Bot -->
+          <a href="https://t.me/VisoloqshomiBot" target="_blank" rel="noopener" class="order-link-btn order-btn-bot" title="Telegram bot orqali buyurtma berish">
+            <div class="order-link-left">
+              <div class="order-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/>
+                  <circle cx="12" cy="5" r="2"/>
+                  <path d="M12 7v4"/>
+                  <line x1="8" y1="16" x2="8" y2="16"/>
+                  <line x1="16" y1="16" x2="16" y2="16"/>
+                </svg>
+              </div>
+              <div class="order-text-group">
+                <span class="order-link-title">@VisoloqshomiBot</span>
+                <span class="order-link-sub">Telegram bot orqali zakaz</span>
+              </div>
+            </div>
+            <span class="order-action-pill">Bot</span>
+          </a>
+        </div>
+      </div>
     </section>
 
   </main>

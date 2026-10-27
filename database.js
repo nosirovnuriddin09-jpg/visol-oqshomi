@@ -70,7 +70,9 @@ class DatabaseManager {
         couple_names TEXT,
         venue_name TEXT,
         venue_address TEXT,
-        event_date_time TEXT
+        event_date_time TEXT,
+        design TEXT DEFAULT 'visol',
+        quantity INTEGER DEFAULT 1
       );
       CREATE INDEX IF NOT EXISTS idx_ticket_id ON participants(unique_ticket_id);
       CREATE INDEX IF NOT EXISTS idx_tg_id ON participants(telegram_id);
@@ -112,7 +114,9 @@ class DatabaseManager {
         couple_names TEXT,
         venue_name TEXT,
         venue_address TEXT,
-        event_date_time TEXT
+        event_date_time TEXT,
+        design TEXT DEFAULT 'visol',
+        quantity INTEGER DEFAULT 1
       );
       CREATE INDEX IF NOT EXISTS idx_ticket_id ON participants(unique_ticket_id);
       CREATE INDEX IF NOT EXISTS idx_tg_id ON participants(telegram_id);
@@ -155,7 +159,9 @@ class DatabaseManager {
       'total_price',
       'receipt_file_id',
       'username',
-      'payment_msg_id'
+      'payment_msg_id',
+      'design',
+      'quantity'
     ];
     for (const c of cols) {
       try {
@@ -167,7 +173,7 @@ class DatabaseManager {
   /**
    * Save a newly registered participant
    */
-  createParticipant({ telegram_id, full_name, guest_name, phone, guests_count, comment, unique_ticket_id, ticket_id, couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date, event_type, payment_status, total_price, username }) {
+  createParticipant({ telegram_id, full_name, guest_name, phone, guests_count, comment, unique_ticket_id, ticket_id, couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date, event_type, payment_status, total_price, username, design, quantity }) {
     const cleanTgId = telegram_id ? String(telegram_id) : null;
     const cleanFullName = String(full_name || guest_name || '').trim();
     const cleanPhone = String(phone || '').trim();
@@ -180,7 +186,9 @@ class DatabaseManager {
     const cleanDateTime = event_date_time || event_date ? String(event_date_time || event_date).trim() : null;
     const cleanEventType = event_type ? String(event_type).trim() : 'Nikoh toʻyi';
     const cleanPaymentStatus = payment_status || 'pending_payment';
-    const cleanTotalPrice = total_price !== undefined ? parseFloat(total_price) : 2000;
+    const cleanDesign = design ? String(design).toLowerCase().trim() : 'visol';
+    const cleanQuantity = Math.max(1, parseInt(quantity, 10) || 1);
+    const cleanTotalPrice = total_price !== undefined ? parseFloat(total_price) : (cleanQuantity * 2000);
     const cleanUsername = username ? String(username).trim() : null;
     const now = new Date().toISOString();
 
@@ -190,15 +198,15 @@ class DatabaseManager {
           telegram_id, full_name, guest_name, phone, guests_count, comment, 
           unique_ticket_id, ticket_id, created_at, 
           couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date,
-          event_type, payment_status, total_price, username
+          event_type, payment_status, total_price, username, design, quantity
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       stmt.run(
         cleanTgId, cleanFullName, cleanFullName, cleanPhone, cleanCount, cleanComment,
         cleanTicketId, cleanTicketId, now,
         cleanCouple, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanDateTime,
-        cleanEventType, cleanPaymentStatus, cleanTotalPrice, cleanUsername
+        cleanEventType, cleanPaymentStatus, cleanTotalPrice, cleanUsername, cleanDesign, cleanQuantity
       );
       return this.getParticipantByTicketId(cleanTicketId);
     }
@@ -225,6 +233,8 @@ class DatabaseManager {
       payment_status: cleanPaymentStatus,
       total_price: cleanTotalPrice,
       username: cleanUsername,
+      design: cleanDesign,
+      quantity: cleanQuantity,
       created_at: now
     };
     list.push(newEntry);
@@ -259,31 +269,7 @@ class DatabaseManager {
     }
 
     if (!row) return null;
-
-    // Return uniform normalized entity with all standard field aliases
-    return {
-      id: row.id,
-      telegram_id: row.telegram_id,
-      ticket_id: row.unique_ticket_id || row.ticket_id,
-      unique_ticket_id: row.unique_ticket_id || row.ticket_id,
-      guest_name: row.full_name || row.guest_name,
-      full_name: row.full_name || row.guest_name,
-      groom_bride: row.couple_names || row.groom_bride,
-      couple_names: row.couple_names || row.groom_bride,
-      venue_name: row.venue_name,
-      venue_address: row.venue_address,
-      event_date: row.event_date_time || row.event_date,
-      event_date_time: row.event_date_time || row.event_date,
-      event_type: row.event_type || 'Nikoh toʻyi',
-      phone: row.phone,
-      guests_count: row.guests_count,
-      comment: row.comment,
-      payment_status: row.payment_status || 'unpaid',
-      total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : 2000,
-      receipt_file_id: row.receipt_file_id || null,
-      username: row.username || null,
-      created_at: row.created_at
-    };
+    return this._formatRow(row);
   }
 
   _formatRow(row) {
@@ -310,6 +296,8 @@ class DatabaseManager {
       receipt_file_id: row.receipt_file_id || null,
       username: row.username || null,
       payment_msg_id: row.payment_msg_id || null,
+      design: row.design || 'visol',
+      quantity: row.quantity !== undefined && row.quantity !== null ? parseInt(row.quantity, 10) : 1,
       created_at: row.created_at
     };
   }
@@ -545,31 +533,13 @@ class DatabaseManager {
       row = list.find(p => p.id === cleanId) || null;
     }
     if (!row) return null;
-    return {
-      id: row.id,
-      telegram_id: row.telegram_id,
-      ticket_id: row.unique_ticket_id || row.ticket_id,
-      unique_ticket_id: row.unique_ticket_id || row.ticket_id,
-      guest_name: row.full_name || row.guest_name,
-      full_name: row.full_name || row.guest_name,
-      groom_bride: row.couple_names || row.groom_bride,
-      couple_names: row.couple_names || row.groom_bride,
-      venue_name: row.venue_name,
-      venue_address: row.venue_address,
-      event_date: row.event_date_time || row.event_date,
-      event_date_time: row.event_date_time || row.event_date,
-      event_type: row.event_type || 'Nikoh toʻyi',
-      phone: row.phone,
-      guests_count: row.guests_count,
-      comment: row.comment,
-      created_at: row.created_at
-    };
+    return this._formatRow(row);
   }
 
   /**
    * Update participant details
    */
-  updateParticipant(id, { full_name, phone, guests_count, comment, couple_names, venue_name, venue_address, event_date_time, event_type }) {
+  updateParticipant(id, { full_name, phone, guests_count, comment, couple_names, venue_name, venue_address, event_date_time, event_type, design, quantity }) {
     const cleanId = Number(id);
     const existing = this.getParticipantById(cleanId);
     if (!existing) return null;
@@ -583,14 +553,16 @@ class DatabaseManager {
     const cleanAddr = venue_address !== undefined ? String(venue_address).trim() : (existing.venue_address || '');
     const cleanDateTime = event_date_time !== undefined ? String(event_date_time).trim() : (existing.event_date_time || '');
     const cleanEventType = event_type !== undefined ? String(event_type).trim() : (existing.event_type || 'Nikoh toʻyi');
+    const cleanDesign = design !== undefined ? String(design).trim() : (existing.design || 'visol');
+    const cleanQuantity = quantity !== undefined ? Math.max(1, parseInt(quantity, 10) || 1) : (existing.quantity || 1);
 
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
       const stmt = this.db.prepare(`
         UPDATE participants 
-        SET full_name = ?, phone = ?, guests_count = ?, comment = ?, couple_names = ?, venue_name = ?, venue_address = ?, event_date_time = ?, event_type = ?
+        SET full_name = ?, phone = ?, guests_count = ?, comment = ?, couple_names = ?, venue_name = ?, venue_address = ?, event_date_time = ?, event_type = ?, design = ?, quantity = ?
         WHERE id = ?
       `);
-      stmt.run(cleanFullName, cleanPhone, cleanCount, cleanComment, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanEventType, cleanId);
+      stmt.run(cleanFullName, cleanPhone, cleanCount, cleanComment, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanEventType, cleanDesign, cleanQuantity, cleanId);
       return this.getParticipantById(cleanId);
     }
 
@@ -606,8 +578,10 @@ class DatabaseManager {
       list[index].venue_address = cleanAddr;
       list[index].event_date_time = cleanDateTime;
       list[index].event_type = cleanEventType;
+      list[index].design = cleanDesign;
+      list[index].quantity = cleanQuantity;
       this.writeJson(list);
-      return list[index];
+      return this._formatRow(list[index]);
     }
     return null;
   }
@@ -624,6 +598,40 @@ class DatabaseManager {
     }
     const list = this.readJson();
     const filtered = list.filter(p => p.id !== cleanId);
+    this.writeJson(filtered);
+    return true;
+  }
+
+  deleteParticipantByTicketId(ticketId) {
+    if (!ticketId) return false;
+    const cleanId = String(ticketId).trim();
+    const withHash = cleanId.startsWith('#') ? cleanId : `#${cleanId}`;
+    const withoutHash = cleanId.replace(/^#/, '');
+
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare('DELETE FROM participants WHERE unique_ticket_id = ? OR unique_ticket_id = ? OR ticket_id = ? OR ticket_id = ?');
+      stmt.run(withHash, withoutHash, withHash, withoutHash);
+      return true;
+    }
+    const list = this.readJson();
+    const filtered = list.filter(p => {
+      const pid = String(p.unique_ticket_id || p.ticket_id || '').toUpperCase();
+      return pid !== withHash.toUpperCase() && pid !== withoutHash.toUpperCase();
+    });
+    this.writeJson(filtered);
+    return true;
+  }
+
+  deleteAllUnpaidParticipants(telegramId) {
+    if (!telegramId) return false;
+    const cleanTgId = String(telegramId).trim();
+    if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+      const stmt = this.db.prepare("DELETE FROM participants WHERE telegram_id = ? AND (payment_status = 'pending_payment' OR payment_status = 'unpaid' OR payment_status IS NULL)");
+      stmt.run(cleanTgId);
+      return true;
+    }
+    const list = this.readJson();
+    const filtered = list.filter(p => !(p.telegram_id === cleanTgId && (!p.payment_status || p.payment_status === 'pending_payment' || p.payment_status === 'unpaid')));
     this.writeJson(filtered);
     return true;
   }
