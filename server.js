@@ -793,13 +793,44 @@ function setupBotCommands(botInstance) {
       }
     }
 
-    // Barcha buyurtmalarni tekshirishga o'tkazish
-    for (const t of pendingTickets) {
-      db.updateParticipantPaymentStatus(t.unique_ticket_id, {
+    // Agar foydalanuvchida hali buyurtma bo'lmasa, chek kelgani sababli avtomatik buyurtma yaratamiz
+    if (!pendingTickets || pendingTickets.length === 0) {
+      let uniqueTicketId = generateUniqueTicketId();
+      while (db.getParticipantByTicketId(uniqueTicketId)) {
+        uniqueTicketId = generateUniqueTicketId();
+      }
+      const s = getSettings();
+      const autoTicket = db.createParticipant({
+        telegram_id: userId,
+        full_name: fullName,
+        guest_name: fullName,
+        phone: "Noma'lum",
+        guests_count: 1,
+        couple_names: `${s.groom_name} va ${s.bride_name}`,
+        groom_bride: `${s.groom_name} va ${s.bride_name}`,
+        venue_name: s.venue_name,
+        venue_address: s.venue_address,
+        event_date_time: `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`,
+        event_date: s.event_date,
+        event_type: s.event_type || 'Nikoh toʻyi',
+        design: 'visol',
+        quantity: 1,
+        total_price: 2000,
         payment_status: 'pending_verification',
         receipt_file_id: fileId,
+        unique_ticket_id: uniqueTicketId,
         username: user.username || null
       });
+      pendingTickets = [autoTicket];
+    } else {
+      // Barcha buyurtmalarni tekshirishga o'tkazish
+      for (const t of pendingTickets) {
+        db.updateParticipantPaymentStatus(t.unique_ticket_id, {
+          payment_status: 'pending_verification',
+          receipt_file_id: fileId,
+          username: user.username || null
+        });
+      }
     }
 
     const totalTicketsCount = pendingTickets.length;
@@ -875,6 +906,12 @@ function setupBotCommands(botInstance) {
         targetTgId = rawTicketId.replace('TG_', '');
         ticketsToApprove = db.getPendingParticipantsByTelegramId(targetTgId);
         if (!ticketsToApprove || ticketsToApprove.length === 0) {
+          ticketsToApprove = db.getPendingVerificationParticipantsByTelegramId(targetTgId);
+        }
+        if (!ticketsToApprove || ticketsToApprove.length === 0) {
+          ticketsToApprove = db.getUnpaidParticipantsByTelegramId(targetTgId);
+        }
+        if (!ticketsToApprove || ticketsToApprove.length === 0) {
           const all = db.getAllParticipantsByTelegramId(targetTgId);
           ticketsToApprove = all.filter(t => t.payment_status !== 'paid');
         }
@@ -891,8 +928,37 @@ function setupBotCommands(botInstance) {
         }
       }
 
+      // Agar bazada chipta umuman topilmasa ham, admin bosganda tasdiqlanib mijozga taklifnoma generatsiya qilinadi
       if (!ticketsToApprove || ticketsToApprove.length === 0) {
-        return ctx.reply(`⚠️ Tasdiqlash uchun chipta topilmadi!`);
+        if (targetTgId) {
+          let uniqueTicketId = generateUniqueTicketId();
+          while (db.getParticipantByTicketId(uniqueTicketId)) {
+            uniqueTicketId = generateUniqueTicketId();
+          }
+          const s = getSettings();
+          const autoTicket = db.createParticipant({
+            telegram_id: targetTgId,
+            full_name: 'Hurmatli mehmon',
+            guest_name: 'Hurmatli mehmon',
+            phone: "Noma'lum",
+            guests_count: 1,
+            couple_names: `${s.groom_name} va ${s.bride_name}`,
+            groom_bride: `${s.groom_name} va ${s.bride_name}`,
+            venue_name: s.venue_name,
+            venue_address: s.venue_address,
+            event_date_time: `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`,
+            event_date: s.event_date,
+            event_type: s.event_type || 'Nikoh toʻyi',
+            design: 'visol',
+            quantity: 1,
+            total_price: 2000,
+            payment_status: 'paid',
+            unique_ticket_id: uniqueTicketId
+          });
+          ticketsToApprove = [autoTicket];
+        } else {
+          return ctx.reply(`⚠️ Tasdiqlash uchun chipta yoki mijoz ID topilmadi!`);
+        }
       }
 
       // To'lovni tasdiqlash (status: 'paid')

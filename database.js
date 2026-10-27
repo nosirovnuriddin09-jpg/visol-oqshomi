@@ -368,7 +368,7 @@ class DatabaseManager {
     let rows = [];
 
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
-      const stmt = this.db.prepare("SELECT * FROM participants WHERE telegram_id = ? AND payment_status != 'paid' ORDER BY id ASC");
+      const stmt = this.db.prepare("SELECT * FROM participants WHERE telegram_id = ? AND (payment_status != 'paid' OR payment_status IS NULL) ORDER BY id ASC");
       rows = stmt.all ? stmt.all(cleanTgId) : [];
     } else {
       const list = this.readJson();
