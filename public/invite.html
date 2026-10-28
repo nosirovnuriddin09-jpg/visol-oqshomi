@@ -867,6 +867,7 @@ h1.title{
 
 <!-- ====== AUDIO ====== -->
 <audio id="bgm" loop preload="auto" playsinline webkit-playsinline>
+  <source src="/music1.mp3" type="audio/mpeg" />
   <source src="/music.mp3" type="audio/mpeg" />
   <source src="/music.mp3.mp3" type="audio/mpeg" />
   <source src="/audio.mp3" type="audio/mpeg" />
@@ -1045,6 +1046,8 @@ h1.title{
   var venueParam = p.get("venue");
   var addressParam = p.get("address");
   var dateParam = p.get("date");
+  var musicParam = p.get("music") || p.get("song");
+  var familyParam = p.get("family") || p.get("oila") || p.get("family_names");
   var isVerifyMode = p.get("verify") || p.get("verified");
 
   if(isVerifyMode){
@@ -1248,18 +1251,39 @@ h1.title{
         cBox.classList.remove("hidden");
       }
     }
+
+    // Taklif etuvchilar / Oila nomi
+    var fam = details.family_names || details.family || familyParam;
+    if(fam && String(fam).trim()){
+      var footerFam = document.getElementById("footerFamily");
+      if(footerFam) footerFam.textContent = String(fam).trim();
+    }
+
+    // Musiqa tanlovi
+    var musicChoice = details.music || details.song || musicParam;
+    if(musicChoice && bgm){
+      var mStr = String(musicChoice).toLowerCase().trim();
+      var isSong2 = mStr === "music2" || mStr === "jon-qizim" || mStr === "2";
+      var targetSrc = isSong2 ? "/music2.mp3" : "/music1.mp3";
+      if(!bgm.src || !bgm.src.endsWith(targetSrc)){
+        bgm.src = targetSrc;
+        AUDIO_LOOP_END = isSong2 ? 322 : 166;
+      }
+    }
   }
 
   if(guestParam){
     var g = decodeURIComponent(guestParam.replace(/\+/g," ")).trim().slice(0,60);
     if(g) applyCustomDetails({ full_name: g });
   }
-  if(coupleParam || venueParam || addressParam || dateParam){
+  if(coupleParam || venueParam || addressParam || dateParam || musicParam || familyParam){
     applyCustomDetails({
       couple_names: coupleParam ? decodeURIComponent(coupleParam.replace(/\+/g," ")).trim() : null,
       venue_name: venueParam ? decodeURIComponent(venueParam.replace(/\+/g," ")).trim() : null,
       venue_address: addressParam ? decodeURIComponent(addressParam.replace(/\+/g," ")).trim() : null,
-      event_date_time: dateParam ? decodeURIComponent(dateParam.replace(/\+/g," ")).trim() : null
+      event_date_time: dateParam ? decodeURIComponent(dateParam.replace(/\+/g," ")).trim() : null,
+      family_names: familyParam ? decodeURIComponent(familyParam.replace(/\+/g," ")).trim() : null,
+      music: musicParam
     });
   }
 

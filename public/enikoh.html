@@ -745,7 +745,7 @@ section{position:relative;z-index:4;padding:0 30px}
 </div>
 
 <!-- ═══════════ MUSIC ═══════════ -->
-<audio id="bgm" src="music.mp3" loop preload="auto" playsinline></audio>
+<audio id="bgm" src="music1.mp3" loop preload="auto" playsinline></audio>
 <button class="music muted" id="music" type="button" aria-label="Musiqa">
   <span class="bars"></span>
   <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>
@@ -1011,7 +1011,7 @@ section{position:relative;z-index:4;padding:0 30px}
       Tashrifingizdan mamnun boʻlamiz.
     </p>
     <p class="respect rv rv-d2" style="margin-top:22px">Hurmat va ehtirom ila,</p>
-    <p class="family rv rv-d3">Ixtiyor Saidov oilasi</p>
+    <p class="family rv rv-d3" id="panelFamily">Toʻy egalari va xonadon ahillari</p>
   </section>
 
   <!-- ─────────── FINAL ─────────── -->
@@ -1084,6 +1084,19 @@ function tick(){
 tick();
 if(TARGET > Date.now()) timer = setInterval(tick, 1000);
 
+const calData = {
+  year: 2026,
+  monthIdx: 7,
+  day: 10,
+  hour: 18,
+  minute: 30,
+  couple: "Baxodirjon va Mexrangizxon",
+  event: "Fotiha",
+  venue: "Moʻjiza restorani",
+  address: "Buxoro shahri",
+  family: "Toʻy egalari va xonadon ahillari"
+};
+
 (function setupDynamicData(){
   const p = new URLSearchParams(location.search);
   const ticketParam = p.get("ticket") || p.get("id");
@@ -1094,6 +1107,8 @@ if(TARGET > Date.now()) timer = setInterval(tick, 1000);
   const timeParam = p.get("time") || p.get("vaqt");
   const venueParam = p.get("venue") || p.get("restoran") || p.get("toyxona");
   const addressParam = p.get("address") || p.get("manzil");
+  const familyParam = p.get("family") || p.get("oila") || p.get("family_names");
+  const musicParam = p.get("music") || p.get("song");
 
   const UZ_MONTHS = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"];
   const UZ_DOW = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
@@ -1103,8 +1118,9 @@ if(TARGET > Date.now()) timer = setInterval(tick, 1000);
 
     // 1. Mehmon ismi
     const guestName = details.guest_name || details.full_name || details.name || guestParam;
+    let cleanGuest = "";
     if(guestName && String(guestName).trim()){
-      const cleanGuest = String(guestName).trim().replace(/[<>]/g, "");
+      cleanGuest = String(guestName).trim().replace(/[<>]/g, "");
       const gEl = document.getElementById("guest");
       if(gEl) gEl.textContent = cleanGuest;
     }
@@ -1113,6 +1129,7 @@ if(TARGET > Date.now()) timer = setInterval(tick, 1000);
     const coupleRaw = details.couple_names || details.groom_bride || details.couple || coupleParam;
     if(coupleRaw && String(coupleRaw).trim()){
       const cStr = String(coupleRaw).trim();
+      calData.couple = cStr;
       document.title = "Taklifnoma — " + cStr;
       
       let parts = cStr.split(/\s*&\s*|\s+va\s+/i);
@@ -1147,6 +1164,7 @@ if(TARGET > Date.now()) timer = setInterval(tick, 1000);
     // 3. Tadbir turi
     const eventType = details.event_type || details.eventType || eventParam || "Nikoh toʻyi";
     const evStr = String(eventType).trim();
+    calData.event = evStr;
     const isPlov = /osh/i.test(evStr);
     
     const occEvent = document.querySelector(".occasion .q");
@@ -1178,6 +1196,12 @@ if(TARGET > Date.now()) timer = setInterval(tick, 1000);
         let tM = String(timeParam).match(/(\d{1,2}):(\d{2})/);
         if(tM){ parsedHour = parseInt(tM[1], 10); parsedMinute = parseInt(tM[2], 10); }
       }
+
+      calData.year = parsedYear;
+      calData.monthIdx = parsedMonthIdx;
+      calData.day = parsedDay;
+      calData.hour = parsedHour;
+      calData.minute = parsedMinute;
 
       const mName = UZ_MONTHS[parsedMonthIdx] || "Avgust";
       const padZero = n => String(n).padStart(2, "0");
@@ -1239,6 +1263,8 @@ if(TARGET > Date.now()) timer = setInterval(tick, 1000);
     // 5. To'yxona va Manzil
     const vName = details.venue_name || details.venue || venueParam;
     const vAddr = details.venue_address || details.address || addressParam;
+    if(vName) calData.venue = String(vName).trim();
+    if(vAddr) calData.address = String(vAddr).trim();
     const rows = document.querySelectorAll(".rows .row");
     if(rows.length >= 4){
       if(vName && String(vName).trim()){
@@ -1261,11 +1287,32 @@ if(TARGET > Date.now()) timer = setInterval(tick, 1000);
       mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
     }
 
-    // 6. Taklif etuvchi oila
-    const family = details.family_names || details.family;
-    if(family && String(family).trim()){
-      const famEl = document.querySelector(".panel .family");
-      if(famEl) famEl.textContent = String(family).trim();
+    // 6. Taklif etuvchi / Mehmon oilasi (Hurmat va ehtirom ila, ...)
+    const rawFamily = details.family_names || details.family || familyParam;
+    let finalFamily = "";
+    if(rawFamily && String(rawFamily).trim()){
+      finalFamily = String(rawFamily).trim();
+    } else if(cleanGuest){
+      // Mehmon ismi kiritilganda pastdagi "Hurmat va ehtirom ila" qismi ham mos ravishda yangilanadi
+      finalFamily = /oila/i.test(cleanGuest) ? cleanGuest : `${cleanGuest} oilasi`;
+    }
+
+    if(finalFamily){
+      calData.family = finalFamily;
+      const famEl = document.getElementById("panelFamily") || document.querySelector(".panel .family");
+      if(famEl) famEl.textContent = finalFamily;
+    }
+
+    // 7. Musiqa / Qo'shiq tanlovi
+    const musicChoice = details.music || details.song || musicParam;
+    if(musicChoice){
+      const mStr = String(musicChoice).toLowerCase().trim();
+      const isSong2 = mStr === "music2" || mStr === "jon-qizim" || mStr === "2";
+      const targetSrc = isSong2 ? "music2.mp3" : "music1.mp3";
+      const bgmEl = document.getElementById("bgm");
+      if(bgmEl && !bgmEl.src.endsWith(targetSrc)){
+        bgmEl.src = targetSrc;
+      }
     }
   }
 
@@ -1298,7 +1345,9 @@ if(TARGET > Date.now()) timer = setInterval(tick, 1000);
     event_type: eventParam,
     event_date_time: dateParam,
     venue_name: venueParam,
-    venue_address: addressParam
+    venue_address: addressParam,
+    family_names: familyParam,
+    music: musicParam
   });
 })();
 
@@ -1359,16 +1408,30 @@ function reveal(){
 
 /* ══════════ ADD TO CALENDAR (.ics) ══════════ */
 document.getElementById("icsBtn").addEventListener("click", ()=>{
+  const pad = n => String(n).padStart(2, "0");
+  const yr = calData.year || 2026;
+  const mo = pad((calData.monthIdx || 7) + 1);
+  const da = pad(calData.day || 10);
+  const hr = pad(calData.hour || 18);
+  const mi = pad(calData.minute || 30);
+  const endHr = pad(((calData.hour || 18) + 4) % 24);
+
+  const dtStart = `${yr}${mo}${da}T${hr}${mi}00`;
+  const dtEnd   = `${yr}${mo}${da}T${endHr}${mi}00`;
+  const loc = [calData.venue, calData.address].filter(Boolean).join(", ").replace(/[,;]/g, "\\$&");
+  const familyName = calData.family || "Toʻy egalari va xonadon ahillari";
+  const desc = `${familyName} sizni «${calData.event || "Nikoh toʻyi"}» munosabati bilan tantanaga taklif etadi. Soat ${hr}:${mi}.`;
+
   const ics = [
     "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Taklifnoma//UZ","CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    "UID:fotiha-baxodirjon-mexrangizxon@taklifnoma",
+    `UID:taklifnoma-${Date.now()}@taklifnoma`,
     "DTSTAMP:20260101T000000Z",
-    "DTSTART:20260810T133000Z",              // 18:30 (UTC+5)
-    "DTEND:20260810T173000Z",
-    "SUMMARY:Baxodirjon va Mexrangizxon — «Fotiha» toʻylari",
-    "LOCATION:Moʻjiza restorani\\, Karvon bozor yonida\\, Buxoro shahri",
-    "DESCRIPTION:Ixtiyor Saidov oilasi sizni toʻy oqshomiga taklif etadi. Soat 18:30.",
+    `DTSTART:${dtStart}`,
+    `DTEND:${dtEnd}`,
+    `SUMMARY:${calData.couple || "Taklifnoma"} — «${calData.event || "Toʻy"}»`,
+    `LOCATION:${loc}`,
+    `DESCRIPTION:${desc}`,
     "BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY","DESCRIPTION:Ertaga toʻy!","END:VALARM",
     "END:VEVENT","END:VCALENDAR"
   ].join("\r\n");
@@ -1376,7 +1439,7 @@ document.getElementById("icsBtn").addEventListener("click", ()=>{
   const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
   const url  = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "taklifnoma-10-avgust-2026.ics";
+  a.href = url; a.download = `taklifnoma-${da}-${mo}-${yr}.ics`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 2000);
   toast("Kalendarga qoʻshildi ✦");

@@ -72,7 +72,9 @@ class DatabaseManager {
         venue_address TEXT,
         event_date_time TEXT,
         design TEXT DEFAULT 'visol',
-        quantity INTEGER DEFAULT 1
+        quantity INTEGER DEFAULT 1,
+        music TEXT DEFAULT 'music1',
+        family_names TEXT
       );
       CREATE INDEX IF NOT EXISTS idx_ticket_id ON participants(unique_ticket_id);
       CREATE INDEX IF NOT EXISTS idx_tg_id ON participants(telegram_id);
@@ -116,7 +118,9 @@ class DatabaseManager {
         venue_address TEXT,
         event_date_time TEXT,
         design TEXT DEFAULT 'visol',
-        quantity INTEGER DEFAULT 1
+        quantity INTEGER DEFAULT 1,
+        music TEXT DEFAULT 'music1',
+        family_names TEXT
       );
       CREATE INDEX IF NOT EXISTS idx_ticket_id ON participants(unique_ticket_id);
       CREATE INDEX IF NOT EXISTS idx_tg_id ON participants(telegram_id);
@@ -161,7 +165,9 @@ class DatabaseManager {
       'username',
       'payment_msg_id',
       'design',
-      'quantity'
+      'quantity',
+      'music',
+      'family_names'
     ];
     for (const c of cols) {
       try {
@@ -173,7 +179,7 @@ class DatabaseManager {
   /**
    * Save a newly registered participant
    */
-  createParticipant({ telegram_id, full_name, guest_name, phone, guests_count, comment, unique_ticket_id, ticket_id, couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date, event_type, payment_status, total_price, username, design, quantity }) {
+  createParticipant({ telegram_id, full_name, guest_name, phone, guests_count, comment, unique_ticket_id, ticket_id, couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date, event_type, payment_status, total_price, username, design, quantity, music, family_names, family }) {
     const cleanTgId = telegram_id ? String(telegram_id) : null;
     const cleanFullName = String(full_name || guest_name || '').trim();
     const cleanPhone = String(phone || '').trim();
@@ -190,6 +196,8 @@ class DatabaseManager {
     const cleanQuantity = Math.max(1, parseInt(quantity, 10) || 1);
     const cleanTotalPrice = total_price !== undefined ? parseFloat(total_price) : (cleanQuantity * 2000);
     const cleanUsername = username ? String(username).trim() : null;
+    const cleanMusic = music ? String(music).toLowerCase().trim() : 'music1';
+    const cleanFamily = (family_names || family) ? String(family_names || family).trim() : null;
     const now = new Date().toISOString();
 
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
@@ -198,15 +206,15 @@ class DatabaseManager {
           telegram_id, full_name, guest_name, phone, guests_count, comment, 
           unique_ticket_id, ticket_id, created_at, 
           couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date,
-          event_type, payment_status, total_price, username, design, quantity
+          event_type, payment_status, total_price, username, design, quantity, music, family_names
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       stmt.run(
         cleanTgId, cleanFullName, cleanFullName, cleanPhone, cleanCount, cleanComment,
         cleanTicketId, cleanTicketId, now,
         cleanCouple, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanDateTime,
-        cleanEventType, cleanPaymentStatus, cleanTotalPrice, cleanUsername, cleanDesign, cleanQuantity
+        cleanEventType, cleanPaymentStatus, cleanTotalPrice, cleanUsername, cleanDesign, cleanQuantity, cleanMusic, cleanFamily
       );
       return this.getParticipantByTicketId(cleanTicketId);
     }
@@ -235,6 +243,8 @@ class DatabaseManager {
       username: cleanUsername,
       design: cleanDesign,
       quantity: cleanQuantity,
+      music: cleanMusic,
+      family_names: cleanFamily,
       created_at: now
     };
     list.push(newEntry);
@@ -298,6 +308,10 @@ class DatabaseManager {
       payment_msg_id: row.payment_msg_id || null,
       design: row.design || 'visol',
       quantity: row.quantity !== undefined && row.quantity !== null ? parseInt(row.quantity, 10) : 1,
+      music: row.music || 'music1',
+      song: row.music || 'music1',
+      family_names: row.family_names || '',
+      family: row.family_names || '',
       created_at: row.created_at
     };
   }
@@ -539,7 +553,7 @@ class DatabaseManager {
   /**
    * Update participant details
    */
-  updateParticipant(id, { full_name, phone, guests_count, comment, couple_names, venue_name, venue_address, event_date_time, event_type, design, quantity }) {
+  updateParticipant(id, { full_name, phone, guests_count, comment, couple_names, venue_name, venue_address, event_date_time, event_type, design, quantity, music, family_names, family }) {
     const cleanId = Number(id);
     const existing = this.getParticipantById(cleanId);
     if (!existing) return null;
@@ -555,14 +569,17 @@ class DatabaseManager {
     const cleanEventType = event_type !== undefined ? String(event_type).trim() : (existing.event_type || 'Nikoh toʻyi');
     const cleanDesign = design !== undefined ? String(design).trim() : (existing.design || 'visol');
     const cleanQuantity = quantity !== undefined ? Math.max(1, parseInt(quantity, 10) || 1) : (existing.quantity || 1);
+    const cleanMusic = music !== undefined ? String(music).trim() : (existing.music || 'music1');
+    const famVal = family_names !== undefined ? family_names : family;
+    const cleanFamily = famVal !== undefined ? String(famVal).trim() : (existing.family_names || '');
 
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
       const stmt = this.db.prepare(`
         UPDATE participants 
-        SET full_name = ?, phone = ?, guests_count = ?, comment = ?, couple_names = ?, venue_name = ?, venue_address = ?, event_date_time = ?, event_type = ?, design = ?, quantity = ?
+        SET full_name = ?, phone = ?, guests_count = ?, comment = ?, couple_names = ?, venue_name = ?, venue_address = ?, event_date_time = ?, event_type = ?, design = ?, quantity = ?, music = ?, family_names = ?
         WHERE id = ?
       `);
-      stmt.run(cleanFullName, cleanPhone, cleanCount, cleanComment, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanEventType, cleanDesign, cleanQuantity, cleanId);
+      stmt.run(cleanFullName, cleanPhone, cleanCount, cleanComment, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanEventType, cleanDesign, cleanQuantity, cleanMusic, cleanFamily, cleanId);
       return this.getParticipantById(cleanId);
     }
 
@@ -580,6 +597,8 @@ class DatabaseManager {
       list[index].event_type = cleanEventType;
       list[index].design = cleanDesign;
       list[index].quantity = cleanQuantity;
+      list[index].music = cleanMusic;
+      list[index].family_names = cleanFamily;
       this.writeJson(list);
       return this._formatRow(list[index]);
     }

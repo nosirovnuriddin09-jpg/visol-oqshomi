@@ -42,6 +42,7 @@ function getInvitationUrl(ticket) {
   if (!ticket) return WEBAPP_URL;
   const cleanTicketId = (ticket.unique_ticket_id || ticket.ticket_id || '').replace('#', '');
   const design = String(ticket.design || 'visol').toLowerCase();
+  const music = ticket.music || ticket.song || 'music1';
 
   if (design === 'enikoh' || design === 'e-nikoh' || design === 'e_nikoh') {
     const params = new URLSearchParams({
@@ -49,13 +50,24 @@ function getInvitationUrl(ticket) {
       name: ticket.full_name || ticket.guest_name || '',
       couple: ticket.couple_names || ticket.groom_bride || '',
       date: ticket.event_date_time || ticket.event_date || '',
-      venue: ticket.venue_name || ticket.venue_address || ''
+      venue: ticket.venue_name || ticket.venue_address || '',
+      music: music
     });
+    if (ticket.family_names || ticket.family) {
+      params.set('family', ticket.family_names || ticket.family);
+    }
     return `${WEBAPP_URL}/enikoh.html?${params.toString()}`;
   }
 
   // Default: Visol Oqshomi design
-  return `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
+  const visolParams = new URLSearchParams({
+    ticket: cleanTicketId,
+    music: music
+  });
+  if (ticket.family_names || ticket.family) {
+    visolParams.set('family', ticket.family_names || ticket.family);
+  }
+  return `${WEBAPP_URL}/invite.html?${visolParams.toString()}`;
 }
 
 // Helper: Build Design Selection Inline Keyboard
@@ -397,7 +409,7 @@ function setupBotCommands(botInstance) {
     await sendDesignSelection(ctx);
   });
 
-  // Action: Select design (Visol Oqshomi or E-Nikoh Oqshomi)
+  // Action: Select design (Visol Oqshomi or E-Nikoh Oqshomi) -> Ask to choose music
   botInstance.action(/^design_select:(visol|enikoh)$/, async (ctx) => {
     await ctx.answerCbQuery();
     const design = ctx.match[1];
@@ -407,9 +419,10 @@ function setupBotCommands(botInstance) {
 
     // Initialize creation wizard for this user
     userWizardStates.set(userId, {
-      step: 'waiting_fullname',
+      step: 'waiting_music',
       data: {
         design,
+        music: 'music1',
         event_type: s.event_type || 'Nikoh toʻyi',
         couple_names: `${s.groom_name} va ${s.bride_name}`,
         event_date_time: `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`,
@@ -417,9 +430,37 @@ function setupBotCommands(botInstance) {
       }
     });
 
-    const step1Prompt = 
+    const musicPrompt = 
       `🎨 <b>Tanlangan dizayn:</b> <b>${designDisplayName}</b>\n\n` +
-      `Taklifnoma tayyorlash uchun kerakli ma'lumotlarni kiritamiz.\n\n` +
+      `🎵 <b>Taklifnoma uchun qo'shiqni tanlang:</b>\n\n` +
+      `1️⃣ <b>"Kelibdi"</b> — Sho'x va tantanali klassik to'y qo'shig'i\n` +
+      `2️⃣ <b>"Jon qizim"</b> — Nafis va ta'sirli qiz uzatish taronasi\n\n` +
+      `<i>O'zingizga ma'qul qo'shiq tugmasini bosing:</i>`;
+
+    await ctx.replyWithHTML(musicPrompt, Markup.inlineKeyboard([
+      [
+        Markup.button.callback("🎵 1) Kelibdi", "music_select:music1"),
+        Markup.button.callback("👰 2) Jon qizim", "music_select:music2")
+      ],
+      [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
+    ]));
+  });
+
+  // Action: Select music
+  botInstance.action(/^music_select:(music1|music2)$/, async (ctx) => {
+    await ctx.answerCbQuery();
+    const musicChoice = ctx.match[1];
+    const userId = String(ctx.from.id);
+    const state = userWizardStates.get(userId);
+    if (!state) return;
+
+    state.data.music = musicChoice;
+    state.step = 'waiting_fullname';
+
+    const musicTitle = musicChoice === 'music2' ? '"Jon qizim"' : '"Kelibdi"';
+    const step1Prompt = 
+      `🎶 <b>Tanlangan qo'shiq:</b> <b>${musicTitle}</b>\n\n` +
+      `Endi taklifnoma ma'lumotlarini kiritamiz.\n\n` +
       `1️⃣ <b>Ism va familiyangizni</b> (yoki taklifnomada ko'rinadigan mehmon/taklif etuvchi ismini) kiriting:\n` +
       `<i>(Masalan: Akmal Razzoqov yoki Alisher va Ziyoda)</i>`;
 
@@ -591,9 +632,27 @@ function setupBotCommands(botInstance) {
     const userId = String(ctx.from.id);
     const state = userWizardStates.get(userId);
     if (!state) return;
+    const s = getSettings();
+    state.step = 'waiting_family';
+    await ctx.replyWithHTML(
+      `3️⃣ <b>Taklif etuvchilar / Oila nomini</b> kiriting:\n<i>(Taklifnoma so'ngida «Hurmat va ehtirom ila...» qatorida chiqadi, masalan: Saidovlar oilasi yoki To'y egalari)</i>`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback(`⏭️ Standart qoldirish (${s.family_names || "To'y egalari"})`, "skip_family")],
+        [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
+      ])
+    );
+  });
+
+  botInstance.action('skip_family', async (ctx) => {
+    await ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    const state = userWizardStates.get(userId);
+    if (!state) return;
+    const s = getSettings();
+    state.data.family_names = s.family_names || "To'y egalari va xonadon ahillari";
     state.step = 'waiting_date';
     await ctx.replyWithHTML(
-      `3️⃣ <b>To'y sanasi va vaqtini</b> kiriting:\n<i>(Masalan: 2026-11-20 18:00)</i>`,
+      `4️⃣ <b>To'y sanasi va vaqtini</b> kiriting:\n<i>(Masalan: 2026-11-20 18:00)</i>`,
       Markup.inlineKeyboard([
         [Markup.button.callback("⏭️ Standart sanani qoldirish", "skip_date")],
         [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
@@ -1247,9 +1306,23 @@ function setupBotCommands(botInstance) {
       // Step 2: Kelin-kuyov kiritildi
       if (state.step === 'waiting_couple') {
         state.data.couple_names = text;
+        state.step = 'waiting_family';
+
+        const promptText = `3️⃣ <b>Taklif etuvchilar / Oila nomini</b> kiriting:\n` +
+          `<i>(Taklifnoma so'ngida «Hurmat va ehtirom ila...» qatorida chiqadi, masalan: Saidovlar oilasi yoki To'y egalari)</i>`;
+
+        return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
+          [Markup.button.callback(`⏭️ Standart qoldirish (${s.family_names || "To'y egalari"})`, "skip_family")],
+          [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
+        ]));
+      }
+
+      // Step 3: Taklif etuvchilar / Oila nomi kiritildi
+      if (state.step === 'waiting_family') {
+        state.data.family_names = text;
         state.step = 'waiting_date';
 
-        const promptText = `3️⃣ <b>To'y sanasi va vaqtini</b> kiriting:\n` +
+        const promptText = `4️⃣ <b>To'y sanasi va vaqtini</b> kiriting:\n` +
           `<i>(Masalan: 2026-11-20 18:00)</i>`;
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
@@ -1335,6 +1408,8 @@ function setupBotCommands(botInstance) {
           event_date: state.data.event_date_time || s.event_date,
           event_type: state.data.event_type || 'Nikoh toʻyi',
           design: state.data.design,
+          music: state.data.music || 'music1',
+          family_names: state.data.family_names || s.family_names || "To'y egalari va xonadon ahillari",
           quantity: qty,
           total_price: totalAmount,
           payment_status: 'pending_payment',
@@ -1437,7 +1512,7 @@ async function sendTicketToUser(telegramId, ticket) {
     caption += `👥 <b>Mehmonlar soni:</b> ${ticket.guests_count} kishi\n`;
     caption += `📅 <b>Sana & Vaqt:</b> ${eventDate} (${s.day_of_week})\n`;
     caption += `📍 <b>Manzil:</b> ${eventVenue}\n`;
-    caption += `👨‍👩‍👧‍👦 <b>Taklif etuvchilar:</b> ${s.family_names}\n\n`;
+    caption += `👨‍👩‍👧‍👦 <b>Taklif etuvchilar:</b> ${ticket.family_names || s.family_names}\n\n`;
     if (ticket.comment) {
       caption += `💬 <b>Tilakingiz:</b> <i>"${ticket.comment}"</i>\n\n`;
     }
@@ -1488,7 +1563,7 @@ app.post('/api/register', async (req, res) => {
     const { 
       full_name, guest_name, phone, guests_count, comment, telegram_id,
       couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date,
-      event_type, design, quantity
+      event_type, design, quantity, music, song, family_names, family
     } = req.body;
 
     const guestFullName = String(full_name || guest_name || '').trim();
@@ -1508,6 +1583,7 @@ app.post('/api/register', async (req, res) => {
     const cleanEventType = (event_type || '').trim() || "Nikoh toʻyi";
     const cleanDesign = design ? String(design).toLowerCase().trim() : 'visol';
     const cleanQuantity = Math.max(1, parseInt(quantity, 10) || 1);
+    const cleanFamily = (family_names || family || '').trim() || null;
 
     // Requirement 1: Unique Entry Creation
     let uniqueTicketId = generateUniqueTicketId();
@@ -1540,6 +1616,8 @@ app.post('/api/register', async (req, res) => {
       event_type: cleanEventType,
       design: cleanDesign,
       quantity: cleanQuantity,
+      music: (music || song || 'music1').toLowerCase().trim(),
+      family_names: cleanFamily,
       payment_status: 'pending_payment',
       total_price: totalAmount
     });
@@ -1662,9 +1740,13 @@ function handleGetInvitation(req, res) {
     design: ticket.design || 'visol',
     design_name: getDesignDisplayName(ticket.design),
     quantity: ticket.quantity || 1,
+    music: ticket.music || 'music1',
+    song: ticket.music || 'music1',
     phone: ticket.phone,
     guests_count: ticket.guests_count,
     comment: ticket.comment,
+    family: ticket.family_names || ticket.family || '',
+    family_names: ticket.family_names || ticket.family || '',
     created_at: ticket.created_at,
     invite_url: inviteUrl,
     status: "VIP TASDIQLANDI"
@@ -1742,7 +1824,7 @@ app.get('/api/guests', (req, res) => {
  */
 app.post('/api/guests', (req, res) => {
   try {
-    const { id, full_name, phone, guests_count, comment } = req.body;
+    const { id, full_name, phone, guests_count, comment, music, family_names, family } = req.body;
     if (!full_name || full_name.trim().length < 2) {
       return res.status(400).json({ success: false, error: "Ism va familiyani kiriting." });
     }
@@ -1750,9 +1832,11 @@ app.post('/api/guests', (req, res) => {
       return res.status(400).json({ success: false, error: "Telefon raqamini kiriting." });
     }
 
+    const cleanFamily = (family_names || family || '').trim() || null;
+
     if (id) {
       // Update existing guest
-      const updated = db.updateParticipant(id, { full_name, phone, guests_count, comment });
+      const updated = db.updateParticipant(id, { full_name, phone, guests_count, comment, music, family_names: cleanFamily });
       if (!updated) {
         return res.status(404).json({ success: false, error: "Mehmon topilmadi." });
       }
@@ -1769,7 +1853,9 @@ app.post('/api/guests', (req, res) => {
         phone: phone.trim(),
         guests_count: Math.max(1, parseInt(guests_count, 10) || 1),
         comment: comment ? comment.trim() : '',
-        unique_ticket_id: uniqueTicketId
+        unique_ticket_id: uniqueTicketId,
+        music: music || 'music1',
+        family_names: cleanFamily
       });
       return res.json({ success: true, message: "Yangi mehmon muvaffaqiyatli qo'shildi!", guest: created });
     }
