@@ -18,6 +18,7 @@ const paymeService = require('./payments/payme.service');
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
 const WEBAPP_URL = process.env.WEBAPP_URL || process.env.RENDER_EXTERNAL_URL || 'https://visol-oqshomi.onrender.com';
+const BUILD_VERSION = Date.now();
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '-5542867358';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JN6cT8qet4kdBzHnB9hX4tRgnhy3xwRfFAA6pyUa2Oww';
 
@@ -81,7 +82,7 @@ function getDesignSelectionKeyboard() {
       Markup.button.url("🌐 E-Nikoh Namunasini Ko'rish", `${WEBAPP_URL}/enikoh.html`)
     ],
     [
-      Markup.button.webApp("📱 Mini App orqali yaratish", `${WEBAPP_URL}/index.html`)
+      Markup.button.webApp("📱 Mini App orqali yaratish", `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`)
     ]
   ]);
 }
@@ -267,8 +268,27 @@ app.get(['/ping', '/health'], (req, res) => {
   });
 });
 
-// Serve static Mini App frontend
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static Mini App frontend with anti-cache headers for Telegram WebApps
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/' || req.path === '') {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+  }
+  next();
+});
+
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+    }
+  }
+}));
 
 // Helper: Generate unique ticket ID format: #VO-XXXX-XXXX
 function generateUniqueTicketId() {
@@ -295,7 +315,7 @@ async function updateChatMenuButton(chatId, text, url) {
       menu_button: JSON.stringify({
         type: 'web_app',
         text: text || "Taklif noma",
-        web_app: { url: url || WEBAPP_URL }
+        web_app: { url: url || `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}` }
       })
     };
     if (chatId) {
@@ -336,7 +356,7 @@ function setupBotCommands(botInstance) {
     const pendingVerList = db.getPendingVerificationParticipantsByTelegramId(userId);
     const paidList = db.getPaidParticipantsByTelegramId(userId);
 
-    const regUrl = `${WEBAPP_URL}/index.html`;
+    const regUrl = `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`;
 
     // 1. Agar foydalanuvchida to'lanmagan buyurtma bo'lsa, to'lov ma'lumotlarini va atmen tugmalarini chiqaramiz
     if (unpaidList.length > 0) {
@@ -712,7 +732,7 @@ function setupBotCommands(botInstance) {
       return ctx.replyWithHTML(
         `Siz hali ro'yxatdan o'tmagansiz.\nTaklifnoma olish uchun quyidagi tugmani bosing:`,
         Markup.inlineKeyboard([
-          [Markup.button.webApp("🎟️ Ro'yxatdan o'tish", WEBAPP_URL)]
+          [Markup.button.webApp("🎟️ Ro'yxatdan o'tish", `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`)]
         ])
       );
     }
@@ -792,7 +812,7 @@ function setupBotCommands(botInstance) {
 
     await ctx.replyWithHTML(
       detailsText,
-      Markup.inlineKeyboard([[Markup.button.webApp("🎟️ Ro'yxatdan o'tish", WEBAPP_URL)]])
+      Markup.inlineKeyboard([[Markup.button.webApp("🎟️ Ro'yxatdan o'tish", `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`)]])
     );
   });
 
@@ -809,7 +829,7 @@ function setupBotCommands(botInstance) {
     if (s.map_url) {
       buttons.push([Markup.button.url("🗺️ Xaritada ko'rish (Navigatsiya)", s.map_url)]);
     }
-    buttons.push([Markup.button.webApp("🎟️ Ro'yxatdan o'tish", WEBAPP_URL)]);
+    buttons.push([Markup.button.webApp("🎟️ Ro'yxatdan o'tish", `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`)]);
 
     await ctx.replyWithHTML(locText, Markup.inlineKeyboard(buttons));
   });
@@ -1091,7 +1111,7 @@ function setupBotCommands(botInstance) {
 
           inlineButtons.push([
             Markup.button.callback("✨ Yangi Taklifnoma Yaratish", "create_new_invite"),
-            Markup.button.webApp("📱 Mini App", `${WEBAPP_URL}/index.html`)
+            Markup.button.webApp("📱 Mini App", `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`)
           ]);
 
           await botInstance.telegram.sendMessage(targetTgId, multiSuccessMsg, {
@@ -2123,8 +2143,8 @@ async function startApp() {
       console.log(`[Telegram Bot] Polling started: actively listening for Telegram users!`);
 
       // Automatically configure Chat Menu Button
-      await updateChatMenuButton(null, "Taklif noma", WEBAPP_URL);
-      console.log(`[Telegram Bot] Chat Menu Button linked to: ${WEBAPP_URL}`);
+      await updateChatMenuButton(null, "Taklif noma", `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`);
+      console.log(`[Telegram Bot] Chat Menu Button linked to: ${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`);
     } catch (botErr) {
       console.warn('[Telegram Bot] Notice initializing bot with BOT_TOKEN:', botErr.message);
       isBotActive = false;
