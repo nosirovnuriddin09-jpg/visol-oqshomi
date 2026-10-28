@@ -679,21 +679,19 @@
               <i class="fa-solid fa-ticket text-base"></i>
             </div>
             <div>
-              <span class="font-bold text-slate-100 block">Oxirgi Yaratilgan VIP Taklifnoma:</span>
-              <span class="text-slate-400">Chipta ID: <strong id="existingTicketId" class="text-gold-300 font-mono">#VO-XXXX</strong></span>
+              <span class="font-bold text-slate-100 block" id="existingTicketTitle">Oxirgi Yaratilgan VIP Taklifnoma:</span>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-slate-400">Chipta ID: <strong id="existingTicketId" class="text-gold-300 font-mono">#VO-XXXX</strong></span>
+                <span id="existingTicketBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold"></span>
+              </div>
             </div>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" id="copyExistingInviteLinkBtn" class="px-3 py-2 rounded-xl border border-gold-400/50 text-gold-300 hover:bg-gold-400/10 text-[11px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer">
-              <i class="fa-regular fa-copy"></i>
-              <span>Silkani Nusxalash</span>
+          <!-- Action for existing ticket -->
+          <div class="flex flex-wrap items-center gap-2" id="existingActions">
+            <button type="button" id="viewExistingPaymentBtn" class="px-3.5 py-2 rounded-xl gold-btn-gradient text-navy-950 font-bold text-[11px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5">
+              <i class="fa-solid fa-credit-card"></i>
+              <span>To'lov Ma'lumotlari</span>
             </button>
-            <button type="button" id="viewExistingTicketBtn" class="px-3.5 py-2 rounded-xl gold-btn-gradient text-navy-950 font-bold uppercase tracking-wider text-[11px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer">
-              <i class="fa-solid fa-eye mr-1"></i>Chiptani Ko'rish
-            </button>
-            <a id="viewExistingInviteLink" href="#" target="_blank" class="px-3.5 py-2 rounded-xl border border-gold-400/50 text-gold-300 hover:bg-gold-400/10 text-[11px] font-semibold transition-colors flex items-center gap-1 cursor-pointer">
-              <i class="fa-solid fa-envelope-open mr-1"></i>Ochish
-            </a>
           </div>
         </div>
 
@@ -1071,197 +1069,114 @@
           </form>
         </div>
 
-        <!-- DIGITAL INVITATION CARD RESULT (Revealed after successful registration) -->
-        <div id="invitationCardContainer" class="hidden transition-all duration-700">
-          
-          <!-- Top celebratory / payment banner -->
-          <div id="ticketPaymentNotice" class="luxury-card p-4 rounded-2xl border border-gold-400/40 bg-gold-950/40 mb-6 text-center shadow-xl">
-            <div class="inline-flex items-center space-x-2 text-xs uppercase tracking-widest text-gold-300 font-bold mb-2">
-              <i class="fa-solid fa-credit-card"></i>
-              <span>Buyurtma & To'lov Ma'lumotlari</span>
-            </div>
-            <div class="text-xl font-serif font-bold text-white">
-              To'lov uchun summa: <span id="paymentTotalSum" class="gold-gradient-text">0 so'm</span>
-            </div>
-            <p id="paymentUnitNotice" class="text-xs text-slate-300 mt-1">Donasi 2 000 so'mdan hisoblandi</p>
+        <!-- PENDING PAYMENT SCREEN (Shown after order creation until admin approval) -->
+        <div id="paymentPendingContainer" class="hidden transition-all duration-700">
+          <div class="luxury-card p-6 sm:p-8 rounded-3xl border border-gold-400/50 bg-navy-950/95 text-center shadow-2xl space-y-6">
             
-            <div class="mt-3 p-3 bg-black/60 rounded-xl border border-gold-400/30 text-left text-xs font-mono space-y-1.5">
-              <div class="flex justify-between items-center text-slate-300">
-                <span>Karta raqami:</span>
-                <span class="text-gold-300 font-bold text-sm tracking-wider select-all cursor-pointer" onclick="navigator.clipboard.writeText('5614681426172270'); alert('Karta raqami nusxalandi!')">5614 6814 2617 2270</span>
-              </div>
-              <div class="flex justify-between items-center text-slate-400 text-[11px]">
-                <span>Tizim:</span>
-                <span class="text-slate-200">Uzcard</span>
-              </div>
-              <div class="flex justify-between items-center text-slate-400 text-[11px]">
-                <span>Karta egasi:</span>
-                <span class="text-white font-semibold">Nosirov Nuriddin</span>
-              </div>
-            </div>
-
-            <p class="mt-3 text-xs text-amber-300 font-medium leading-relaxed">
-              📸 Iltimos, pulni o'tkazib, <b>chek rasmini Telegram botga yuboring</b>.<br>Admin uni tekshirib, 1 soat ichida taklifnomangiz havolasini yuboradi!
-            </p>
-          </div>
-
-          <!-- THE LUXURY DIGITAL TICKET (Target for html2canvas screenshot) -->
-          <div id="ticketDownloadTarget" class="invitation-ticket rounded-3xl p-6 sm:p-8 text-center text-slate-100 overflow-hidden relative">
-            <!-- Ornate corners -->
-            <div class="ornament-corner corner-tl"></div>
-            <div class="ornament-corner corner-tr"></div>
-            <div class="ornament-corner corner-bl"></div>
-            <div class="ornament-corner corner-br"></div>
-
-            <!-- Top Header -->
-            <div class="mb-4">
-              <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-gold-400/10 border border-gold-400/30 text-gold-300 text-[10px] uppercase tracking-widest font-bold">
-                <i class="fa-solid fa-crown text-[9px] text-gold-400"></i>
-                <span>Rasmiy Taklifnoma • VIP Chipta</span>
-                <i class="fa-solid fa-crown text-[9px] text-gold-400"></i>
-              </div>
-              <h4 class="font-royal text-2xl sm:text-3xl font-black tracking-widest gold-gradient-text mt-3" id="ticketEventTitle">VISOL OQSHOMI</h4>
-              <p class="font-serif italic text-sm text-gold-200/90 tracking-wider font-semibold" id="ticketCoupleNames">Anvar &amp; Madina</p>
-            </div>
-
-            <!-- Ticket ID Pill -->
-            <div class="my-4 inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-navy-950/80 border border-gold-400/40">
-              <span class="text-[10px] uppercase tracking-wider text-slate-400">Chipta ID:</span>
-              <span id="ticketDisplayId" class="font-mono text-sm sm:text-base font-bold text-gold-300 tracking-wider">#VO-2026-0000</span>
-              <button type="button" id="copyTicketBtn" title="Chipta raqamini nusxalash" class="text-gold-400 hover:text-white ml-1 text-xs">
-                <i class="fa-regular fa-copy"></i>
-              </button>
-            </div>
-
-            <!-- Guest Name -->
-            <div class="my-4">
-              <span class="text-[10px] uppercase tracking-widest text-slate-400 block mb-1">Muhtaram Mehmon:</span>
-              <h5 id="ticketGuestName" class="font-serif text-xl sm:text-2xl font-bold text-slate-100 tracking-wide gold-gradient-text">
-                Alisher Navoiy
-              </h5>
-            </div>
-
-            <!-- Event Details Specs Table -->
-            <div class="grid grid-cols-2 gap-3 text-left bg-navy-950/60 p-3.5 rounded-2xl border border-gold-400/20 my-5 text-xs">
-              <div>
-                <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Sana & Vaqt:</span>
-                <span class="font-semibold text-slate-200" id="ticketDateTime">15-Noyabr, 2026 • 18:00</span>
-              </div>
-              <div>
-                <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Mehmonlar soni:</span>
-                <span id="ticketGuestCount" class="font-semibold text-gold-300">2 kishi</span>
-              </div>
-              <div class="col-span-2 pt-1 border-t border-slate-800">
-                <span class="text-[10px] text-slate-400 uppercase tracking-wider block">To'yxona & Manzil:</span>
-                <span class="font-semibold text-slate-200" id="ticketVenueAddress">"Grand Palace" tantanalar saroyi, Toshkent</span>
-              </div>
-            </div>
-
-            <!-- DYNAMIC QR CODE DISPLAY -->
-            <div class="my-6 flex flex-col items-center justify-center">
-              <div class="p-3 bg-white rounded-2xl shadow-2xl border-2 border-gold-400 inline-block">
-                <div id="qrcodeCanvas"></div>
-              </div>
-              <span class="text-[10px] text-gold-300 tracking-wider uppercase mt-2.5 font-medium flex items-center gap-1.5">
-                <i class="fa-solid fa-qrcode text-xs"></i>
-                Tadbirga kirishda ushbu QR-kodni ko'rsating
+            <!-- Status Badge & Header -->
+            <div class="space-y-2">
+              <span class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold uppercase tracking-wider">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <span>To'lov Kutilmoqda</span>
               </span>
+              <h3 class="font-royal text-2xl sm:text-3xl font-bold gold-gradient-text">Buyurtmangiz Qabul Qilindi!</h3>
+              <p class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                Taklifnomangiz tizimda saqlandi. Taklifnoma havolasi va QR-kod admin to'lov chekini tasdiqlaganidan so'ng Telegram botingizga yuboriladi.
+              </p>
             </div>
 
-            <!-- Footer Note on Ticket -->
-            <div class="pt-3 border-t border-gold-400/20 text-[10px] text-slate-400">
-              Dress-kod: Black Tie / Kechki Libos • Shaxsiy tasdiqlangan taklifnoma
-            </div>
-          </div>
-
-          <!-- DEDICATED INVITATION LINK & SHARING BOX -->
-          <div class="mt-6 p-4 sm:p-5 rounded-2xl bg-navy-950/90 border border-gold-400/40 text-left space-y-3 shadow-2xl">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2 text-gold-400">
-                <i class="fa-solid fa-link text-sm"></i>
-                <span class="text-xs font-bold uppercase tracking-wider">Taklifnoma Silkasi (Havola):</span>
+            <!-- Order Details Summary -->
+            <div class="p-4 rounded-2xl bg-navy-900/90 border border-gold-400/30 text-left text-xs space-y-2.5 max-w-md mx-auto">
+              <div class="flex items-center justify-between border-b border-gold-400/20 pb-2">
+                <span class="text-slate-400">Chipta ID:</span>
+                <span id="pendingTicketId" class="font-mono font-bold text-gold-300 tracking-wider">#VO-XXXX</span>
               </div>
-              <span class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                <i class="fa-solid fa-circle-check"></i> Tayyor
-              </span>
+              <div class="flex items-center justify-between border-b border-gold-400/20 pb-2">
+                <span class="text-slate-400">Mijoz / Mehmon:</span>
+                <span id="pendingCustomerName" class="font-semibold text-slate-100">...</span>
+              </div>
+              <div class="flex items-center justify-between border-b border-gold-400/20 pb-2">
+                <span class="text-slate-400">Tanlangan Dizayn:</span>
+                <span id="pendingDesignName" class="font-semibold text-gold-300">Visol Oqshomi</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Taklifnomalar soni:</span>
+                <span id="pendingQuantity" class="font-semibold text-slate-100">1 ta</span>
+              </div>
             </div>
 
-            <!-- The Link Input with Copy Button -->
-            <div class="flex items-center space-x-2">
-              <input
-                type="text"
-                id="inviteUrlDisplayInput"
-                readonly
-                value=""
-                class="flex-1 bg-navy-900 border border-gold-400/30 rounded-xl px-3 py-2.5 text-xs text-gold-200 font-mono select-all focus:outline-none focus:border-gold-400"
-              />
+            <!-- Payment Card Box (Gold Luxury) -->
+            <div class="p-5 rounded-2xl bg-gold-950/40 border border-gold-400/40 max-w-md mx-auto text-left space-y-3 shadow-lg">
+              <div class="text-center">
+                <span class="text-xs uppercase tracking-widest text-gold-300/80 font-bold block mb-1">To'lov uchun summa:</span>
+                <div class="text-2xl sm:text-3xl font-serif font-black gold-gradient-text" id="pendingPaymentSum">
+                  2 000 so'm
+                </div>
+                <span class="text-[11px] text-slate-400" id="pendingPaymentNotice">Donasi 2 000 so'mdan hisoblandi</span>
+              </div>
+
+              <!-- Card Box with Copy -->
+              <div class="p-3.5 bg-black/70 rounded-xl border border-gold-400/30 space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-400">Karta raqami:</span>
+                  <div class="flex items-center gap-2">
+                    <span id="pendingCardNumber" class="text-gold-300 font-mono font-bold tracking-wider text-sm select-all">5614 6814 2617 2270</span>
+                    <button type="button" id="copyPendingCardBtn" class="px-2.5 py-1 rounded-lg bg-gold-400/20 hover:bg-gold-400/30 border border-gold-400/40 text-gold-300 text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1">
+                      <i class="fa-regular fa-copy" id="copyPendingCardIcon"></i>
+                      <span id="copyPendingCardText">Nusxa</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-400">Tizim:</span>
+                  <span class="text-slate-200 font-medium">Uzcard</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-400">Karta egasi:</span>
+                  <span class="text-white font-semibold">Nosirov Nuriddin</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mandatory Instructions Box -->
+            <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-400/30 text-left text-xs max-w-md mx-auto space-y-2 text-slate-200">
+              <div class="font-bold text-amber-300 flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved text-sm"></i>
+                <span>TO'LOV VA TASDIQLASH TARTIBI:</span>
+              </div>
+              <ol class="list-decimal list-inside space-y-1.5 text-[11.5px] leading-relaxed text-slate-300 pl-1">
+                <li>Yuqoridagi Uzcard kartasiga to'lovni o'tkazing.</li>
+                <li>To'lov cheki rasmini (skrinshot) shu Telegram botga yuboring.</li>
+                <li>Admin to'lovni tekshirib tasdiqlagach, <b>taklifnoma silkasi va QR-kodi Telegram bot orqali yuboriladi</b>.</li>
+              </ol>
+              <div class="pt-2 border-t border-amber-400/20 text-[11px] text-amber-300 italic flex items-center gap-1.5">
+                <i class="fa-solid fa-lock text-xs"></i>
+                <span>To'lov admin tomonidan tasdiqlanmaguncha havola yoki QR-kod berilmaydi!</span>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-2.5 max-w-md mx-auto pt-2">
               <button
                 type="button"
-                id="copyInviteUrlBtn"
-                class="gold-btn-gradient text-navy-950 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                id="goToBotBtn"
+                class="w-full py-3.5 rounded-xl gold-btn-gradient text-navy-950 font-bold text-sm shadow-xl flex items-center justify-center space-x-2 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
               >
-                <i class="fa-regular fa-copy" id="copyUrlIcon"></i>
-                <span id="copyUrlText">Nusxalash</span>
+                <i class="fa-brands fa-telegram text-lg"></i>
+                <span>Telegram Botga Chek Yuborish</span>
+              </button>
+
+              <button
+                type="button"
+                id="createAnotherFromPendingBtn"
+                class="w-full py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800/50 text-xs font-semibold flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+              >
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span>Yangi Taklifnoma Yaratish</span>
               </button>
             </div>
 
-            <p class="text-[11px] text-slate-300 leading-relaxed">
-              💡 <b>Mehmonga yuborish uchun:</b> Ushbu silkani nusxalang yoki quyidagi tugma orqali Telegramda to'g'ridan-to'g'ri mehmonga yuboring. Havola ochilganda shaxsiy taklifnoma va musiqa yangraydi.
-            </p>
-
-            <!-- Action buttons: Share and Open -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-              <a
-                id="shareTelegramBtn"
-                href="#"
-                target="_blank"
-                class="py-2.5 px-3 rounded-xl bg-[#24A1DE]/20 hover:bg-[#24A1DE]/30 border border-[#24A1DE]/50 text-[#68c6ff] font-semibold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer"
-              >
-                <i class="fa-brands fa-telegram text-base"></i>
-                <span>Telegramda Ulashish</span>
-              </a>
-
-              <a
-                id="openPersonalInviteBtn"
-                href="#"
-                target="_blank"
-                class="py-2.5 px-3 rounded-xl gold-btn-gradient text-navy-950 font-bold text-xs flex items-center justify-center space-x-2 shadow hover:scale-105 transition-all cursor-pointer"
-              >
-                <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                <span>Taklifnomani Ochish</span>
-              </a>
-            </div>
           </div>
-
-          <!-- Secondary Action Buttons for the Ticket -->
-          <div class="mt-4 space-y-2.5">
-            <button
-              type="button"
-              id="downloadTicketBtn"
-              class="w-full py-3 rounded-xl border border-gold-400/50 text-gold-300 hover:bg-gold-400/10 transition-colors text-xs uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg"
-            >
-              <i class="fa-solid fa-download"></i>
-              <span>Taklifnomani Rasm Qilib Saqlash</span>
-            </button>
-
-            <button
-              type="button"
-              id="closeTgBtn"
-              class="w-full py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors text-xs uppercase tracking-wider flex items-center justify-center space-x-2"
-            >
-              <i class="fa-brands fa-telegram"></i>
-              <span>Telegramda yopish</span>
-            </button>
-
-            <button
-              type="button"
-              id="registerAnotherBtn"
-              class="w-full text-center text-xs text-slate-400 hover:text-gold-300 underline pt-1"
-            >
-              Boshqa mehmon uchun ro'yxatdan o'tish
-            </button>
-          </div>
-
         </div>
 
       </div>
@@ -1616,44 +1531,36 @@
           // Show existing ticket banner above the form without hiding or locking the form
           const banner = document.getElementById('alreadyRegisteredBanner');
           const ticketIdEl = document.getElementById('existingTicketId');
+          const badgeEl = document.getElementById('existingTicketBadge');
+          const paidActions = document.getElementById('existingPaidActions');
+          const unpaidActions = document.getElementById('existingUnpaidActions');
+          const viewPaymentBtn = document.getElementById('viewExistingPaymentBtn');
           const viewBtn = document.getElementById('viewExistingTicketBtn');
           const linkBtn = document.getElementById('viewExistingInviteLink');
           const copyExistingBtn = document.getElementById('copyExistingInviteLinkBtn');
 
           if (banner) banner.classList.remove('hidden');
           if (ticketIdEl) ticketIdEl.textContent = t.unique_ticket_id;
-          const cleanTicket = t.unique_ticket_id.replace('#', '');
-          const fullInviteUrl = window.location.origin + `/invite.html?ticket=${encodeURIComponent(cleanTicket)}`;
-          
-          if (linkBtn) {
-            linkBtn.href = fullInviteUrl;
-            linkBtn.onclick = (e) => {
-              e.preventDefault();
-              if (tg && tg.openLink) {
-                tg.openLink(fullInviteUrl);
-              } else {
-                window.open(fullInviteUrl, '_blank');
-              }
-            };
+
+          const isPaid = t.payment_status === 'paid';
+
+          if (badgeEl) {
+            if (isPaid) {
+              badgeEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 border border-emerald-400/40 text-emerald-300';
+              badgeEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Tasdiqlangan (Botda mavjud)';
+            } else {
+              badgeEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/20 border border-amber-400/40 text-amber-300';
+              badgeEl.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> To\'lov kutilmoqda';
+            }
           }
 
-          if (copyExistingBtn) {
-            copyExistingBtn.onclick = () => {
-              navigator.clipboard.writeText(fullInviteUrl).then(() => {
-                copyExistingBtn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i><span>Nusxalandi!</span>';
-                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                setTimeout(() => {
-                  copyExistingBtn.innerHTML = '<i class="fa-regular fa-copy"></i><span>Silkani Nusxalash</span>';
-                }, 2500);
-              }).catch(() => {
-                prompt('Taklifnoma havolasi:', fullInviteUrl);
+          if (viewPaymentBtn) {
+            viewPaymentBtn.onclick = () => {
+              const totalAmount = t.total_price || 2000;
+              renderPaymentPending(t, {
+                formatted_total_amount: totalAmount.toLocaleString('uz-UZ'),
+                total_unpaid_count: 1
               });
-            };
-          }
-
-          if (viewBtn) {
-            viewBtn.onclick = () => {
-              renderInvitationTicket(t, fullInviteUrl);
             };
           }
         }
@@ -1795,8 +1702,12 @@
           launchConfetti();
           if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-          // Render ticket
-          renderInvitationTicket(result.ticket, result.invite_url, result);
+          // To'lov tasdiqlanmagan holatda mutlaqo silka yoki QR-kod ko'rsatilmaydi!
+          if (result.ticket.payment_status === 'paid') {
+            renderInvitationTicket(result.ticket, result.invite_url, result);
+          } else {
+            renderPaymentPending(result.ticket, result);
+          }
         } else {
           throw new Error(result.error || "Ro'yxatdan o'tishda xatolik yuz berdi");
         }
@@ -1813,225 +1724,114 @@
       }
     });
 
-    // 7. Render Invitation Ticket Card with Dynamic QR
-    function renderInvitationTicket(ticket, inviteUrl, paymentInfo) {
+    // 6.1 Render Pending Payment Screen (No link or QR code shown!)
+    function renderPaymentPending(ticket, paymentInfo) {
       const formContainer = document.getElementById('registrationFormContainer');
       const ticketContainer = document.getElementById('invitationCardContainer');
+      const pendingContainer = document.getElementById('paymentPendingContainer');
 
-      // Populate Payment Notice
-      if (document.getElementById('paymentTotalSum')) {
-        const total = paymentInfo?.formatted_total_amount || paymentInfo?.formatted_amount || '2 000';
-        document.getElementById('paymentTotalSum').textContent = `${total} so'm`;
+      if (!pendingContainer) return;
+
+      // Populate pending order details
+      const ticketIdEl = document.getElementById('pendingTicketId');
+      if (ticketIdEl) ticketIdEl.textContent = ticket.unique_ticket_id || ticket.ticket_id || '#VO-2026';
+
+      const customerNameEl = document.getElementById('pendingCustomerName');
+      if (customerNameEl) customerNameEl.textContent = ticket.full_name || ticket.guest_name || 'Hurmatli mehmon';
+
+      const designNameEl = document.getElementById('pendingDesignName');
+      if (designNameEl) {
+        const d = String(ticket.design || 'visol').toLowerCase();
+        designNameEl.textContent = d === 'enikoh' ? 'E-Nikoh Oqshomi' : 'Visol Oqshomi';
       }
-      if (document.getElementById('paymentUnitNotice')) {
+
+      const qtyEl = document.getElementById('pendingQuantity');
+      if (qtyEl) {
+        const qty = ticket.quantity || 1;
+        qtyEl.textContent = `${qty} ta taklifnoma`;
+      }
+
+      const total = paymentInfo?.formatted_total_amount || paymentInfo?.formatted_amount || (ticket.total_price ? ticket.total_price.toLocaleString('uz-UZ') : '2 000');
+      const sumEl = document.getElementById('pendingPaymentSum');
+      if (sumEl) sumEl.textContent = `${total} so'm`;
+
+      const noticeEl = document.getElementById('pendingPaymentNotice');
+      if (noticeEl) {
         if (paymentInfo && paymentInfo.total_unpaid_count > 1) {
-          document.getElementById('paymentUnitNotice').textContent = `Sizda jami ${paymentInfo.total_unpaid_count} ta to'lanmagan taklifnoma x 2 000 so'm`;
+          noticeEl.textContent = `Sizda jami ${paymentInfo.total_unpaid_count} ta to'lanmagan taklifnoma mavjud`;
         } else {
-          document.getElementById('paymentUnitNotice').textContent = `Har bir taklifnoma 2 000 so'm`;
+          noticeEl.textContent = `Har bir taklifnoma 2 000 so'm`;
         }
       }
 
-      // Populate card data
-      document.getElementById('ticketDisplayId').textContent = ticket.unique_ticket_id;
-      document.getElementById('ticketGuestName').textContent = ticket.full_name;
-      document.getElementById('ticketGuestCount').textContent = `${ticket.guests_count} kishi`;
-
-      if (ticket.event_type) {
-        const titleEl = document.getElementById('ticketEventTitle');
-        if (titleEl) titleEl.textContent = ticket.event_type.toUpperCase();
-      }
-
-      const coupleNamesVal = ticket.couple_names || (document.getElementById('coupleNamesInput') ? document.getElementById('coupleNamesInput').value.trim() : '');
-      if (coupleNamesVal) {
-        const coupleEl = document.getElementById('ticketCoupleNames');
-        if (coupleEl) coupleEl.textContent = coupleNamesVal;
-      }
-
-      const dateTimeVal = ticket.event_date_time || (document.getElementById('eventDateTimeInput') ? document.getElementById('eventDateTimeInput').value.trim() : '');
-      if (dateTimeVal) {
-        const dtEl = document.getElementById('ticketDateTime');
-        if (dtEl) dtEl.textContent = dateTimeVal;
-      }
-
-      const venueNameVal = ticket.venue_name || (document.getElementById('venueNameInput') ? document.getElementById('venueNameInput').value.trim() : '');
-      const venueAddrVal = ticket.venue_address || (document.getElementById('venueAddressInput') ? document.getElementById('venueAddressInput').value.trim() : '');
-      if (venueNameVal || venueAddrVal) {
-        const vaEl = document.getElementById('ticketVenueAddress');
-        if (vaEl) {
-          const parts = [venueNameVal, venueAddrVal].filter(Boolean);
-          vaEl.textContent = parts.join(', ');
-        }
-      }
-
-      // Set personal invite link
-      const cleanId = ticket.unique_ticket_id.replace('#', '');
-      let fullInviteUrl = inviteUrl;
-      if (!fullInviteUrl || !fullInviteUrl.startsWith('http')) {
-        fullInviteUrl = window.location.origin + `/invite.html?ticket=${encodeURIComponent(cleanId)}`;
-      }
-
-      // Populate Link input box
-      const urlInput = document.getElementById('inviteUrlDisplayInput');
-      if (urlInput) {
-        urlInput.value = fullInviteUrl;
-      }
-
-      // Configure Copy Link button
-      const copyUrlBtn = document.getElementById('copyInviteUrlBtn');
-      if (copyUrlBtn) {
-        copyUrlBtn.onclick = () => {
-          navigator.clipboard.writeText(fullInviteUrl).then(() => {
-            const icon = document.getElementById('copyUrlIcon');
-            const text = document.getElementById('copyUrlText');
-            if (icon) icon.className = 'fa-solid fa-check text-green-700';
+      // Copy Card Number Button
+      const copyCardBtn = document.getElementById('copyPendingCardBtn');
+      if (copyCardBtn) {
+        copyCardBtn.onclick = () => {
+          navigator.clipboard.writeText('5614681426172270').then(() => {
+            const icon = document.getElementById('copyPendingCardIcon');
+            const text = document.getElementById('copyPendingCardText');
+            if (icon) icon.className = 'fa-solid fa-check text-green-400';
             if (text) text.textContent = 'Nusxalandi!';
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             setTimeout(() => {
               if (icon) icon.className = 'fa-regular fa-copy';
-              if (text) text.textContent = 'Nusxalash';
+              if (text) text.textContent = 'Nusxa';
             }, 2500);
           }).catch(() => {
-            if (urlInput) {
-              urlInput.select();
-              document.execCommand('copy');
-              alert('Taklifnoma havolasi nusxalandi!');
-            }
+            prompt('Karta raqami:', '5614681426172270');
           });
         };
       }
 
-      // Configure Telegram Share button
-      const shareTgBtn = document.getElementById('shareTelegramBtn');
-      if (shareTgBtn) {
-        const guestName = ticket.full_name || 'Muhtaram mehmon';
-        const shareText = `Assalomu alaykum, ${guestName}! Sizni to'yimizga taklif etamiz. Shaxsiy taklifnomangiz:`;
-        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(fullInviteUrl)}&text=${encodeURIComponent(shareText)}`;
-        shareTgBtn.href = shareUrl;
-        shareTgBtn.onclick = (e) => {
-          if (tg && tg.openTelegramLink) {
-            e.preventDefault();
-            tg.openTelegramLink(shareUrl);
-          }
-        };
-      }
-
-      // Configure Open Button (works smoothly both inside TG WebApp and regular browser)
-      const openBtn = document.getElementById('openPersonalInviteBtn');
-      if (openBtn) {
-        openBtn.href = fullInviteUrl;
-        openBtn.onclick = (e) => {
-          e.preventDefault();
-          if (tg && tg.openLink) {
-            tg.openLink(fullInviteUrl);
+      // Go to Bot Button (closes Mini App so user is directly in the chat with payment details)
+      const goToBotBtn = document.getElementById('goToBotBtn');
+      if (goToBotBtn) {
+        goToBotBtn.onclick = () => {
+          if (tg && tg.close) {
+            tg.close();
+          } else if (tg && tg.openTelegramLink) {
+            tg.openTelegramLink('https://t.me/VisoloqshomiBot');
           } else {
-            window.open(fullInviteUrl, '_blank');
+            window.open('https://t.me/VisoloqshomiBot', '_blank');
           }
         };
       }
 
-      // Generate dynamic QR Code
-      const qrTarget = document.getElementById('qrcodeCanvas');
-      qrTarget.innerHTML = ''; // clear any previous QR
+      // Create Another Button
+      const createAnotherBtn = document.getElementById('createAnotherFromPendingBtn');
+      if (createAnotherBtn) {
+        createAnotherBtn.onclick = () => {
+          pendingContainer.classList.add('hidden');
+          if (formContainer) {
+            formContainer.classList.remove('hidden', 'opacity-0', 'scale-95');
+            document.getElementById('fullNameInput').value = '';
+            document.getElementById('phoneInput').value = '+998 ';
+            document.getElementById('commentInput').value = '';
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+          }
+        };
+      }
 
-      // QR content points directly to personal digital invitation
-      const qrData = window.location.origin + `/invite.html?ticket=${encodeURIComponent(cleanId)}`;
-      
-      new QRCode(qrTarget, {
-        text: qrData,
-        width: 150,
-        height: 150,
-        colorDark: "#0b0f19",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
+      // Hide other views and show pendingContainer
+      if (formContainer) {
+        formContainer.classList.add('opacity-0', 'scale-95');
+      }
+      if (ticketContainer) {
+        ticketContainer.classList.add('hidden');
+      }
 
-      // Smooth switch transition
-      formContainer.classList.add('opacity-0', 'scale-95');
       setTimeout(() => {
-        formContainer.classList.add('hidden');
-        ticketContainer.classList.remove('hidden');
-        ticketContainer.classList.add('opacity-100');
-
-        // Scroll to ticket smoothly
-        ticketContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (formContainer) formContainer.classList.add('hidden');
+        pendingContainer.classList.remove('hidden');
+        pendingContainer.classList.add('opacity-100');
+        pendingContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 300);
     }
 
-    // 8. Download / Save Ticket as High-Res Image
-    const downloadTicketBtn = document.getElementById('downloadTicketBtn');
-    if (downloadTicketBtn) {
-      downloadTicketBtn.addEventListener('click', async function() {
-        const ticketElement = document.getElementById('ticketDownloadTarget');
-        const btn = this;
-        const originalText = btn.innerHTML;
-
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Rasm tayyorlanmoqda...</span>';
-        btn.disabled = true;
-
-        try {
-          const canvas = await html2canvas(ticketElement, {
-            scale: 2, // High resolution
-            useCORS: true,
-            backgroundColor: '#090e18'
-          });
-
-          const image = canvas.toDataURL('image/png');
-          const link = document.createElement('a');
-          const ticketId = document.getElementById('ticketDisplayId').textContent.replace('#', '');
-          link.download = `Visol-Oqshomi-Taklifnoma-${ticketId}.png`;
-          link.href = image;
-          link.click();
-
-          if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        } catch (err) {
-          console.error('Download error:', err);
-          alert('Rasmni yuklab olishda xatolik yuz berdi. Iltimos, ekranni skrinshot qilib oling.');
-        } finally {
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-        }
-      });
-    }
-
-    // 9. Copy Ticket ID to Clipboard
-    const copyTicketBtn = document.getElementById('copyTicketBtn');
-    if (copyTicketBtn) {
-      copyTicketBtn.addEventListener('click', function() {
-        const idText = document.getElementById('ticketDisplayId').textContent;
-        navigator.clipboard.writeText(idText).then(() => {
-          this.innerHTML = '<i class="fa-solid fa-check text-green-400"></i>';
-          if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-          setTimeout(() => {
-            this.innerHTML = '<i class="fa-regular fa-copy"></i>';
-          }, 2000);
-        });
-      });
-    }
-
-    // 10. Close Telegram Mini App
-    const closeTgBtn = document.getElementById('closeTgBtn');
-    if (closeTgBtn) {
-      closeTgBtn.addEventListener('click', function() {
-        if (tg && tg.close) {
-          tg.close();
-        } else {
-          alert('Ushbu oyna Telegram ilovasi ichida avtomatik yopiladi.');
-        }
-      });
-    }
-
-    // 11. Register Another Guest
-    const registerAnotherBtn = document.getElementById('registerAnotherBtn');
-    if (registerAnotherBtn) {
-      registerAnotherBtn.addEventListener('click', function() {
-        document.getElementById('invitationCardContainer').classList.add('hidden');
-        const formContainer = document.getElementById('registrationFormContainer');
-        formContainer.classList.remove('hidden', 'opacity-0', 'scale-95');
-        document.getElementById('fullNameInput').value = '';
-        document.getElementById('phoneInput').value = '+998 ';
-        document.getElementById('commentInput').value = '';
-        formContainer.scrollIntoView({ behavior: 'smooth' });
-      });
+    // 7. Mini App does not show QR code or link - redirects to payment pending screen
+    function renderInvitationTicket(ticket, inviteUrl, paymentInfo) {
+      renderPaymentPending(ticket, paymentInfo);
     }
 
     // 12. Confetti Burst Helper

@@ -737,6 +737,16 @@ function setupBotCommands(botInstance) {
       );
     }
 
+    if (ticket.payment_status !== 'paid') {
+      const unpaidView = buildUnpaidOrderDetails(telegramId, ticket.full_name);
+      return ctx.replyWithHTML(
+        `⏳ <b>Taklifnomangiz (<code>${ticket.unique_ticket_id}</code>) to'lovi hali tasdiqlanmagan.</b>\n\n` +
+        `Taklifnoma havolasi va QR-kodi faqat to'lov cheki yuborilib, admin tasdiqlaganidan so'ng taqdim etiladi.\n\n` +
+        unpaidView.text,
+        unpaidView.keyboard
+      );
+    }
+
     await sendTicketToUser(ctx.chat.id, ticket);
   });
 
@@ -1693,11 +1703,12 @@ app.post('/api/register', async (req, res) => {
       bot.telegram.sendMessage(adminChatId, adminOrderMsg, { parse_mode: 'HTML' }).catch(() => {});
     }
 
-    const inviteUrl = getInvitationUrl(ticketRecord);
+    const inviteUrl = ticketRecord.payment_status === 'paid' ? getInvitationUrl(ticketRecord) : null;
 
     return res.status(200).json({
       success: true,
-      payment_required: true,
+      payment_required: ticketRecord.payment_status !== 'paid',
+      status: ticketRecord.payment_status || 'pending_payment',
       design: cleanDesign,
       design_name: getDesignDisplayName(cleanDesign),
       quantity: cleanQuantity,
@@ -1710,10 +1721,31 @@ app.post('/api/register', async (req, res) => {
       card_number: "5614 6814 2617 2270",
       card_owner: "Nosirov Nuriddin",
       message: `To'lov uchun summa: ${formattedTotalAmount} so'm. Chek rasmini botga yuboring.`,
-      ticket: ticketRecord,
-      invitation: ticketRecord,
+      ticket: {
+        id: ticketRecord.id,
+        unique_ticket_id: ticketRecord.unique_ticket_id,
+        ticket_id: ticketRecord.unique_ticket_id,
+        full_name: ticketRecord.full_name,
+        guest_name: ticketRecord.full_name,
+        couple_names: ticketRecord.couple_names,
+        event_type: ticketRecord.event_type,
+        event_date_time: ticketRecord.event_date_time,
+        venue_name: ticketRecord.venue_name,
+        venue_address: ticketRecord.venue_address,
+        guests_count: ticketRecord.guests_count,
+        design: ticketRecord.design,
+        payment_status: ticketRecord.payment_status,
+        total_price: ticketRecord.total_price
+      },
+      invitation: {
+        id: ticketRecord.id,
+        unique_ticket_id: ticketRecord.unique_ticket_id,
+        ticket_id: ticketRecord.unique_ticket_id,
+        full_name: ticketRecord.full_name,
+        payment_status: ticketRecord.payment_status
+      },
       ticket_id: ticketRecord.unique_ticket_id,
-      invite_url: inviteUrl
+      invite_url: null // To'lov tasdiqlanmaguncha havola taqdim etilmaydi
     });
 
   } catch (error) {
@@ -1738,6 +1770,18 @@ function handleGetInvitation(req, res) {
       success: false,
       valid: false,
       error: "Bunday raqamli chipta / taklifnoma topilmadi."
+    });
+  }
+
+  // To'lov holatini tekshirish: admin tasdiqlamagan bo'lsa kirish taqiqlanadi
+  if (ticket.payment_status && ticket.payment_status !== 'paid') {
+    return res.status(403).json({
+      success: false,
+      valid: false,
+      payment_required: true,
+      payment_status: ticket.payment_status,
+      ticket_id: ticket.unique_ticket_id || ticket.ticket_id,
+      error: "Ushbu taklifnoma to'lovi hali tasdiqlanmagan. Iltimos, to'lov chekini botga yuboring va admin tasdiqlashini kuting."
     });
   }
 
@@ -1795,7 +1839,13 @@ app.get('/api/user-ticket/:telegramId', (req, res) => {
     return res.status(404).json({ success: false, error: "Chipta topilmadi." });
   }
 
-  return res.json({ success: true, ticket });
+  const safeTicket = { ...ticket };
+  if (safeTicket.payment_status !== 'paid') {
+    delete safeTicket.invite_url;
+    safeTicket.invite_url = null;
+  }
+
+  return res.json({ success: true, ticket: safeTicket });
 });
 
 /**

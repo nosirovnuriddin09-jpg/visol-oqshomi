@@ -1287,23 +1287,61 @@ h1.title{
     });
   }
 
+  function showPaymentRequiredNotice() {
+    var bgm = document.getElementById("bgm");
+    if (bgm) bgm.pause();
+    document.body.innerHTML = `
+      <div style="min-height:100vh;background:#0b0f19;color:#f3e5ab;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:'Montserrat',sans-serif;box-sizing:border-box;">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(212,175,55,0.15);border:2px solid #d4af37;display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:20px;box-shadow:0 0 25px rgba(212,175,55,0.25);">
+          ⏳
+        </div>
+        <h2 style="font-size:24px;color:#d4af37;font-family:'Cinzel Decorative','Cinzel',serif;margin:0 0 12px;letter-spacing:1px;">
+          Taklifnoma To'lovi Kutilmoqda
+        </h2>
+        <p style="color:#cbd5e1;max-width:380px;line-height:1.6;font-size:13.5px;margin:0 0 24px;">
+          Ushbu taklifnoma to'lovi hali tasdiqlanmagan.<br>
+          Iltimos, to'lov chekini Telegram botimizga yuboring. Admin tasdiqlashi bilan taklifnoma to'liq ochiladi.
+        </p>
+        <a href="https://t.me/VisoloqshomiBot" style="display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:linear-gradient(135deg,#c59d28,#ffd700);color:#090e18;border-radius:12px;font-weight:bold;text-decoration:none;font-size:13px;box-shadow:0 4px 15px rgba(212,175,55,0.35);transition:transform 0.2s;">
+          Telegram Botga O'tish
+        </a>
+      </div>
+    `;
+  }
+
   // If ticket ID is present, fetch guest details and custom event info from backend API
   if(ticketParam){
     var cleanTicket = ticketParam.replace("#", "").trim();
     fetch("/api/invitation/" + encodeURIComponent(cleanTicket))
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        if(data && data.success && (data.invitation || data.ticket)){
-          applyCustomDetails(data.invitation || data.ticket);
+      .then(function(r){
+        return r.json().then(function(data){
+          return { status: r.status, data: data };
+        });
+      })
+      .then(function(res){
+        if(res.status === 403 || (res.data && res.data.payment_required)){
+          showPaymentRequiredNotice();
+          return;
+        }
+        if(res.data && res.data.success && (res.data.invitation || res.data.ticket)){
+          applyCustomDetails(res.data.invitation || res.data.ticket);
         }
       })
       .catch(function(err){
         console.warn("API invitation load notice, trying /api/ticket/:", err);
         fetch("/api/ticket/" + encodeURIComponent(cleanTicket))
-          .then(function(r){ return r.json(); })
-          .then(function(d){
-            if(d && d.success && (d.invitation || d.ticket)){
-              applyCustomDetails(d.invitation || d.ticket);
+          .then(function(r){
+            return r.json().then(function(data){
+              return { status: r.status, data: data };
+            });
+          })
+          .then(function(res){
+            if(res.status === 403 || (res.data && res.data.payment_required)){
+              showPaymentRequiredNotice();
+              return;
+            }
+            if(res.data && res.data.success && (res.data.invitation || res.data.ticket)){
+              applyCustomDetails(res.data.invitation || res.data.ticket);
             }
           })
           .catch(function(e){
