@@ -307,21 +307,34 @@ function generateUniqueTicketId() {
 let bot = null;
 let isBotActive = false;
 
-// Helper: Reliably set Telegram Chat Menu Button via raw callApi with proper JSON serialization
+// Helper: Reliably set Telegram Chat Menu Button
 async function updateChatMenuButton(chatId, text, url) {
   if (!bot || !isBotActive || !WEBAPP_URL || !WEBAPP_URL.startsWith('https://')) return;
+  const targetUrl = url || `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`;
+  const btnText = text || "Taklif noma";
   try {
-    const payload = {
-      menu_button: JSON.stringify({
-        type: 'web_app',
-        text: text || "Taklif noma",
-        web_app: { url: url || `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}` }
-      })
-    };
-    if (chatId) {
-      payload.chat_id = chatId;
+    if (bot.telegram && typeof bot.telegram.setChatMenuButton === 'function') {
+      await bot.telegram.setChatMenuButton({
+        chatId: chatId || undefined,
+        menuButton: {
+          type: 'web_app',
+          text: btnText,
+          web_app: { url: targetUrl }
+        }
+      });
+    } else {
+      const payload = {
+        menu_button: JSON.stringify({
+          type: 'web_app',
+          text: btnText,
+          web_app: { url: targetUrl }
+        })
+      };
+      if (chatId) {
+        payload.chat_id = chatId;
+      }
+      await bot.telegram.callApi('setChatMenuButton', payload);
     }
-    await bot.telegram.callApi('setChatMenuButton', payload);
   } catch (err) {
     console.warn('[Telegram Bot] Menu button update warning:', err.message);
   }
@@ -2112,6 +2125,28 @@ app.get('/api/payment/generate-url', (req, res) => {
 });
 
 /**
+ * GET /api/fix-menu-button
+ * Explicitly synchronize and purge any outdated Telegram Chat Menu Buttons
+ */
+app.get('/api/fix-menu-button', async (req, res) => {
+  try {
+    const regUrl = `${WEBAPP_URL}/index.html?v=${Date.now()}`;
+    await updateChatMenuButton(null, "Taklif noma", regUrl);
+    
+    const participants = db.getAllParticipants ? db.getAllParticipants() : [];
+    const userIds = new Set(['6770205751', ...participants.map(p => p.telegram_id).filter(Boolean)]);
+    const synced = [];
+    for (const uid of userIds) {
+      await updateChatMenuButton(uid, "Taklif noma", regUrl);
+      synced.push(uid);
+    }
+    return res.json({ success: true, message: "Menu button fixed and synced", url: regUrl, syncedUsers: synced });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+/**
  * GET /api/payment/transactions
  * Get recent transactions for Admin
  */
@@ -2195,6 +2230,17 @@ async function startApp() {
       // Automatically configure Chat Menu Button
       await updateChatMenuButton(null, "Taklif noma", `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`);
       console.log(`[Telegram Bot] Chat Menu Button linked to: ${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`);
+
+      // Sync user-specific menu buttons to purge any old tunnel URLs
+      try {
+        const participants = db.getAllParticipants ? db.getAllParticipants() : [];
+        const userIds = new Set(['6770205751', ...participants.map(p => p.telegram_id).filter(Boolean)]);
+        for (const uid of userIds) {
+          await updateChatMenuButton(uid, "Taklif noma", `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`);
+        }
+      } catch (syncErr) {
+        console.warn('[Telegram Bot] User menu button sync warning:', syncErr.message);
+      }
     } catch (botErr) {
       console.warn('[Telegram Bot] Notice initializing bot with BOT_TOKEN:', botErr.message);
       isBotActive = false;

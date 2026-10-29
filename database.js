@@ -174,6 +174,40 @@ class DatabaseManager {
         this.db.exec(`ALTER TABLE participants ADD COLUMN ${c} TEXT`);
       } catch {}
     }
+    this.seedInitialData();
+  }
+
+  seedInitialData() {
+    try {
+      const existing = this.getParticipantByTicketId('#VO-QCXU-6110');
+      if (!existing) {
+        this.createParticipant({
+          telegram_id: '6770205751',
+          full_name: 'Nuriddin',
+          phone: '+998 94 912 56 51',
+          guests_count: 1,
+          comment: '',
+          unique_ticket_id: '#VO-QCXU-6110',
+          ticket_id: '#VO-QCXU-6110',
+          couple_names: 'Lazizbek&Sevinch',
+          groom_bride: 'Lazizbek&Sevinch',
+          venue_name: 'Kimyogar',
+          venue_address: 'Chirchiq shahar Kimyogar toyxonasi',
+          event_date_time: '2026-12-26',
+          event_date: '2026-12-26',
+          event_type: 'Nahor oshi',
+          payment_status: 'paid',
+          total_price: '2000.0',
+          username: 'nuri1ddin',
+          design: 'visol',
+          quantity: 1,
+          music: 'music1'
+        });
+        console.log('[Database] Seeded initial VIP ticket #VO-QCXU-6110 successfully.');
+      }
+    } catch (e) {
+      console.warn('[Database] Seed check warning:', e.message);
+    }
   }
 
   /**
