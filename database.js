@@ -215,11 +215,20 @@ class DatabaseManager {
    */
   createParticipant({ telegram_id, full_name, guest_name, phone, guests_count, comment, unique_ticket_id, ticket_id, couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date, event_type, payment_status, total_price, username, design, quantity, music, family_names, family }) {
     const cleanTgId = telegram_id ? String(telegram_id) : null;
-    const cleanFullName = String(full_name || guest_name || '').trim();
+    const cleanFullName = String(full_name || guest_name || '').trim() || 'Hurmatli mehmon';
     const cleanPhone = String(phone || '').trim();
     const cleanCount = Math.max(1, parseInt(guests_count, 10) || 1);
     const cleanComment = comment ? String(comment).trim() : '';
-    const cleanTicketId = String(ticket_id || unique_ticket_id || '').trim();
+    let cleanTicketId = String(ticket_id || unique_ticket_id || '').trim();
+    if (!cleanTicketId) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let rand = '';
+      for (let i = 0; i < 4; i++) {
+        rand += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const num = Math.floor(1000 + Math.random() * 9000);
+      cleanTicketId = `#VO-${rand}-${num}`;
+    }
     const cleanCouple = couple_names || groom_bride ? String(couple_names || groom_bride).trim() : null;
     const cleanVenue = venue_name ? String(venue_name).trim() : null;
     const cleanAddr = venue_address ? String(venue_address).trim() : null;

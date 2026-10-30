@@ -498,6 +498,7 @@ function setupBotCommands(botInstance) {
       `<i>(Masalan: Akmal Razzoqov yoki Alisher va Ziyoda)</i>`;
 
     await ctx.replyWithHTML(step1Prompt, Markup.inlineKeyboard([
+      [Markup.button.callback("⏭️ Standart qoldirish (Hurmatli mehmon)", "skip_fullname")],
       [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
     ]));
   });
@@ -708,18 +709,132 @@ function setupBotCommands(botInstance) {
     );
   });
 
+  botInstance.action('skip_fullname', async (ctx) => {
+    await ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    const state = userWizardStates.get(userId);
+    if (!state) return;
+    const s = getSettings();
+    state.data.full_name = ctx.from.first_name || 'Hurmatli mehmon';
+    state.step = 'waiting_couple';
+    await ctx.replyWithHTML(
+      `2️⃣ <b>Kelin va kuyov ismlarini</b> kiriting:\n<i>(Masalan: Farrux va Sevara)</i>`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback(`⏭️ Standart qoldirish (${s.groom_name} va ${s.bride_name})`, "skip_couple")],
+        [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
+      ])
+    );
+  });
+
   botInstance.action('skip_venue', async (ctx) => {
     await ctx.answerCbQuery();
     const userId = String(ctx.from.id);
     const state = userWizardStates.get(userId);
     if (!state) return;
+    const s = getSettings();
+    state.data.venue_name = `${s.venue_name}, ${s.venue_address}`;
     state.step = 'waiting_phone';
     await ctx.replyWithHTML(
-      `5️⃣ <b>Bog'lanish uchun telefon raqamingizni</b> kiriting:\n<i>(Masalan: +998901234567)</i>`,
+      `5️⃣ <b>Bog'lanish uchun telefon raqamingizni</b> kiriting (ixtiyoriy):\n<i>(Masalan: +998901234567 yoki pastdagi tugmani bosing)</i>`,
       Markup.inlineKeyboard([
+        [Markup.button.callback("⏭️ Telefon raqamsiz davom etish", "skip_phone")],
         [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
       ])
     );
+  });
+
+  botInstance.action('skip_phone', async (ctx) => {
+    await ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    const state = userWizardStates.get(userId);
+    if (!state) return;
+    state.data.phone = '';
+    state.step = 'waiting_quantity';
+    await ctx.replyWithHTML(
+      `6️⃣ <b>Nechta taklifnoma yasamoqchisiz?</b>\n\n` +
+      `💰 <b>Donasi 2 000 so'mdan hisoblanadi.</b>\n\n` +
+      `<i>(Iltimos, kerakli taklifnomalar sonini kiriting, masalan: 1, 5, 10, 50):</i>`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback("⏭️ Standart (1 ta)", "skip_quantity")],
+        [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
+      ])
+    );
+  });
+
+  const finalizeWizardOrder = async (ctx, userId, qtyInput) => {
+    const state = userWizardStates.get(userId);
+    if (!state) return;
+    const s = getSettings();
+    const qty = Math.max(1, parseInt(qtyInput, 10) || 1);
+    const pricePerUnit = 2000;
+    const totalAmount = qty * pricePerUnit;
+    const formattedAmount = totalAmount.toLocaleString('uz-UZ');
+
+    let uniqueTicketId = generateUniqueTicketId();
+    let attempts = 0;
+    while (db.getParticipantByTicketId(uniqueTicketId) && attempts < 10) {
+      uniqueTicketId = generateUniqueTicketId();
+      attempts++;
+    }
+
+    const ticketRecord = db.createParticipant({
+      telegram_id: userId,
+      full_name: state.data.full_name || ctx.from.first_name || 'Hurmatli mehmon',
+      guest_name: state.data.full_name || ctx.from.first_name || 'Hurmatli mehmon',
+      phone: state.data.phone || '',
+      guests_count: 1,
+      couple_names: state.data.couple_names || `${s.groom_name} va ${s.bride_name}`,
+      groom_bride: state.data.couple_names || `${s.groom_name} va ${s.bride_name}`,
+      venue_name: state.data.venue_name || s.venue_name,
+      venue_address: state.data.venue_name || s.venue_address,
+      event_date_time: state.data.event_date_time || `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`,
+      event_date: state.data.event_date_time || s.event_date,
+      event_type: state.data.event_type || 'Nikoh toʻyi',
+      design: state.data.design,
+      music: state.data.music || 'music1',
+      family_names: state.data.family_names || s.family_names || "To'y egalari va xonadon ahillari",
+      quantity: qty,
+      total_price: totalAmount,
+      payment_status: 'pending_payment',
+      unique_ticket_id: uniqueTicketId,
+      username: ctx.from.username || null
+    });
+
+    userWizardStates.delete(userId);
+
+    console.log(`[Bot Wizard] Created order: ${ticketRecord.full_name} (${ticketRecord.unique_ticket_id}), Design: ${ticketRecord.design}, Qty: ${qty}, Sum: ${totalAmount}`);
+
+    const prevMsgId = userPaymentMessages.get(userId) || db.getLastPaymentMsgId(userId);
+    if (prevMsgId) {
+      botInstance.telegram.deleteMessage(userId, prevMsgId).catch(() => {});
+    }
+
+    const unpaidView = buildUnpaidOrderDetails(userId, ctx.from.first_name);
+    const sentMsg = await ctx.replyWithHTML(unpaidView.text, unpaidView.keyboard);
+    if (sentMsg && sentMsg.message_id) {
+      userPaymentMessages.set(userId, sentMsg.message_id);
+      db.setPaymentMsgId(userId, sentMsg.message_id);
+    }
+
+    const adminChatId = ADMIN_CHAT_ID || process.env.ADMIN_CHAT_ID;
+    if (adminChatId) {
+      const adminOrderNotice = `🔔 <b>YANGI BUYURTMA QABUL QILINDI!</b>\n\n` +
+        `👤 <b>Mijoz:</b> ${ticketRecord.full_name}\n` +
+        `📞 <b>Telefon:</b> ${ticketRecord.phone || 'Kiritilmagan'}\n` +
+        `🎨 <b>Dizayn:</b> <b>${getDesignDisplayName(ticketRecord.design)}</b>\n` +
+        `💌 <b>Taklifnomalar soni:</b> ${qty} ta\n` +
+        `💰 <b>Summa:</b> ${formattedAmount} so'm\n` +
+        `🎫 <b>Chipta ID:</b> <code>${ticketRecord.unique_ticket_id}</code>\n` +
+        `📱 <b>Telegram ID:</b> <code>${userId}</code> (@${ctx.from.username || 'yo\'q'})\n` +
+        `⏳ <i>Mijoz chek yuborishi kutilmoqda...</i>`;
+      botInstance.telegram.sendMessage(adminChatId, adminOrderNotice, { parse_mode: 'HTML' }).catch(() => {});
+    }
+  };
+
+  botInstance.action('skip_quantity', async (ctx) => {
+    await ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    await finalizeWizardOrder(ctx, userId, 1);
   });
 
   // Command: /admin - Open admin settings panel
@@ -1393,17 +1508,23 @@ function setupBotCommands(botInstance) {
         state.data.venue_name = text;
         state.step = 'waiting_phone';
 
-        const promptText = `5️⃣ <b>Bog'lanish uchun telefon raqamingizni</b> kiriting:\n` +
-          `<i>(Masalan: +998901234567)</i>`;
+        const promptText = `5️⃣ <b>Bog'lanish uchun telefon raqamingizni</b> kiriting (ixtiyoriy):\n` +
+          `<i>(Masalan: +998901234567 yoki pastdagi tugmani bosing)</i>`;
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
+          [Markup.button.callback("⏭️ Telefon raqamsiz davom etish", "skip_phone")],
           [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
         ]));
       }
 
-      // Step 5: Telefon raqam kiritildi -> Nechta taklifnoma ekanini so'rash
+      // Step 5: Telefon raqam kiritildi (yoki o'tkazib yuborildi) -> Nechta taklifnoma ekanini so'rash
       if (state.step === 'waiting_phone') {
-        state.data.phone = text;
+        const lower = text.toLowerCase().trim();
+        if (lower === 'skip' || lower === '-' || lower === "yo'q" || lower === 'yoq' || lower === 'otkazish' || lower === 'kerakmas') {
+          state.data.phone = '';
+        } else {
+          state.data.phone = text;
+        }
         state.step = 'waiting_quantity';
 
         const promptText = `6️⃣ <b>Nechta taklifnoma yasamoqchisiz?</b>\n\n` +
@@ -1411,6 +1532,7 @@ function setupBotCommands(botInstance) {
           `<i>(Iltimos, kerakli taklifnomalar sonini kiriting, masalan: 1, 5, 10, 50):</i>`;
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
+          [Markup.button.callback("⏭️ Standart (1 ta)", "skip_quantity")],
           [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
         ]));
       }
@@ -1418,82 +1540,8 @@ function setupBotCommands(botInstance) {
       // Step 6: Taklifnomalar soni kiritildi -> Narxni hisoblash va to'lov rekvizitlarini yuborish
       if (state.step === 'waiting_quantity') {
         const qty = parseInt(text, 10);
-        if (isNaN(qty) || qty < 1) {
-          return ctx.replyWithHTML(
-            `⚠️ Iltimos, faqat musbat butun son kiriting (masalan: 1, 5, 10, 50):`
-          );
-        }
-
-        state.data.quantity = qty;
-        const pricePerUnit = 2000;
-        const totalAmount = qty * pricePerUnit;
-        const formattedAmount = totalAmount.toLocaleString('uz-UZ');
-
-        // Yangi unikal chipta yaratish
-        let uniqueTicketId = generateUniqueTicketId();
-        let attempts = 0;
-        while (db.getParticipantByTicketId(uniqueTicketId) && attempts < 10) {
-          uniqueTicketId = generateUniqueTicketId();
-          attempts++;
-        }
-
-        const ticketRecord = db.createParticipant({
-          telegram_id: userId,
-          full_name: state.data.full_name,
-          guest_name: state.data.full_name,
-          phone: state.data.phone,
-          guests_count: 1,
-          couple_names: state.data.couple_names || `${s.groom_name} va ${s.bride_name}`,
-          groom_bride: state.data.couple_names || `${s.groom_name} va ${s.bride_name}`,
-          venue_name: state.data.venue_name || s.venue_name,
-          venue_address: state.data.venue_name || s.venue_address,
-          event_date_time: state.data.event_date_time || `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`,
-          event_date: state.data.event_date_time || s.event_date,
-          event_type: state.data.event_type || 'Nikoh toʻyi',
-          design: state.data.design,
-          music: state.data.music || 'music1',
-          family_names: state.data.family_names || s.family_names || "To'y egalari va xonadon ahillari",
-          quantity: qty,
-          total_price: totalAmount,
-          payment_status: 'pending_payment',
-          unique_ticket_id: uniqueTicketId,
-          username: ctx.from.username || null
-        });
-
-        // Jarayon yakunlandi, stateni o'chiramiz
-        userWizardStates.delete(userId);
-
-        console.log(`[Bot Wizard] Created order: ${ticketRecord.full_name} (${ticketRecord.unique_ticket_id}), Design: ${ticketRecord.design}, Qty: ${qty}, Sum: ${totalAmount}`);
-
-        // Oldingi to'lov xabari bo'lsa o'chirish
-        const prevMsgId = userPaymentMessages.get(userId) || db.getLastPaymentMsgId(userId);
-        if (prevMsgId) {
-          botInstance.telegram.deleteMessage(userId, prevMsgId).catch(() => {});
-        }
-
-        // TALAB 2: Narxni avtomatik hisoblash va to'lov xabarini yuborish (tagida atmen tugmalari bilan)
-        const unpaidView = buildUnpaidOrderDetails(userId, ctx.from.first_name);
-        const sentMsg = await ctx.replyWithHTML(unpaidView.text, unpaidView.keyboard);
-        if (sentMsg && sentMsg.message_id) {
-          userPaymentMessages.set(userId, sentMsg.message_id);
-          db.setPaymentMsgId(userId, sentMsg.message_id);
-        }
-
-        // Admin guruhiga bildirishnoma
-        const adminChatId = ADMIN_CHAT_ID || process.env.ADMIN_CHAT_ID;
-        if (adminChatId) {
-          const adminOrderNotice = `🔔 <b>YANGI BUYURTMA QABUL QILINDI!</b>\n\n` +
-            `👤 <b>Mijoz:</b> ${ticketRecord.full_name}\n` +
-            `📞 <b>Telefon:</b> ${ticketRecord.phone}\n` +
-            `🎨 <b>Dizayn:</b> <b>${getDesignDisplayName(ticketRecord.design)}</b>\n` +
-            `💌 <b>Taklifnomalar soni:</b> ${qty} ta\n` +
-            `💰 <b>Summa:</b> ${formattedAmount} so'm\n` +
-            `🎫 <b>Chipta ID:</b> <code>${ticketRecord.unique_ticket_id}</code>\n` +
-            `📱 <b>Telegram ID:</b> <code>${userId}</code>\n` +
-            `⏳ <i>Mijoz to'lov chekini yuborishi kutilmoqda...</i>`;
-
-          botInstance.telegram.sendMessage(adminChatId, adminOrderNotice, { parse_mode: 'HTML' }).catch(() => {});
-        }
+        return finalizeWizardOrder(ctx, userId, isNaN(qty) || qty < 1 ? 1 : qty);
+      }
 
         return;
       }
@@ -1609,24 +1657,20 @@ app.post('/api/register', async (req, res) => {
       event_type, design, quantity, music, song, family_names, family
     } = req.body;
 
-    const guestFullName = String(full_name || guest_name || '').trim();
-    if (!guestFullName || guestFullName.length < 2) {
-      return res.status(400).json({ success: false, error: "Ism va familiyangizni to'liq kiriting." });
-    }
-    if (!phone || String(phone).trim().length < 7) {
-      return res.status(400).json({ success: false, error: "Telefon raqamingizni to'liq kiriting." });
-    }
+    const s = getSettings();
+    const guestFullName = String(full_name || guest_name || '').trim() || 'Hurmatli mehmon';
+    const cleanPhone = (phone && phone !== '+998' && phone !== '+998 ') ? String(phone).trim() : '';
 
     const cleanGuestsCount = Math.max(1, parseInt(guests_count, 10) || 1);
     const cleanTgId = telegram_id ? String(telegram_id).trim() : null;
-    const cleanCouple = (couple_names || groom_bride || '').trim() || null;
-    const cleanVenueName = (venue_name || '').trim() || null;
-    const cleanVenueAddress = (venue_address || '').trim() || null;
-    const cleanEventDateTime = (event_date_time || event_date || '').trim() || null;
-    const cleanEventType = (event_type || '').trim() || "Nikoh toʻyi";
+    const cleanCouple = (couple_names || groom_bride || '').trim() || `${s.groom_name} va ${s.bride_name}`;
+    const cleanVenueName = (venue_name || '').trim() || s.venue_name || null;
+    const cleanVenueAddress = (venue_address || '').trim() || s.venue_address || null;
+    const cleanEventDateTime = (event_date_time || event_date || '').trim() || `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}` || null;
+    const cleanEventType = (event_type || '').trim() || s.event_type || "Nikoh toʻyi";
     const cleanDesign = design ? String(design).toLowerCase().trim() : 'visol';
     const cleanQuantity = Math.max(1, parseInt(quantity, 10) || 1);
-    const cleanFamily = (family_names || family || '').trim() || null;
+    const cleanFamily = (family_names || family || '').trim() || s.family_names || null;
 
     // Requirement 1: Unique Entry Creation
     let uniqueTicketId = generateUniqueTicketId();
@@ -1645,7 +1689,7 @@ app.post('/api/register', async (req, res) => {
       telegram_id: cleanTgId,
       full_name: guestFullName,
       guest_name: guestFullName,
-      phone: String(phone).trim(),
+      phone: cleanPhone,
       guests_count: cleanGuestsCount,
       comment: comment ? String(comment).trim() : '',
       unique_ticket_id: uniqueTicketId,
@@ -1705,7 +1749,7 @@ app.post('/api/register', async (req, res) => {
     if (adminChatId && bot && isBotActive) {
       const adminOrderMsg = `🔔 <b>YANGI BUYURTMA KELIB TUSHDI!</b>\n\n` +
         `👤 <b>Mijoz:</b> ${ticketRecord.full_name}\n` +
-        `📞 <b>Telefon:</b> ${ticketRecord.phone}\n` +
+        `📞 <b>Telefon:</b> ${ticketRecord.phone || "Kiritilmagan"}\n` +
         `🎨 <b>Dizayn:</b> <b>${getDesignDisplayName(cleanDesign)}</b>\n` +
         `💌 <b>Taklifnomalar soni:</b> ${cleanQuantity} ta\n` +
         `💰 <b>To'lov summasi:</b> ${formattedTotalAmount} so'm\n` +
@@ -1908,18 +1952,13 @@ app.get('/api/guests', (req, res) => {
 app.post('/api/guests', (req, res) => {
   try {
     const { id, full_name, phone, guests_count, comment, music, family_names, family } = req.body;
-    if (!full_name || full_name.trim().length < 2) {
-      return res.status(400).json({ success: false, error: "Ism va familiyani kiriting." });
-    }
-    if (!phone || phone.trim().length < 7) {
-      return res.status(400).json({ success: false, error: "Telefon raqamini kiriting." });
-    }
-
+    const cleanFullName = (full_name && full_name.trim().length >= 1) ? full_name.trim() : 'Hurmatli mehmon';
+    const cleanPhone = (phone && phone !== '+998' && phone !== '+998 ') ? phone.trim() : '';
     const cleanFamily = (family_names || family || '').trim() || null;
 
     if (id) {
       // Update existing guest
-      const updated = db.updateParticipant(id, { full_name, phone, guests_count, comment, music, family_names: cleanFamily });
+      const updated = db.updateParticipant(id, { full_name: cleanFullName, phone: cleanPhone, guests_count, comment, music, family_names: cleanFamily });
       if (!updated) {
         return res.status(404).json({ success: false, error: "Mehmon topilmadi." });
       }
@@ -1932,8 +1971,8 @@ app.post('/api/guests', (req, res) => {
       }
       const created = db.createParticipant({
         telegram_id: null,
-        full_name: full_name.trim(),
-        phone: phone.trim(),
+        full_name: cleanFullName,
+        phone: cleanPhone,
         guests_count: Math.max(1, parseInt(guests_count, 10) || 1),
         comment: comment ? comment.trim() : '',
         unique_ticket_id: uniqueTicketId,
