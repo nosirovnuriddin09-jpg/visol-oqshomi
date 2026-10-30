@@ -669,7 +669,7 @@ function setupBotCommands(botInstance) {
     const s = getSettings();
     state.step = 'waiting_family';
     await ctx.replyWithHTML(
-      `3️⃣ <b>Taklif etuvchilar / Oila nomini</b> kiriting:\n<i>(Taklifnoma so'ngida «Hurmat va ehtirom ila...» qatorida chiqadi, masalan: Saidovlar oilasi yoki To'y egalari)</i>`,
+      `3️⃣ <b>To'y egasi / Oila nomini</b> kiriting:\n<i>(Taklifnoma so'ngida «Hurmat va ehtirom ila...» qatorida chiqadi, masalan: Ahmedovlar oilasi yoki To'y egalari)</i>`,
       Markup.inlineKeyboard([
         [Markup.button.callback(`⏭️ Standart qoldirish (${s.family_names || "To'y egalari"})`, "skip_family")],
         [Markup.button.callback("🔙 Yaratishni to'xtatish", "cancel_wizard")]
@@ -945,7 +945,7 @@ function setupBotCommands(botInstance) {
       `⏰ <b>Boshlanish vaqti:</b> ${s.event_time}\n` +
       `🏛️ <b>To'yxona:</b> ${s.venue_name}\n` +
       `📍 <b>Manzil:</b> ${s.venue_address}\n` +
-      `👨‍👩‍👧‍👦 <b>Taklif etuvchilar:</b> ${s.family_names}\n\n` +
+      `👨‍👩‍👧‍👦 <b>To'y egasi:</b> ${s.family_names}\n\n` +
       `Quyidagi tugma orqali taklifnoma olishingiz mumkin:`;
 
     await ctx.replyWithHTML(
@@ -961,7 +961,7 @@ function setupBotCommands(botInstance) {
     const locText = `📍 <b>Tadbir Manzili:</b>\n\n` +
       `🏛️ <b>${s.venue_name}</b>\n` +
       `📌 ${s.venue_address}\n\n` +
-      `👨‍👩‍👧‍👦 <b>Taklif etuvchilar:</b> ${s.family_names}`;
+      `👨‍👩‍👧‍👦 <b>To'y egasi:</b> ${s.family_names}`;
 
     const buttons = [];
     if (s.map_url) {
@@ -1466,8 +1466,8 @@ function setupBotCommands(botInstance) {
         state.data.couple_names = text;
         state.step = 'waiting_family';
 
-        const promptText = `3️⃣ <b>Taklif etuvchilar / Oila nomini</b> kiriting:\n` +
-          `<i>(Taklifnoma so'ngida «Hurmat va ehtirom ila...» qatorida chiqadi, masalan: Saidovlar oilasi yoki To'y egalari)</i>`;
+        const promptText = `3️⃣ <b>To'y egasi / Oila nomini</b> kiriting:\n` +
+          `<i>(Taklifnoma so'ngida «Hurmat va ehtirom ila...» qatorida chiqadi, masalan: Ahmedovlar oilasi yoki To'y egalari)</i>`;
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
           [Markup.button.callback(`⏭️ Standart qoldirish (${s.family_names || "To'y egalari"})`, "skip_family")],
@@ -1475,7 +1475,7 @@ function setupBotCommands(botInstance) {
         ]));
       }
 
-      // Step 3: Taklif etuvchilar / Oila nomi kiritildi
+      // Step 3: To'y egasi / Oila nomi kiritildi
       if (state.step === 'waiting_family') {
         state.data.family_names = text;
         state.step = 'waiting_date';
@@ -1602,7 +1602,7 @@ async function sendTicketToUser(telegramId, ticket) {
     caption += `👥 <b>Mehmonlar soni:</b> ${ticket.guests_count} kishi\n`;
     caption += `📅 <b>Sana & Vaqt:</b> ${eventDate} (${s.day_of_week})\n`;
     caption += `📍 <b>Manzil:</b> ${eventVenue}\n`;
-    caption += `👨‍👩‍👧‍👦 <b>Taklif etuvchilar:</b> ${ticket.family_names || s.family_names}\n\n`;
+    caption += `👨‍👩‍👧‍👦 <b>To'y egasi:</b> ${ticket.family_names || s.family_names}\n\n`;
     if (ticket.comment) {
       caption += `💬 <b>Tilakingiz:</b> <i>"${ticket.comment}"</i>\n\n`;
     }

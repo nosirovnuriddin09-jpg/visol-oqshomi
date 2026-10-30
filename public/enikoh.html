@@ -1287,14 +1287,13 @@ const calData = {
       mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
     }
 
-    // 6. Taklif etuvchi / Mehmon oilasi (Hurmat va ehtirom ila, ...)
+    // 6. To'y egasi / Oila nomi (Hurmat va ehtirom ila, ...)
     const rawFamily = details.family_names || details.family || familyParam;
     let finalFamily = "";
     if(rawFamily && String(rawFamily).trim()){
       finalFamily = String(rawFamily).trim();
-    } else if(cleanGuest){
-      // Mehmon ismi kiritilganda pastdagi "Hurmat va ehtirom ila" qismi ham mos ravishda yangilanadi
-      finalFamily = /oila/i.test(cleanGuest) ? cleanGuest : `${cleanGuest} oilasi`;
+    } else {
+      finalFamily = "Toʻy egalari va xonadon ahillari";
     }
 
     if(finalFamily){
