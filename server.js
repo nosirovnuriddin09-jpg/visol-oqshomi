@@ -1543,8 +1543,7 @@ function setupBotCommands(botInstance) {
         return finalizeWizardOrder(ctx, userId, isNaN(qty) || qty < 1 ? 1 : qty);
       }
 
-        return;
-      }
+      return;
     }
 
     // Wizard holatida bo'lmasa — Gemini AI savollarga javob beradi
