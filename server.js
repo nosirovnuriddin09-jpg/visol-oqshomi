@@ -48,14 +48,14 @@ function getInvitationUrl(ticket) {
   if (design === 'enikoh' || design === 'e-nikoh' || design === 'e_nikoh') {
     const params = new URLSearchParams({
       ticket: cleanTicketId,
-      name: ticket.full_name || ticket.guest_name || '',
       couple: ticket.couple_names || ticket.groom_bride || '',
       date: ticket.event_date_time || ticket.event_date || '',
       venue: ticket.venue_name || ticket.venue_address || '',
       music: music
     });
-    if (ticket.family_names || ticket.family) {
-      params.set('family', ticket.family_names || ticket.family);
+    const rawName = (ticket.full_name || ticket.guest_name || '').trim();
+    if (rawName && !/^(hurmatli\s+mehmon(imiz)?|mehmonimiz|mehmon)$/i.test(rawName)) {
+      params.set('name', rawName);
     }
     return `${WEBAPP_URL}/enikoh.html?${params.toString()}`;
   }
@@ -65,8 +65,9 @@ function getInvitationUrl(ticket) {
     ticket: cleanTicketId,
     music: music
   });
-  if (ticket.family_names || ticket.family) {
-    visolParams.set('family', ticket.family_names || ticket.family);
+  const rawNameVisol = (ticket.full_name || ticket.guest_name || '').trim();
+  if (rawNameVisol && !/^(hurmatli\s+mehmon(imiz)?|mehmonimiz|mehmon)$/i.test(rawNameVisol)) {
+    visolParams.set('name', rawNameVisol);
   }
   return `${WEBAPP_URL}/invite.html?${visolParams.toString()}`;
 }

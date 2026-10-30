@@ -1119,10 +1119,13 @@ const calData = {
     // 1. Mehmon ismi
     const guestName = details.guest_name || details.full_name || details.name || guestParam;
     let cleanGuest = "";
-    if(guestName && String(guestName).trim()){
+    const isDefaultGuest = !guestName || /^(hurmatli\s+mehmon(imiz)?|mehmonimiz|mehmon)$/i.test(String(guestName).trim());
+    const gEl = document.getElementById("guest");
+    if(!isDefaultGuest){
       cleanGuest = String(guestName).trim().replace(/[<>]/g, "");
-      const gEl = document.getElementById("guest");
       if(gEl) gEl.textContent = cleanGuest;
+    } else {
+      if(gEl) gEl.textContent = "mehmonimiz";
     }
 
     // 2. Kelin va Kuyov ismlari
@@ -1287,12 +1290,13 @@ const calData = {
       mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
     }
 
-    // 6. To'y egasi / Oila nomi (Hurmat va ehtirom ila, ...)
-    const rawFamily = details.family_names || details.family || familyParam;
+    // 6. Taklif etuvchilar / Mehmon oilasi (Hurmat va ehtirom ila, ...)
     let finalFamily = "";
-    if(rawFamily && String(rawFamily).trim()){
-      finalFamily = String(rawFamily).trim();
+    if(cleanGuest){
+      // Agar taklifnomada mehmon kiritilgan bo'lsa (kimni chaqirayotgan bo'lsa), o'sha mehmonning ismi/oilasi chiqadi
+      finalFamily = /oila/i.test(cleanGuest) ? cleanGuest : `${cleanGuest} oilasi`;
     } else {
+      // Mehmon ismi kiritilmagan bo'lsa, to'y egasi emas, standart "Toʻy egalari va xonadon ahillari" chiqadi
       finalFamily = "Toʻy egalari va xonadon ahillari";
     }
 

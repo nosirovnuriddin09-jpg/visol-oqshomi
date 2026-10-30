@@ -1099,10 +1099,14 @@ h1.title{
       }
     }
 
-    if(guestName && String(guestName).trim()){
+    var isDefaultG = !guestName || /^(hurmatli\s+mehmon(imiz)?|mehmonimiz|mehmon)$/i.test(String(guestName).trim());
+    if(!isDefaultG && guestName && String(guestName).trim()){
       hasCustom.guest = true;
       var gEl = document.getElementById("guestName");
       if(gEl) gEl.textContent = String(guestName).trim();
+    } else {
+      var gEl = document.getElementById("guestName");
+      if(gEl) gEl.textContent = "Mehmonimiz";
     }
     if(coupleNames && String(coupleNames).trim()){
       hasCustom.couple = true;
@@ -1253,10 +1257,14 @@ h1.title{
     }
 
     // Taklif etuvchilar / Oila nomi
-    var fam = details.family_names || details.family || familyParam;
-    if(fam && String(fam).trim()){
-      var footerFam = document.getElementById("footerFamily");
-      if(footerFam) footerFam.textContent = String(fam).trim();
+    var footerFam = document.getElementById("footerFamily");
+    if(footerFam){
+      if(!isDefaultG && guestName && String(guestName).trim()){
+        var cleanG = String(guestName).trim();
+        footerFam.textContent = /oila/i.test(cleanG) ? cleanG : (cleanG + " oilasi");
+      } else {
+        footerFam.textContent = "Toʻy egalari va xonadon ahillari";
+      }
     }
 
     // Musiqa tanlovi
