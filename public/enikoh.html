@@ -910,19 +910,9 @@ section{position:relative;z-index:4;padding:0 30px}
     </div>
   </section>
 
-  <!-- ─────────── COUNTDOWN ─────────── -->
-  <section class="panel" style="padding-top:18px">
-    <p class="eyebrow rv">BAYRAMGACHA</p>
-    <h2 class="h2 rv rv-d1">Qolgan vaqt</h2>
-
-    <div class="cd rv rv-d2" id="cd">
-      <div class="cd-box"><div class="cd-num" id="cdD">00</div><div class="cd-lab">kun</div></div>
-      <div class="cd-box"><div class="cd-num" id="cdH">00</div><div class="cd-lab">soat</div></div>
-      <div class="cd-box"><div class="cd-num" id="cdM">00</div><div class="cd-lab">daqiqa</div></div>
-      <div class="cd-box"><div class="cd-num" id="cdS">00</div><div class="cd-lab">soniya</div></div>
-    </div>
-
-    <div class="cal rv rv-d3">
+  <!-- ─────────── CALENDAR ─────────── -->
+  <section class="panel" style="padding-top:20px;padding-bottom:12px">
+    <div class="cal rv rv-d1" style="margin-top:0">
       <div class="cal-h">AVGUST 2026</div>
       <div class="cal-grid" id="cal"></div>
     </div>
@@ -1068,10 +1058,11 @@ const el = {d:document.getElementById("cdD"), h:document.getElementById("cdH"),
             m:document.getElementById("cdM"), s:document.getElementById("cdS")};
 
 function tick(){
+  const cdEl = document.getElementById("cd");
+  if(!cdEl) return;
   let diff = TARGET - Date.now();
   if(diff <= 0){
-    const cdEl = document.getElementById("cd");
-    if(cdEl) cdEl.innerHTML = '<div class="cd-done">Bugun — bayram kuni!</div>';
+    cdEl.innerHTML = '<div class="cd-done">Bugun — bayram kuni!</div>';
     if(timer) clearInterval(timer);
     return;
   }
@@ -1081,8 +1072,10 @@ function tick(){
   if(el.m) el.m.textContent = pad(Math.floor(s%3600/60));
   if(el.s) el.s.textContent = pad(s%60);
 }
-tick();
-if(TARGET > Date.now()) timer = setInterval(tick, 1000);
+if(document.getElementById("cd")){
+  tick();
+  if(TARGET > Date.now()) timer = setInterval(tick, 1000);
+}
 
 const calData = {
   year: 2026,
@@ -1236,8 +1229,10 @@ const calData = {
       if(!isNaN(targetTime)){
         TARGET = targetTime;
         if(timer) { clearInterval(timer); }
-        tick();
-        if(TARGET > Date.now()) timer = setInterval(tick, 1000);
+        if(document.getElementById("cd")){
+          tick();
+          if(TARGET > Date.now()) timer = setInterval(tick, 1000);
+        }
       }
 
       const calTitle = document.querySelector(".cal .cal-h");
