@@ -210,9 +210,10 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 }
 .opener-sub{
   font-family:"Great Vibes",cursive;
-  font-size:clamp(30px,9vw,40px);line-height:1.1;text-align:center;
+  font-size:clamp(30px,9vw,40px);line-height:1.24;text-align:center;
   background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent;
   animation:fadeUp .9s var(--ease) .5s both;
+  padding:0.2em 0.1em 0.08em;
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 
@@ -323,8 +324,8 @@ section{position:relative;z-index:4;padding:0 30px}
 }
 .guest{
   font-family:"Great Vibes",cursive;
-  font-size:1.62em;line-height:1;
-  display:inline-block;padding:0 .04em;vertical-align:-.14em;
+  font-size:1.62em;line-height:1.24;
+  display:inline-block;padding:0.18em 0.08em 0.06em;vertical-align:-.14em;
   background:var(--grad-gold-ink);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 1px 0 rgba(255,255,255,.5));
@@ -332,20 +333,20 @@ section{position:relative;z-index:4;padding:0 30px}
 
 .lead{
   font-size:clamp(18px,5vw,21px);color:var(--ink-soft);
-  margin:18px 0 4px;letter-spacing:.01em;
+  margin:18px 0 2px;letter-spacing:.01em;
 }
 
-.names{margin:6px 0 2px}
+.names{margin:2px 0 2px}
 .name{
   font-family:"Great Vibes",cursive;
   font-size:clamp(48px,15.4vw,74px);
-  line-height:1.06;
+  line-height:1.24;
   background:var(--grad-gold-ink);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 1px 0 rgba(255,255,255,.55));
   background-size:220% 100%;
   animation:shimmer 6s linear infinite;
-  padding:0 2px;
+  padding:0.28em 0.12em 0.08em;
 }
 @keyframes shimmer{0%{background-position:0% 50%}100%{background-position:220% 50%}}
 
@@ -544,10 +545,11 @@ section{position:relative;z-index:4;padding:0 30px}
 }
 .final .big{
   font-family:"Great Vibes",cursive;
-  font-size:clamp(38px,11.6vw,54px);line-height:1.15;
+  font-size:clamp(38px,11.6vw,54px);line-height:1.24;
   background:var(--grad-gold-ink);-webkit-background-clip:text;background-clip:text;color:transparent;
   background-size:220% 100%;animation:shimmer 7s linear infinite;
   filter:drop-shadow(0 1px 0 rgba(255,255,255,.5));
+  padding:0.2em 0.1em 0.08em;
 }
 .final .sm{
   margin-top:10px;font-size:18px;color:var(--ink-soft);font-style:italic;
