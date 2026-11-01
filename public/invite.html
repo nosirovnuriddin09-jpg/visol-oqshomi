@@ -1060,7 +1060,8 @@ h1.title{
     couple: false,
     venue: false,
     address: false,
-    dateTime: false
+    dateTime: false,
+    family: false
   };
 
   function applyCustomDetails(details) {
@@ -1071,6 +1072,9 @@ h1.title{
     var venueAddress = details.venue_address || details.address;
     var eventDateTime = details.event_date || details.event_date_time || details.date;
     var comment = details.comment || details.wishes;
+    var hostFamily = (details.family_names !== undefined && details.family_names !== null) ? details.family_names :
+                     (details.family !== undefined && details.family !== null) ? details.family :
+                     familyParam;
 
     var eventType = details.event_type || details.eventType;
     var evStr = eventType && String(eventType).trim() ? String(eventType).trim() : "Nikoh toʻyi";
@@ -1256,13 +1260,13 @@ h1.title{
       }
     }
 
-    // Taklif etuvchilar / Oila nomi
+    // Taklif etuvchilar / To'y egasi / Oila nomi (Hurmat va ehtirom ila, ...)
     var footerFam = document.getElementById("footerFamily");
     if(footerFam){
-      if(!isDefaultG && guestName && String(guestName).trim()){
-        var cleanG = String(guestName).trim();
-        footerFam.textContent = /oila/i.test(cleanG) ? cleanG : (cleanG + " oilasi");
-      } else {
+      if(hostFamily && String(hostFamily).trim()){
+        footerFam.textContent = String(hostFamily).trim();
+        hasCustom.family = true;
+      } else if(!hasCustom.family){
         footerFam.textContent = "Toʻy egalari va xonadon ahillari";
       }
     }
@@ -1597,7 +1601,7 @@ h1.title{
     if(mapBtn && s.map_url) mapBtn.href = s.map_url;
 
     var footerFamily = document.getElementById("footerFamily");
-    if(footerFamily && s.family_names) footerFamily.textContent = s.family_names;
+    if(footerFamily && s.family_names && !hasCustom.family) footerFamily.textContent = s.family_names;
 
     var footerCredit = document.getElementById("footerCredit");
     if(footerCredit && s.year) footerCredit.textContent = "Taklifnoma · " + s.year;
@@ -1620,7 +1624,7 @@ h1.title{
       if(data && data.success && data.settings){
         if(typeof data.settings.music_loop_start === "number") AUDIO_LOOP_START = data.settings.music_loop_start;
         if(typeof data.settings.music_loop_end === "number") AUDIO_LOOP_END = data.settings.music_loop_end;
-        if(!ticketParam && !hasCustom.couple && !hasCustom.venue && !hasCustom.address && !hasCustom.dateTime && !hasCustom.guest){
+        if(!ticketParam && !hasCustom.couple && !hasCustom.venue && !hasCustom.address && !hasCustom.dateTime && !hasCustom.guest && !hasCustom.family){
           applySettings(data.settings);
         }
       }

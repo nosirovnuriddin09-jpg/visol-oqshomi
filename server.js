@@ -45,6 +45,8 @@ function getInvitationUrl(ticket) {
   const design = String(ticket.design || 'visol').toLowerCase();
   const music = ticket.music || ticket.song || 'music1';
 
+  const familyName = (ticket.family_names || ticket.family || '').trim();
+
   if (design === 'enikoh' || design === 'e-nikoh' || design === 'e_nikoh') {
     const params = new URLSearchParams({
       ticket: cleanTicketId,
@@ -57,6 +59,9 @@ function getInvitationUrl(ticket) {
     if (rawName && !/^(hurmatli\s+mehmon(imiz)?|mehmonimiz|mehmon)$/i.test(rawName)) {
       params.set('name', rawName);
     }
+    if (familyName) {
+      params.set('family', familyName);
+    }
     return `${WEBAPP_URL}/enikoh.html?${params.toString()}`;
   }
 
@@ -68,6 +73,9 @@ function getInvitationUrl(ticket) {
   const rawNameVisol = (ticket.full_name || ticket.guest_name || '').trim();
   if (rawNameVisol && !/^(hurmatli\s+mehmon(imiz)?|mehmonimiz|mehmon)$/i.test(rawNameVisol)) {
     visolParams.set('name', rawNameVisol);
+  }
+  if (familyName) {
+    visolParams.set('family', familyName);
   }
   return `${WEBAPP_URL}/invite.html?${visolParams.toString()}`;
 }
@@ -1791,6 +1799,8 @@ app.post('/api/register', async (req, res) => {
         venue_address: ticketRecord.venue_address,
         guests_count: ticketRecord.guests_count,
         design: ticketRecord.design,
+        family_names: ticketRecord.family_names,
+        family: ticketRecord.family_names,
         payment_status: ticketRecord.payment_status,
         total_price: ticketRecord.total_price
       },

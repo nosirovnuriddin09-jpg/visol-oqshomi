@@ -1285,13 +1285,16 @@ const calData = {
       mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
     }
 
-    // 6. Taklif etuvchilar / Mehmon oilasi (Hurmat va ehtirom ila, ...)
+    // 6. Taklif etuvchilar / To'y egasi / Oila nomi (Hurmat va ehtirom ila, ...)
+    const hostFamily = (details.family_names !== undefined && details.family_names !== null) ? details.family_names :
+                       (details.family !== undefined && details.family !== null) ? details.family :
+                       familyParam;
     let finalFamily = "";
-    if(cleanGuest){
-      // Agar taklifnomada mehmon kiritilgan bo'lsa (kimni chaqirayotgan bo'lsa), o'sha mehmonning ismi/oilasi chiqadi
-      finalFamily = /oila/i.test(cleanGuest) ? cleanGuest : `${cleanGuest} oilasi`;
+    if(hostFamily && String(hostFamily).trim()){
+      finalFamily = String(hostFamily).trim().replace(/[<>]/g, "");
+    } else if(calData.family && calData.family !== "Toʻy egalari va xonadon ahillari" && calData.family !== "To'y egalari va xonadon ahillari"){
+      finalFamily = calData.family;
     } else {
-      // Mehmon ismi kiritilmagan bo'lsa, to'y egasi emas, standart "Toʻy egalari va xonadon ahillari" chiqadi
       finalFamily = "Toʻy egalari va xonadon ahillari";
     }
 
@@ -1357,7 +1360,15 @@ const calData = {
       .then(r => r.json())
       .then(data => {
         if(data && data.success && data.settings){
-          applyData(data.settings);
+          const merged = Object.assign({}, data.settings);
+          if (familyParam) merged.family_names = familyParam;
+          if (guestParam) merged.full_name = guestParam;
+          if (coupleParam) merged.couple_names = coupleParam;
+          if (dateParam) merged.event_date_time = dateParam;
+          if (venueParam) merged.venue_name = venueParam;
+          if (addressParam) merged.venue_address = addressParam;
+          if (musicParam) merged.music = musicParam;
+          applyData(merged);
         }
       })
       .catch(() => {});

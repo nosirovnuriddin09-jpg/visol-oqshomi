@@ -497,9 +497,10 @@
         const musicBadge = isSong2
           ? `<span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-400/30">👰 Jon qizim</span>`
           : `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">🎵 Kelibdi</span>`;
+        const famParam = (g.family_names || g.family) ? `&family=${encodeURIComponent(g.family_names || g.family)}` : '';
         const inviteUrl = isEnikoh 
-          ? `/enikoh.html?ticket=${encodeURIComponent(cleanTicket)}&name=${encodeURIComponent(g.full_name || '')}&music=${encodeURIComponent(music)}`
-          : `/invite.html?ticket=${encodeURIComponent(cleanTicket)}&music=${encodeURIComponent(music)}`;
+          ? `/enikoh.html?ticket=${encodeURIComponent(cleanTicket)}&name=${encodeURIComponent(g.full_name || '')}&music=${encodeURIComponent(music)}${famParam}`
+          : `/invite.html?ticket=${encodeURIComponent(cleanTicket)}&music=${encodeURIComponent(music)}${famParam}`;
         const designBadge = isEnikoh
           ? `<span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-bold border border-blue-400/30">💍 E-Nikoh</span>`
           : `<span class="px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-300 text-[10px] font-bold border border-gold-400/30">✨ Visol</span>`;
