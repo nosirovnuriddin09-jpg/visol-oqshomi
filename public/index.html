@@ -999,13 +999,13 @@
                 </div>
               </div>
 
-              <!-- Input: Taklifnomalar Soni & Narx (Donasi 2000 so'm) -->
+              <!-- Input: Taklifnomalar Soni & Narx (Donasi 3 000 so'm) -->
               <div class="p-4 rounded-xl bg-gold-400/10 border border-gold-400/30 space-y-2">
                 <div class="flex items-center justify-between">
                   <label for="quantityInput" class="block text-xs uppercase tracking-wider text-gold-300 font-bold">
                     Nechta taklifnoma yasaysiz? <span class="text-red-400">*</span>
                   </label>
-                  <span class="text-xs font-semibold px-2 py-0.5 rounded bg-gold-400/20 text-gold-400">2 000 so'm / dona</span>
+                  <span id="pricePerUnitBadge" class="text-xs font-semibold px-2 py-0.5 rounded bg-gold-400/20 text-gold-400">3 000 so'm / dona</span>
                 </div>
                 <div class="flex items-center space-x-3">
                   <div class="relative w-28">
@@ -1022,7 +1022,7 @@
                   </div>
                   <div class="flex-1 text-right">
                     <span class="text-[10px] uppercase text-slate-400 block">Jami summa:</span>
-                    <span id="livePriceDisplay" class="text-base sm:text-lg font-black text-gold-400">2 000 so'm</span>
+                    <span id="livePriceDisplay" class="text-base sm:text-lg font-black text-gold-400">3 000 so'm</span>
                   </div>
                 </div>
               </div>
@@ -1107,9 +1107,9 @@
               <div class="text-center">
                 <span class="text-xs uppercase tracking-widest text-gold-300/80 font-bold block mb-1">To'lov uchun summa:</span>
                 <div class="text-2xl sm:text-3xl font-serif font-black gold-gradient-text" id="pendingPaymentSum">
-                  2 000 so'm
+                  3 000 so'm
                 </div>
-                <span class="text-[11px] text-slate-400" id="pendingPaymentNotice">Donasi 2 000 so'mdan hisoblandi</span>
+                <span class="text-[11px] text-slate-400" id="pendingPaymentNotice">Donasi 3 000 so'mdan hisoblandi</span>
               </div>
 
               <!-- Card Box with Copy -->
@@ -1247,6 +1247,16 @@
     // 1. Initialize Telegram WebApp SDK
     const tg = window.Telegram?.WebApp;
     let tgUser = null;
+    let pricePerInvite = 3000;
+
+    function updateLivePrice() {
+      const quantityInput = document.getElementById('quantityInput');
+      const livePriceDisplay = document.getElementById('livePriceDisplay');
+      if (!quantityInput || !livePriceDisplay) return;
+      const count = Math.max(1, parseInt(quantityInput.value, 10) || 1);
+      const total = count * pricePerInvite;
+      livePriceDisplay.textContent = `${total.toLocaleString('uz-UZ')} so'm`;
+    }
 
     if (tg) {
       try {
@@ -1378,6 +1388,12 @@
             const iso = `${s.event_date}T${s.event_time.length === 5 ? s.event_time + ':00' : s.event_time}+05:00`;
             const parsed = new Date(iso).getTime();
             if (!isNaN(parsed)) eventTargetTime = parsed;
+          }
+          if (s.ticket_price) {
+            pricePerInvite = Number(s.ticket_price) || 3000;
+            const badge = document.getElementById('pricePerUnitBadge');
+            if (badge) badge.textContent = `${pricePerInvite.toLocaleString('uz-UZ')} so'm / dona`;
+            updateLivePrice();
           }
 
           updateTimer();
@@ -1537,16 +1553,12 @@
       };
     };
 
-    // 4.2 Live Price Calculator (2 000 so'm per invitation)
+    // 4.2 Live Price Calculator (3 000 so'm per invitation)
     const quantityInput = document.getElementById('quantityInput');
-    const livePriceDisplay = document.getElementById('livePriceDisplay');
-    function updateLivePrice() {
-      if (!quantityInput || !livePriceDisplay) return;
-      const count = Math.max(1, parseInt(quantityInput.value, 10) || 1);
-      const total = count * 2000;
-      livePriceDisplay.textContent = `${total.toLocaleString('uz-UZ')} so'm`;
-    }
     if (quantityInput) {
+      quantityInput.addEventListener('input', updateLivePrice);
+      quantityInput.addEventListener('change', updateLivePrice);
+    }
       quantityInput.addEventListener('input', updateLivePrice);
       quantityInput.addEventListener('change', updateLivePrice);
     }
@@ -1588,7 +1600,7 @@
 
           if (viewPaymentBtn) {
             viewPaymentBtn.onclick = () => {
-              const totalAmount = t.total_price || 2000;
+              const totalAmount = t.total_price || pricePerInvite;
               renderPaymentPending(t, {
                 formatted_total_amount: totalAmount.toLocaleString('uz-UZ'),
                 total_unpaid_count: 1
@@ -1772,7 +1784,7 @@
         qtyEl.textContent = `${qty} ta taklifnoma`;
       }
 
-      const total = paymentInfo?.formatted_total_amount || paymentInfo?.formatted_amount || (ticket.total_price ? ticket.total_price.toLocaleString('uz-UZ') : '2 000');
+      const total = paymentInfo?.formatted_total_amount || paymentInfo?.formatted_amount || (ticket.total_price ? ticket.total_price.toLocaleString('uz-UZ') : pricePerInvite.toLocaleString('uz-UZ'));
       const sumEl = document.getElementById('pendingPaymentSum');
       if (sumEl) sumEl.textContent = `${total} so'm`;
 
@@ -1781,7 +1793,7 @@
         if (paymentInfo && paymentInfo.total_unpaid_count > 1) {
           noticeEl.textContent = `Sizda jami ${paymentInfo.total_unpaid_count} ta to'lanmagan taklifnoma mavjud`;
         } else {
-          noticeEl.textContent = `Har bir taklifnoma 2 000 so'm`;
+          noticeEl.textContent = `Har bir taklifnoma ${pricePerInvite.toLocaleString('uz-UZ')} so'm`;
         }
       }
 

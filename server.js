@@ -21,6 +21,7 @@ const WEBAPP_URL = process.env.WEBAPP_URL || process.env.RENDER_EXTERNAL_URL || 
 const BUILD_VERSION = Date.now();
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '-5542867358';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JN6cT8qet4kdBzHnB9hX4tRgnhy3xwRfFAA6pyUa2Oww';
+const INVITATION_PRICE = parseInt(process.env.INVITATION_PRICE, 10) || 3000;
 
 // Active payment message tracking per user to allow deleting previous message when new orders arrive
 const userPaymentMessages = new Map();
@@ -116,7 +117,7 @@ function buildUnpaidOrderDetails(userId, firstName = 'Hurmatli mehmon') {
     };
   }
 
-  const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+  const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || INVITATION_PRICE), 0);
   const formattedTotal = totalSum.toLocaleString('uz-UZ');
 
   let text = '';
@@ -125,7 +126,7 @@ function buildUnpaidOrderDetails(userId, firstName = 'Hurmatli mehmon') {
   if (unpaidList.length > 1) {
     text = `🧾 <b>Sizda ${unpaidList.length} ta to'lanmagan taklifnoma mavjud!</b>\n\n`;
     unpaidList.forEach((t, idx) => {
-      text += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
+      text += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || INVITATION_PRICE).toLocaleString('uz-UZ')} so'm\n`;
     });
     text += `\n💰 <b>To'lov uchun umumiy summa: ${formattedTotal} so'm</b>\n`;
     text += `💳 Karta raqami: <code>5614 6814 2617 2270</code> (Uzcard)\n`;
@@ -229,7 +230,11 @@ function getSettings() {
   try {
     if (fs.existsSync(SETTINGS_FILE)) {
       const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
-      return JSON.parse(raw);
+      const data = JSON.parse(raw);
+      if (!data.ticket_price) {
+        data.ticket_price = INVITATION_PRICE;
+      }
+      return data;
     }
   } catch (err) {
     console.error('[Settings] Error reading settings.json:', err.message);
@@ -249,7 +254,8 @@ function getSettings() {
     map_url: "https://maps.google.com",
     family_names: "To'y egalari va xonadon ahillari",
     music_loop_start: 0,
-    music_loop_end: 166
+    music_loop_end: 166,
+    ticket_price: INVITATION_PRICE
   };
 }
 
@@ -523,14 +529,14 @@ function setupBotCommands(botInstance) {
         t.unique_ticket_id.replace('#', '') === ticketId.replace('#', '')
       );
       const oldCount = beforeList.length;
-      const oldSum = beforeList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+      const oldSum = beforeList.reduce((sum, t) => sum + (t.total_price || INVITATION_PRICE), 0);
 
       db.deleteParticipantByTicketId(ticketId);
       await ctx.answerCbQuery("Taklifnoma bekor qilindi ❌").catch(() => {});
 
       const afterList = db.getUnpaidParticipantsByTelegramId(userId);
       const newCount = afterList.length;
-      const newSum = afterList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+      const newSum = afterList.reduce((sum, t) => sum + (t.total_price || INVITATION_PRICE), 0);
 
       const ticketName = targetTicket ? targetTicket.full_name : 'Taklifnoma';
 
@@ -571,7 +577,7 @@ function setupBotCommands(botInstance) {
       const userId = String(ctx.from.id);
       const beforeList = db.getUnpaidParticipantsByTelegramId(userId);
       const oldCount = beforeList.length;
-      const oldSum = beforeList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+      const oldSum = beforeList.reduce((sum, t) => sum + (t.total_price || INVITATION_PRICE), 0);
 
       db.deleteAllUnpaidParticipants(userId);
       await ctx.answerCbQuery("Barcha taklifnomalar bekor qilindi 🗑️").catch(() => {});
@@ -605,7 +611,7 @@ function setupBotCommands(botInstance) {
         return ctx.reply("Sizda bekor qilish uchun to'lanmagan taklifnoma yo'q.");
       }
 
-      const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+      const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || INVITATION_PRICE), 0);
 
       userWizardStates.set(userId, {
         step: 'waiting_cancel_indices'
@@ -615,7 +621,7 @@ function setupBotCommands(botInstance) {
         `💰 <b>Umumiy summa: ${totalSum.toLocaleString('uz-UZ')} so'm</b>\n\n` +
         `🗑️ <b>Qaysi taklifnomalarni bekor qilmoqchisiz?</b>\n\n`;
       unpaidList.forEach((t, idx) => {
-        prompt += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
+        prompt += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || INVITATION_PRICE).toLocaleString('uz-UZ')} so'm\n`;
       });
       prompt += `\nBekor qilmoqchi bo'lgan taklifnoma raqamini yozing:\n` +
         `• Bitta xat uchun: <code>2</code>\n` +
@@ -761,7 +767,7 @@ function setupBotCommands(botInstance) {
     state.step = 'waiting_quantity';
     await ctx.replyWithHTML(
       `6️⃣ <b>Nechta taklifnoma yasamoqchisiz?</b>\n\n` +
-      `💰 <b>Donasi 2 000 so'mdan hisoblanadi.</b>\n\n` +
+      `💰 <b>Donasi ${INVITATION_PRICE.toLocaleString('uz-UZ')} so'mdan hisoblanadi.</b>\n\n` +
       `<i>(Iltimos, kerakli taklifnomalar sonini kiriting, masalan: 1, 5, 10, 50):</i>`,
       Markup.inlineKeyboard([
         [Markup.button.callback("⏭️ Standart (1 ta)", "skip_quantity")],
@@ -775,7 +781,7 @@ function setupBotCommands(botInstance) {
     if (!state) return;
     const s = getSettings();
     const qty = Math.max(1, parseInt(qtyInput, 10) || 1);
-    const pricePerUnit = 2000;
+    const pricePerUnit = INVITATION_PRICE;
     const totalAmount = qty * pricePerUnit;
     const formattedAmount = totalAmount.toLocaleString('uz-UZ');
 
@@ -1041,7 +1047,7 @@ function setupBotCommands(botInstance) {
         event_type: s.event_type || 'Nikoh toʻyi',
         design: 'visol',
         quantity: 1,
-        total_price: 2000,
+        total_price: INVITATION_PRICE,
         payment_status: 'pending_verification',
         receipt_file_id: fileId,
         unique_ticket_id: uniqueTicketId,
@@ -1060,7 +1066,7 @@ function setupBotCommands(botInstance) {
     }
 
     const totalTicketsCount = pendingTickets.length;
-    const totalAmount = pendingTickets.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+    const totalAmount = pendingTickets.reduce((sum, t) => sum + (t.total_price || INVITATION_PRICE), 0);
     const formattedTotalAmount = totalAmount.toLocaleString('uz-UZ');
     const cleanTicketId = `TG_${userId}`;
 
@@ -1074,7 +1080,7 @@ function setupBotCommands(botInstance) {
     if (adminChatId) {
       let ticketsListText = '';
       if (pendingTickets.length > 1) {
-        ticketsListText = pendingTickets.map((t, idx) => `  ${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm`).join('\n');
+        ticketsListText = pendingTickets.map((t, idx) => `  ${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || INVITATION_PRICE).toLocaleString('uz-UZ')} so'm`).join('\n');
       } else if (pendingTickets.length === 1) {
         ticketsListText = `<code>${pendingTickets[0].unique_ticket_id}</code> (${pendingTickets[0].full_name})`;
       } else {
@@ -1177,7 +1183,7 @@ function setupBotCommands(botInstance) {
             event_type: s.event_type || 'Nikoh toʻyi',
             design: 'visol',
             quantity: 1,
-            total_price: 2000,
+            total_price: INVITATION_PRICE,
             payment_status: 'paid',
             unique_ticket_id: uniqueTicketId
           });
@@ -1308,7 +1314,7 @@ function setupBotCommands(botInstance) {
         );
       }
 
-      const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+      const totalSum = unpaidList.reduce((sum, t) => sum + (t.total_price || INVITATION_PRICE), 0);
 
       userWizardStates.set(userId, { step: 'waiting_cancel_indices' });
 
@@ -1316,7 +1322,7 @@ function setupBotCommands(botInstance) {
         `💰 <b>Umumiy to'lov summasi: ${totalSum.toLocaleString('uz-UZ')} so'm</b>\n\n` +
         `🗑️ <b>Qaysi taklifnomalarni bekor qilmoqchisiz?</b>\n\n`;
       unpaidList.forEach((t, idx) => {
-        prompt += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || 2000).toLocaleString('uz-UZ')} so'm\n`;
+        prompt += `${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || INVITATION_PRICE).toLocaleString('uz-UZ')} so'm\n`;
       });
       prompt += `\nBekor qilish uchun:\n` +
         `• <b>Pastdagi "❌ 1-sini bekor qilish" tugmasini bosing</b>\n` +
@@ -1392,7 +1398,7 @@ function setupBotCommands(botInstance) {
           return ctx.replyWithHTML(view.text, view.keyboard);
         }
 
-        const oldSum = unpaidList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+        const oldSum = unpaidList.reduce((sum, t) => sum + (t.total_price || INVITATION_PRICE), 0);
         const oldCount = unpaidList.length;
 
         if (cleanText === 'hammasi' || cleanText === 'barchasi' || cleanText === 'all') {
@@ -1432,7 +1438,7 @@ function setupBotCommands(botInstance) {
 
         const afterList = db.getUnpaidParticipantsByTelegramId(userId);
         const newCount = afterList.length;
-        const newSum = afterList.reduce((sum, t) => sum + (t.total_price || 2000), 0);
+        const newSum = afterList.reduce((sum, t) => sum + (t.total_price || INVITATION_PRICE), 0);
 
         const deletedListText = ticketsToDelete.map((t, i) => `${i + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>)`).join('\n');
         
@@ -1537,7 +1543,7 @@ function setupBotCommands(botInstance) {
         state.step = 'waiting_quantity';
 
         const promptText = `6️⃣ <b>Nechta taklifnoma yasamoqchisiz?</b>\n\n` +
-          `💰 <b>Donasi 2 000 so'mdan hisoblanadi.</b>\n\n` +
+          `💰 <b>Donasi ${INVITATION_PRICE.toLocaleString('uz-UZ')} so'mdan hisoblanadi.</b>\n\n` +
           `<i>(Iltimos, kerakli taklifnomalar sonini kiriting, masalan: 1, 5, 10, 50):</i>`;
 
         return ctx.replyWithHTML(promptText, Markup.inlineKeyboard([
@@ -1688,8 +1694,8 @@ app.post('/api/register', async (req, res) => {
       attempts++;
     }
 
-    // Narx: har bitta taklifnoma donasi 2 000 so'mdan hisoblanadi
-    const pricePerInvite = 2000;
+    // Narx: har bitta taklifnoma donasi INVITATION_PRICE so'mdan hisoblanadi
+    const pricePerInvite = INVITATION_PRICE;
     const totalAmount = cleanQuantity * pricePerInvite;
     const formattedAmount = totalAmount.toLocaleString('uz-UZ');
 

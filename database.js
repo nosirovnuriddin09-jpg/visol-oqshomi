@@ -15,6 +15,7 @@ if (!fs.existsSync(DB_DIR)) {
 
 const DB_FILE = path.join(DB_DIR, 'database.sqlite');
 const BACKUP_JSON = path.join(DB_DIR, 'participants.json');
+const DEFAULT_PRICE = parseInt(process.env.INVITATION_PRICE, 10) || 3000;
 
 class DatabaseManager {
   constructor() {
@@ -197,7 +198,7 @@ class DatabaseManager {
           event_date: '2026-12-26',
           event_type: 'Nahor oshi',
           payment_status: 'paid',
-          total_price: '2000.0',
+          total_price: `${DEFAULT_PRICE}.0`,
           username: 'nuri1ddin',
           design: 'visol',
           quantity: 1,
@@ -237,7 +238,7 @@ class DatabaseManager {
     const cleanPaymentStatus = payment_status || 'pending_payment';
     const cleanDesign = design ? String(design).toLowerCase().trim() : 'visol';
     const cleanQuantity = Math.max(1, parseInt(quantity, 10) || 1);
-    const cleanTotalPrice = total_price !== undefined ? parseFloat(total_price) : (cleanQuantity * 2000);
+    const cleanTotalPrice = total_price !== undefined ? parseFloat(total_price) : (cleanQuantity * DEFAULT_PRICE);
     const cleanUsername = username ? String(username).trim() : null;
     const cleanMusic = music ? String(music).toLowerCase().trim() : 'music1';
     const cleanFamily = (family_names || family) ? String(family_names || family).trim() : null;
@@ -345,7 +346,7 @@ class DatabaseManager {
       guests_count: row.guests_count,
       comment: row.comment,
       payment_status: row.payment_status || 'unpaid',
-      total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : 2000,
+      total_price: row.total_price !== undefined && row.total_price !== null ? parseFloat(row.total_price) : DEFAULT_PRICE,
       receipt_file_id: row.receipt_file_id || null,
       username: row.username || null,
       payment_msg_id: row.payment_msg_id || null,
