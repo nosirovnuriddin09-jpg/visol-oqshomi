@@ -1050,6 +1050,8 @@ h1.title{
   var dateParam = p.get("date");
   var musicParam = p.get("music") || p.get("song");
   var familyParam = p.get("family") || p.get("oila") || p.get("family_names");
+  var eventParam = p.get("event") || p.get("event_type") || p.get("type");
+  var paidParam = p.get("paid");
   var isVerifyMode = p.get("verify") || p.get("verified");
 
   if(isVerifyMode){
@@ -1063,7 +1065,8 @@ h1.title{
     venue: false,
     address: false,
     dateTime: false,
-    family: false
+    family: false,
+    event: false
   };
 
   function applyCustomDetails(details) {
@@ -1078,7 +1081,10 @@ h1.title{
                      (details.family !== undefined && details.family !== null) ? details.family :
                      familyParam;
 
-    var eventType = details.event_type || details.eventType;
+    var eventType = details.event_type || details.eventType || eventParam;
+    if(eventType && String(eventType).trim()){
+      hasCustom.event = true;
+    }
     var evStr = eventType && String(eventType).trim() ? String(eventType).trim() : "Nikoh toʻyi";
     var isPlov = /osh/i.test(evStr);
 
@@ -1290,18 +1296,20 @@ h1.title{
     var g = decodeURIComponent(guestParam.replace(/\+/g," ")).trim().slice(0,60);
     if(g) applyCustomDetails({ full_name: g });
   }
-  if(coupleParam || venueParam || addressParam || dateParam || musicParam || familyParam){
+  if(coupleParam || venueParam || addressParam || dateParam || musicParam || familyParam || eventParam){
     applyCustomDetails({
       couple_names: coupleParam ? decodeURIComponent(coupleParam.replace(/\+/g," ")).trim() : null,
       venue_name: venueParam ? decodeURIComponent(venueParam.replace(/\+/g," ")).trim() : null,
       venue_address: addressParam ? decodeURIComponent(addressParam.replace(/\+/g," ")).trim() : null,
       event_date_time: dateParam ? decodeURIComponent(dateParam.replace(/\+/g," ")).trim() : null,
       family_names: familyParam ? decodeURIComponent(familyParam.replace(/\+/g," ")).trim() : null,
+      event_type: eventParam ? decodeURIComponent(eventParam.replace(/\+/g," ")).trim() : null,
       music: musicParam
     });
   }
 
   function showPaymentRequiredNotice() {
+    if (paidParam === "1" || paidParam === "true") return;
     var bgm = document.getElementById("bgm");
     if (bgm) bgm.pause();
     document.body.innerHTML = `
@@ -1334,8 +1342,10 @@ h1.title{
       })
       .then(function(res){
         if(res.status === 403 || (res.data && res.data.payment_required)){
-          showPaymentRequiredNotice();
-          return;
+          if(paidParam !== "1" && paidParam !== "true"){
+            showPaymentRequiredNotice();
+            return;
+          }
         }
         if(res.data && res.data.success && (res.data.invitation || res.data.ticket)){
           applyCustomDetails(res.data.invitation || res.data.ticket);
@@ -1351,8 +1361,10 @@ h1.title{
           })
           .then(function(res){
             if(res.status === 403 || (res.data && res.data.payment_required)){
-              showPaymentRequiredNotice();
-              return;
+              if(paidParam !== "1" && paidParam !== "true"){
+                showPaymentRequiredNotice();
+                return;
+              }
             }
             if(res.data && res.data.success && (res.data.invitation || res.data.ticket)){
               applyCustomDetails(res.data.invitation || res.data.ticket);
@@ -1540,7 +1552,7 @@ h1.title{
     if(typeof s.music_loop_end === "number") AUDIO_LOOP_END = s.music_loop_end;
 
     // NEVER overwrite custom ticket or user details
-    if(ticketParam || hasCustom.couple || hasCustom.venue || hasCustom.address || hasCustom.dateTime || hasCustom.guest){
+    if(ticketParam || hasCustom.couple || hasCustom.venue || hasCustom.address || hasCustom.dateTime || hasCustom.guest || hasCustom.family || hasCustom.event){
       return;
     }
 
@@ -1626,7 +1638,7 @@ h1.title{
       if(data && data.success && data.settings){
         if(typeof data.settings.music_loop_start === "number") AUDIO_LOOP_START = data.settings.music_loop_start;
         if(typeof data.settings.music_loop_end === "number") AUDIO_LOOP_END = data.settings.music_loop_end;
-        if(!ticketParam && !hasCustom.couple && !hasCustom.venue && !hasCustom.address && !hasCustom.dateTime && !hasCustom.guest && !hasCustom.family){
+        if(!ticketParam && !hasCustom.couple && !hasCustom.venue && !hasCustom.address && !hasCustom.dateTime && !hasCustom.guest && !hasCustom.family && !hasCustom.event){
           applySettings(data.settings);
         }
       }

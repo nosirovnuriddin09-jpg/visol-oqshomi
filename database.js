@@ -180,6 +180,7 @@ class DatabaseManager {
 
   seedInitialData() {
     try {
+      this.syncFromJsonBackup();
       const existing = this.getParticipantByTicketId('#VO-QCXU-6110');
       if (!existing) {
         this.createParticipant({
@@ -208,6 +209,139 @@ class DatabaseManager {
       }
     } catch (e) {
       console.warn('[Database] Seed check warning:', e.message);
+    }
+  }
+
+  syncFromJsonBackup() {
+    try {
+      const list = this.readJson();
+      if (!Array.isArray(list) || list.length === 0) return;
+      if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+        let imported = 0;
+        for (const item of list) {
+          const tid = item.unique_ticket_id || item.ticket_id;
+          if (!tid) continue;
+          const cleanId = String(tid).trim();
+          const withHash = cleanId.startsWith('#') ? cleanId : `#${cleanId}`;
+          const withoutHash = cleanId.replace(/^#/, '');
+          const checkStmt = this.db.prepare('SELECT id FROM participants WHERE unique_ticket_id = ? OR unique_ticket_id = ? OR ticket_id = ? OR ticket_id = ? LIMIT 1');
+          const existing = checkStmt.get(withHash, withoutHash, withHash, withoutHash);
+          if (!existing) {
+            this._rawInsertParticipant(item);
+            imported++;
+          }
+        }
+        if (imported > 0) {
+          console.log(`[Database] Restored ${imported} participants from JSON backup to SQLite.`);
+        }
+      }
+    } catch (err) {
+      console.warn('[Database] Sync from JSON backup error:', err.message);
+    }
+  }
+
+  _rawInsertParticipant(item) {
+    if (!item) return;
+    try {
+      const cleanTgId = item.telegram_id ? String(item.telegram_id) : null;
+      const cleanFullName = String(item.full_name || item.guest_name || '').trim() || 'Hurmatli mehmon';
+      const cleanPhone = String(item.phone || '').trim();
+      const cleanCount = Math.max(1, parseInt(item.guests_count, 10) || 1);
+      const cleanComment = item.comment ? String(item.comment).trim() : '';
+      const cleanTicketId = String(item.ticket_id || item.unique_ticket_id || '').trim();
+      const cleanCouple = item.couple_names || item.groom_bride ? String(item.couple_names || item.groom_bride).trim() : null;
+      const cleanVenue = item.venue_name ? String(item.venue_name).trim() : null;
+      const cleanAddr = item.venue_address ? String(item.venue_address).trim() : null;
+      const cleanDateTime = item.event_date_time || item.event_date ? String(item.event_date_time || item.event_date).trim() : null;
+      const cleanEventType = item.event_type ? String(item.event_type).trim() : 'Nikoh toʻyi';
+      const cleanPaymentStatus = item.payment_status || 'paid';
+      const cleanDesign = item.design ? String(item.design).toLowerCase().trim() : 'visol';
+      const cleanQuantity = Math.max(1, parseInt(item.quantity, 10) || 1);
+      const cleanTotalPrice = item.total_price !== undefined ? parseFloat(item.total_price) : (cleanQuantity * DEFAULT_PRICE);
+      const cleanUsername = item.username ? String(item.username).trim() : null;
+      const cleanMusic = item.music ? String(item.music).toLowerCase().trim() : 'music1';
+      const cleanFamily = (item.family_names || item.family) ? String(item.family_names || item.family).trim() : null;
+      const createdAt = item.created_at || new Date().toISOString();
+
+      const stmt = this.db.prepare(`
+        INSERT INTO participants (
+          telegram_id, full_name, guest_name, phone, guests_count, comment, 
+          unique_ticket_id, ticket_id, created_at, 
+          couple_names, groom_bride, venue_name, venue_address, event_date_time, event_date,
+          event_type, payment_status, total_price, username, design, quantity, music, family_names
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      stmt.run(
+        cleanTgId, cleanFullName, cleanFullName, cleanPhone, cleanCount, cleanComment,
+        cleanTicketId, cleanTicketId, createdAt,
+        cleanCouple, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanDateTime,
+        cleanEventType, cleanPaymentStatus, cleanTotalPrice, cleanUsername, cleanDesign, cleanQuantity, cleanMusic, cleanFamily
+      );
+    } catch (e) {
+      console.warn('[Database] _rawInsertParticipant error:', e.message);
+    }
+  }
+
+  _saveToJsonBackup(item) {
+    if (!item) return;
+    try {
+      const list = this.readJson();
+      const ticketId = String(item.unique_ticket_id || item.ticket_id || '').replace(/^#/, '').toUpperCase();
+      const idx = list.findIndex(p => {
+        const pid = String(p.unique_ticket_id || p.ticket_id || '').replace(/^#/, '').toUpperCase();
+        return pid === ticketId;
+      });
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...item };
+      } else {
+        list.push({ id: list.length + 1, ...item });
+      }
+      this.writeJson(list);
+    } catch (e) {
+      console.warn('[Database] _saveToJsonBackup error:', e.message);
+    }
+  }
+
+  _removeFromJsonBackup(ticketId) {
+    if (!ticketId) return;
+    try {
+      const list = this.readJson();
+      const target = String(ticketId).replace(/^#/, '').toUpperCase();
+      const filtered = list.filter(p => {
+        const pid = String(p.unique_ticket_id || p.ticket_id || '').replace(/^#/, '').toUpperCase();
+        return pid !== target;
+      });
+      this.writeJson(filtered);
+    } catch (e) {
+      console.warn('[Database] _removeFromJsonBackup error:', e.message);
+    }
+  }
+
+  _removeFromJsonBackupById(id) {
+    if (!id) return;
+    try {
+      const list = this.readJson();
+      const cleanId = Number(id);
+      const filtered = list.filter(p => Number(p.id) !== cleanId);
+      this.writeJson(filtered);
+    } catch (e) {
+      console.warn('[Database] _removeFromJsonBackupById error:', e.message);
+    }
+  }
+
+  _removeUnpaidFromJsonBackup(telegramId) {
+    if (!telegramId) return;
+    try {
+      const list = this.readJson();
+      const cleanTgId = String(telegramId).trim();
+      const filtered = list.filter(p => {
+        if (String(p.telegram_id || '').trim() !== cleanTgId) return true;
+        return p.payment_status === 'paid';
+      });
+      this.writeJson(filtered);
+    } catch (e) {
+      console.warn('[Database] _removeUnpaidFromJsonBackup error:', e.message);
     }
   }
 
@@ -260,7 +394,9 @@ class DatabaseManager {
         cleanCouple, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanDateTime,
         cleanEventType, cleanPaymentStatus, cleanTotalPrice, cleanUsername, cleanDesign, cleanQuantity, cleanMusic, cleanFamily
       );
-      return this.getParticipantByTicketId(cleanTicketId);
+      const created = this.getParticipantByTicketId(cleanTicketId);
+      if (created) this._saveToJsonBackup(created);
+      return created;
     }
 
     // JSON fallback
@@ -322,7 +458,22 @@ class DatabaseManager {
       }) || null;
     }
 
-    if (!row) return null;
+    if (!row) {
+      const list = this.readJson();
+      const jsonItem = list.slice().reverse().find((p) => {
+        const pid = String(p.unique_ticket_id || p.ticket_id || '').toUpperCase();
+        return pid === withHash.toUpperCase() || pid === withoutHash.toUpperCase();
+      }) || null;
+
+      if (jsonItem) {
+        if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
+          this._rawInsertParticipant(jsonItem);
+        }
+        return this._formatRow(jsonItem);
+      }
+      return null;
+    }
+
     return this._formatRow(row);
   }
 
@@ -409,9 +560,19 @@ class DatabaseManager {
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
       const stmt = this.db.prepare("SELECT * FROM participants WHERE telegram_id = ? AND payment_status = 'pending_verification' ORDER BY id ASC");
       rows = stmt.all ? stmt.all(cleanTgId) : [];
+      if (rows.length === 0) {
+        const list = this.readJson();
+        const jsonRows = list.filter((p) => String(p.telegram_id || '').trim() === cleanTgId && p.payment_status === 'pending_verification');
+        if (jsonRows.length > 0) {
+          for (const item of jsonRows) {
+            this._rawInsertParticipant(item);
+          }
+          return jsonRows.map(r => this._formatRow(r));
+        }
+      }
     } else {
       const list = this.readJson();
-      rows = list.filter((p) => p.telegram_id === cleanTgId && p.payment_status === 'pending_verification');
+      rows = list.filter((p) => String(p.telegram_id || '').trim() === cleanTgId && p.payment_status === 'pending_verification');
     }
 
     return rows.map(r => this._formatRow(r));
@@ -428,9 +589,19 @@ class DatabaseManager {
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
       const stmt = this.db.prepare("SELECT * FROM participants WHERE telegram_id = ? AND (payment_status != 'paid' OR payment_status IS NULL) ORDER BY id ASC");
       rows = stmt.all ? stmt.all(cleanTgId) : [];
+      if (rows.length === 0) {
+        const list = this.readJson();
+        const jsonRows = list.filter((p) => String(p.telegram_id || '').trim() === cleanTgId && p.payment_status !== 'paid');
+        if (jsonRows.length > 0) {
+          for (const item of jsonRows) {
+            this._rawInsertParticipant(item);
+          }
+          return jsonRows.map(r => this._formatRow(r));
+        }
+      }
     } else {
       const list = this.readJson();
-      rows = list.filter((p) => p.telegram_id === cleanTgId && p.payment_status !== 'paid');
+      rows = list.filter((p) => String(p.telegram_id || '').trim() === cleanTgId && p.payment_status !== 'paid');
     }
 
     return rows.map(r => this._formatRow(r));
@@ -540,7 +711,9 @@ class DatabaseManager {
         username || null, 
         withHash, withoutHash, withHash, withoutHash
       );
-      return this.getParticipantByTicketId(cleanId);
+      const updated = this.getParticipantByTicketId(cleanId);
+      if (updated) this._saveToJsonBackup(updated);
+      return updated;
     }
 
     const list = this.readJson();
@@ -624,7 +797,9 @@ class DatabaseManager {
         WHERE id = ?
       `);
       stmt.run(cleanFullName, cleanPhone, cleanCount, cleanComment, cleanCouple, cleanVenue, cleanAddr, cleanDateTime, cleanEventType, cleanDesign, cleanQuantity, cleanMusic, cleanFamily, cleanId);
-      return this.getParticipantById(cleanId);
+      const updated = this.getParticipantById(cleanId);
+      if (updated) this._saveToJsonBackup(updated);
+      return updated;
     }
 
     const list = this.readJson();
@@ -657,6 +832,7 @@ class DatabaseManager {
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
       const stmt = this.db.prepare('DELETE FROM participants WHERE id = ?');
       stmt.run(cleanId);
+      this._removeFromJsonBackupById(cleanId);
       return true;
     }
     const list = this.readJson();
@@ -674,6 +850,7 @@ class DatabaseManager {
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
       const stmt = this.db.prepare('DELETE FROM participants WHERE unique_ticket_id = ? OR unique_ticket_id = ? OR ticket_id = ? OR ticket_id = ?');
       stmt.run(withHash, withoutHash, withHash, withoutHash);
+      this._removeFromJsonBackup(cleanId);
       return true;
     }
     const list = this.readJson();
@@ -691,6 +868,7 @@ class DatabaseManager {
     if (this.driver === 'node:sqlite' || this.driver === 'better-sqlite3') {
       const stmt = this.db.prepare("DELETE FROM participants WHERE telegram_id = ? AND (payment_status = 'pending_payment' OR payment_status = 'unpaid' OR payment_status IS NULL)");
       stmt.run(cleanTgId);
+      this._removeUnpaidFromJsonBackup(cleanTgId);
       return true;
     }
     const list = this.readJson();

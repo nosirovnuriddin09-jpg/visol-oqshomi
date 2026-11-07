@@ -1352,6 +1352,7 @@ const calData = {
   const addressParam = p.get("address") || p.get("manzil");
   const familyParam = p.get("family") || p.get("oila") || p.get("family_names");
   const musicParam = p.get("music") || p.get("song");
+  const paidParam = p.get("paid");
 
   const UZ_MONTHS = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"];
   const UZ_DOW = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
@@ -1426,15 +1427,37 @@ const calData = {
     const dateRaw = details.event_date_time || details.event_date || dateParam;
     if(dateRaw && String(dateRaw).trim()){
       const rawDt = String(dateRaw).trim();
-      let dtMatch = rawDt.match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/);
-      let timeMatch = rawDt.match(/(\d{1,2}):(\d{2})/);
-      
-      let parsedYear = 2026, parsedMonthIdx = 7, parsedDay = 10, parsedHour = 18, parsedMinute = 30;
-      if(dtMatch){
-        parsedYear = parseInt(dtMatch[1], 10);
-        parsedMonthIdx = parseInt(dtMatch[2], 10) - 1;
-        parsedDay = parseInt(dtMatch[3], 10);
+      let parsedYear = 2026, parsedMonthIdx = 10, parsedDay = 15, parsedHour = 18, parsedMinute = 0;
+
+      // Match YYYY-MM-DD
+      const isoMatch = rawDt.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+      if(isoMatch){
+        parsedYear = parseInt(isoMatch[1], 10);
+        parsedMonthIdx = Math.max(0, Math.min(11, parseInt(isoMatch[2], 10) - 1));
+        parsedDay = parseInt(isoMatch[3], 10);
+      } else {
+        // Match DD.MM.YYYY
+        const dmyMatch = rawDt.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+        if(dmyMatch){
+          parsedDay = parseInt(dmyMatch[1], 10);
+          parsedMonthIdx = Math.max(0, Math.min(11, parseInt(dmyMatch[2], 10) - 1));
+          parsedYear = parseInt(dmyMatch[3], 10);
+        } else {
+          for(let mi = 0; mi < UZ_MONTHS.length; mi++){
+            const reg = new RegExp(UZ_MONTHS[mi], 'i');
+            if(reg.test(rawDt)){
+              parsedMonthIdx = mi;
+              break;
+            }
+          }
+          const dMatch = rawDt.match(/(?:^|\D)(\d{1,2})(?:-|\s|\.|\/)/);
+          if(dMatch) parsedDay = parseInt(dMatch[1], 10);
+          const yMatch = rawDt.match(/(\d{4})/);
+          if(yMatch) parsedYear = parseInt(yMatch[1], 10);
+        }
       }
+
+      const timeMatch = rawDt.match(/(\d{1,2}):(\d{2})/);
       if(timeMatch){
         parsedHour = parseInt(timeMatch[1], 10);
         parsedMinute = parseInt(timeMatch[2], 10);
@@ -1568,6 +1591,7 @@ const calData = {
   }
 
   function showPaymentRequiredNotice() {
+    if (paidParam === "1" || paidParam === "true") return;
     const bgmEl = document.getElementById("bgm");
     if (bgmEl) bgmEl.pause();
     document.body.innerHTML = `
@@ -1595,17 +1619,35 @@ const calData = {
       .then(r => r.json().then(data => ({ status: r.status, data: data })))
       .then(res => {
         if(res.status === 403 || (res.data && res.data.payment_required)){
-          showPaymentRequiredNotice();
-          return;
+          if (paidParam !== "1" && paidParam !== "true") {
+            showPaymentRequiredNotice();
+            return;
+          }
         }
         if(res.data && res.data.success && (res.data.invitation || res.data.ticket)){
           applyData(res.data.invitation || res.data.ticket);
         }
       })
       .catch(e => {
-        console.warn("Backend ticket fetch error:", e);
+        console.warn("Backend ticket fetch error, trying /api/ticket/:", e);
+        fetch("/api/ticket/" + encodeURIComponent(cleanTicket))
+          .then(r => r.json().then(data => ({ status: r.status, data: data })))
+          .then(res => {
+            if(res.status === 403 || (res.data && res.data.payment_required)){
+              if (paidParam !== "1" && paidParam !== "true") {
+                showPaymentRequiredNotice();
+                return;
+              }
+            }
+            if(res.data && res.data.success && (res.data.invitation || res.data.ticket)){
+              applyData(res.data.invitation || res.data.ticket);
+            }
+          })
+          .catch(err => {
+            console.warn("API ticket fallback error:", err);
+          });
       });
-  } else {
+  } else if (!coupleParam && !dateParam && !venueParam && !addressParam) {
     fetch("/api/settings")
       .then(r => r.json())
       .then(data => {
@@ -1618,6 +1660,7 @@ const calData = {
           if (venueParam) merged.venue_name = venueParam;
           if (addressParam) merged.venue_address = addressParam;
           if (musicParam) merged.music = musicParam;
+          if (eventParam) merged.event_type = eventParam;
           applyData(merged);
         }
       })

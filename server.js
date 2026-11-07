@@ -44,41 +44,35 @@ function getInvitationUrl(ticket) {
   if (!ticket) return WEBAPP_URL;
   const cleanTicketId = (ticket.unique_ticket_id || ticket.ticket_id || '').replace('#', '');
   const design = String(ticket.design || 'visol').toLowerCase();
+  const isEnikoh = (design === 'enikoh' || design === 'e-nikoh' || design === 'e_nikoh');
   const music = ticket.music || ticket.song || 'music1';
 
+  const couple = (ticket.couple_names || ticket.groom_bride || '').trim();
+  const eventDate = (ticket.event_date_time || ticket.event_date || '').trim();
+  const venueName = (ticket.venue_name || '').trim();
+  const venueAddress = (ticket.venue_address || '').trim();
+  const eventType = (ticket.event_type || 'Nikoh toʻyi').trim();
   const familyName = (ticket.family_names || ticket.family || '').trim();
+  const rawName = (ticket.full_name || ticket.guest_name || '').trim();
 
-  if (design === 'enikoh' || design === 'e-nikoh' || design === 'e_nikoh') {
-    const params = new URLSearchParams({
-      ticket: cleanTicketId,
-      couple: ticket.couple_names || ticket.groom_bride || '',
-      date: ticket.event_date_time || ticket.event_date || '',
-      venue: ticket.venue_name || ticket.venue_address || '',
-      music: music
-    });
-    const rawName = (ticket.full_name || ticket.guest_name || '').trim();
-    if (rawName && !/^(hurmatli\s+mehmon(imiz)?|mehmonimiz|mehmon)$/i.test(rawName)) {
-      params.set('name', rawName);
-    }
-    if (familyName) {
-      params.set('family', familyName);
-    }
-    return `${WEBAPP_URL}/enikoh.html?${params.toString()}`;
+  const params = new URLSearchParams();
+  if (cleanTicketId) params.set('ticket', cleanTicketId);
+  if (couple) params.set('couple', couple);
+  if (eventDate) params.set('date', eventDate);
+  if (venueName) params.set('venue', venueName);
+  if (venueAddress) params.set('address', venueAddress);
+  if (eventType) params.set('event', eventType);
+  if (familyName) params.set('family', familyName);
+  if (rawName && !/^(hurmatli\s+mehmon(imiz)?|mehmonimiz|mehmon)$/i.test(rawName)) {
+    params.set('name', rawName);
+  }
+  if (music) params.set('music', music);
+  if (ticket.payment_status === 'paid' || ticket.paid) {
+    params.set('paid', '1');
   }
 
-  // Default: Visol Oqshomi design
-  const visolParams = new URLSearchParams({
-    ticket: cleanTicketId,
-    music: music
-  });
-  const rawNameVisol = (ticket.full_name || ticket.guest_name || '').trim();
-  if (rawNameVisol && !/^(hurmatli\s+mehmon(imiz)?|mehmonimiz|mehmon)$/i.test(rawNameVisol)) {
-    visolParams.set('name', rawNameVisol);
-  }
-  if (familyName) {
-    visolParams.set('family', familyName);
-  }
-  return `${WEBAPP_URL}/invite.html?${visolParams.toString()}`;
+  const file = isEnikoh ? 'enikoh.html' : 'invite.html';
+  return `${WEBAPP_URL}/${file}?${params.toString()}`;
 }
 
 // Helper: Build Design Selection Inline Keyboard
@@ -801,7 +795,7 @@ function setupBotCommands(botInstance) {
       couple_names: state.data.couple_names || `${s.groom_name} va ${s.bride_name}`,
       groom_bride: state.data.couple_names || `${s.groom_name} va ${s.bride_name}`,
       venue_name: state.data.venue_name || s.venue_name,
-      venue_address: state.data.venue_name || s.venue_address,
+      venue_address: state.data.venue_address || state.data.venue_name || s.venue_address,
       event_date_time: state.data.event_date_time || `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`,
       event_date: state.data.event_date_time || s.event_date,
       event_type: state.data.event_type || 'Nikoh toʻyi',
@@ -1160,6 +1154,33 @@ function setupBotCommands(botInstance) {
         }
       }
 
+      // Agar bazada chipta topilmasa, captiondagi chipta ID larini yoki telegram_id bo'yicha barcha chiptalarni qidiramiz
+      if (!ticketsToApprove || ticketsToApprove.length === 0) {
+        const origCaption = ctx.callbackQuery?.message?.caption || '';
+        const capMatch = origCaption.match(/#VO-[A-Z0-9-]+/g) || origCaption.match(/VO-[A-Z0-9-]+/g);
+        if (capMatch && capMatch.length > 0) {
+          const found = [];
+          for (const rawId of capMatch) {
+            const tRec = db.getParticipantByTicketId(rawId);
+            if (tRec && !found.some(x => x.unique_ticket_id === tRec.unique_ticket_id)) {
+              found.push(tRec);
+            }
+          }
+          if (found.length > 0) {
+            ticketsToApprove = found;
+          }
+        }
+      }
+
+      if (!ticketsToApprove || ticketsToApprove.length === 0) {
+        if (targetTgId) {
+          const allUserTickets = db.getAllParticipantsByTelegramId(targetTgId);
+          if (allUserTickets && allUserTickets.length > 0) {
+            ticketsToApprove = allUserTickets;
+          }
+        }
+      }
+
       // Agar bazada chipta umuman topilmasa ham, admin bosganda tasdiqlanib mijozga taklifnoma generatsiya qilinadi
       if (!ticketsToApprove || ticketsToApprove.length === 0) {
         if (targetTgId) {
@@ -1168,10 +1189,15 @@ function setupBotCommands(botInstance) {
             uniqueTicketId = generateUniqueTicketId();
           }
           const s = getSettings();
+          const origCaption = ctx.callbackQuery?.message?.caption || '';
+          const nameMatch = origCaption.match(/Mijoz:\s*([^\n\r]+)/i);
+          const designMatch = origCaption.match(/Tanlangan dizayn:\s*([^\n\r]+)/i);
+          const clientName = nameMatch ? nameMatch[1].replace(/<[^>]+>/g, '').trim() : (ctx.from?.first_name || 'Hurmatli mehmon');
+          const isEnikohCaption = designMatch && /e-?nikoh/i.test(designMatch[1]);
           const autoTicket = db.createParticipant({
             telegram_id: targetTgId,
-            full_name: 'Hurmatli mehmon',
-            guest_name: 'Hurmatli mehmon',
+            full_name: clientName,
+            guest_name: clientName,
             phone: "Noma'lum",
             guests_count: 1,
             couple_names: `${s.groom_name} va ${s.bride_name}`,
@@ -1181,7 +1207,7 @@ function setupBotCommands(botInstance) {
             event_date_time: `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`,
             event_date: s.event_date,
             event_type: s.event_type || 'Nikoh toʻyi',
-            design: 'visol',
+            design: isEnikohCaption ? 'enikoh' : 'visol',
             quantity: 1,
             total_price: INVITATION_PRICE,
             payment_status: 'paid',
@@ -2077,7 +2103,8 @@ async function sendPaymentSuccessNotification({ provider, transId, ticketId, amo
   if (!bot || !isBotActive) return;
 
   const cleanTicketId = String(ticketId || '').replace('#', '');
-  const inviteUrl = `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}`;
+  const tObj = ticketId ? db.getParticipantByTicketId(ticketId) : null;
+  const inviteUrl = tObj ? getInvitationUrl(tObj) : `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(cleanTicketId)}&paid=1`;
 
   const formattedAmount = (amount || 0).toLocaleString('uz-UZ');
   let caption = `🎉 <b>TO‘LOV MUVAFFAQIYATLI QABUL QILINDI!</b> 🎉\n\n`;
@@ -2155,11 +2182,13 @@ app.get('/api/payment/generate-url', (req, res) => {
   }
 
   let paymentUrl = '';
+  const returnTicketObj = db.getParticipantByTicketId(tId);
+  const payReturnUrl = returnTicketObj ? getInvitationUrl(returnTicketObj) : `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(tId.replace('#', ''))}&paid=1`;
   if (prov === 'click') {
     paymentUrl = clickService.generatePaymentUrl({
       ticketId: tId,
       amount: amt,
-      returnUrl: `${WEBAPP_URL}/invite.html?ticket=${encodeURIComponent(tId.replace('#', ''))}`
+      returnUrl: payReturnUrl
     });
   } else if (prov === 'payme') {
     paymentUrl = paymeService.generatePaymentUrl({
