@@ -316,10 +316,42 @@ function generateUniqueTicketId() {
 let bot = null;
 let isBotActive = false;
 
+// Active Telegram Users Tracker (ensures WebApp orders can always message the user back)
+const recentActiveTelegramUsers = new Map();
+
+function recordActiveTelegramUser(user) {
+  if (!user || !user.id) return;
+  const uid = String(user.id);
+  recentActiveTelegramUsers.set(uid, {
+    id: uid,
+    firstName: user.first_name || 'Hurmatli mehmon',
+    username: user.username || null,
+    time: Date.now()
+  });
+}
+
+function getMostRecentActiveUserId() {
+  let latest = null;
+  const cutoff = Date.now() - 30 * 60 * 1000; // 30 minutes
+  for (const [uid, info] of recentActiveTelegramUsers.entries()) {
+    if (info.time > cutoff) {
+      if (!latest || info.time > latest.time) {
+        latest = info;
+      }
+    }
+  }
+  return latest ? latest.id : null;
+}
+
+function getWebAppUrlForUser(userId) {
+  const uidParam = userId ? `tg_id=${userId}&` : '';
+  return `${WEBAPP_URL}/index.html?${uidParam}v=${BUILD_VERSION}`;
+}
+
 // Helper: Reliably set Telegram Chat Menu Button
 async function updateChatMenuButton(chatId, text, url) {
   if (!bot || !isBotActive || !WEBAPP_URL || !WEBAPP_URL.startsWith('https://')) return;
-  const targetUrl = url || `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`;
+  const targetUrl = url || getWebAppUrlForUser(chatId);
   const btnText = text || "Taklif noma";
   try {
     if (bot.telegram && typeof bot.telegram.setChatMenuButton === 'function') {
@@ -350,6 +382,15 @@ async function updateChatMenuButton(chatId, text, url) {
 }
 
 function setupBotCommands(botInstance) {
+  // Global middleware: Record active user and ensure personalized menu button
+  botInstance.use((ctx, next) => {
+    if (ctx.from) {
+      recordActiveTelegramUser(ctx.from);
+      updateChatMenuButton(ctx.from.id, "Taklif noma", getWebAppUrlForUser(ctx.from.id)).catch(() => {});
+    }
+    return next();
+  });
+
   // Helper to send design choices to user
   const sendDesignSelection = async (ctx, customIntro) => {
     const s = getSettings();
@@ -368,6 +409,7 @@ function setupBotCommands(botInstance) {
     const user = ctx.from;
     const userId = String(user?.id);
     const firstName = user?.first_name || 'Hurmatli mehmon';
+    recordActiveTelegramUser(user);
     const s = getSettings();
 
     // Set persistent bottom reply keyboard for easy access to "Atmen" and "Create"
@@ -378,7 +420,7 @@ function setupBotCommands(botInstance) {
     const pendingVerList = db.getPendingVerificationParticipantsByTelegramId(userId);
     const paidList = db.getPaidParticipantsByTelegramId(userId);
 
-    const regUrl = `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`;
+    const regUrl = getWebAppUrlForUser(userId);
 
     // 1. Agar foydalanuvchida to'lanmagan buyurtma bo'lsa, to'lov ma'lumotlarini va atmen tugmalarini chiqaramiz
     if (unpaidList.length > 0) {
@@ -1702,7 +1744,39 @@ app.post('/api/register', async (req, res) => {
     const cleanPhone = (phone && phone !== '+998' && phone !== '+998 ') ? String(phone).trim() : '';
 
     const cleanGuestsCount = Math.max(1, parseInt(guests_count, 10) || 1);
-    const cleanTgId = telegram_id ? String(telegram_id).trim() : null;
+    let cleanTgId = telegram_id ? String(telegram_id).trim() : null;
+
+    // Fallback 1: Extract from initData
+    if (!cleanTgId && req.body.initData) {
+      try {
+        const parsed = new URLSearchParams(req.body.initData);
+        const rawUser = parsed.get('user');
+        if (rawUser) {
+          const uObj = JSON.parse(rawUser);
+          if (uObj?.id) cleanTgId = String(uObj.id);
+        }
+      } catch (e) {
+        console.warn('[Register] initData user parse warning:', e.message);
+      }
+    }
+
+    // Fallback 2: Check most recent active Telegram user from bot interactions (within last 30 mins)
+    if (!cleanTgId) {
+      const recentId = getMostRecentActiveUserId();
+      if (recentId) {
+        cleanTgId = String(recentId);
+        console.log(`[Register] Auto-linked order to recent active Telegram user: ${cleanTgId}`);
+      }
+    }
+
+    // Fallback 3: Check by phone number if known from previous orders
+    if (!cleanTgId && cleanPhone) {
+      const prevTicket = db.getAllParticipants().reverse().find(p => p.phone && p.phone === cleanPhone && p.telegram_id);
+      if (prevTicket && prevTicket.telegram_id) {
+        cleanTgId = String(prevTicket.telegram_id);
+      }
+    }
+
     const cleanCouple = (couple_names || groom_bride || '').trim() || `${s.groom_name} va ${s.bride_name}`;
     const cleanVenueName = (venue_name || '').trim() || s.venue_name || null;
     const cleanVenueAddress = (venue_address || '').trim() || s.venue_address || null;

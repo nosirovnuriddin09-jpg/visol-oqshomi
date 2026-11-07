@@ -1321,6 +1321,12 @@
     let tgUser = null;
     let pricePerInvite = 3000;
 
+    // Discover user ID from URL parameters, Hash, Telegram WebApp, or LocalStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    let discoveredTgId = urlParams.get('tg_id') || urlParams.get('telegram_id') || urlParams.get('user_id') || urlParams.get('uid') ||
+                         hashParams.get('tg_id') || hashParams.get('telegram_id') || null;
+
     function updateLivePrice() {
       const quantityInput = document.getElementById('quantityInput');
       const livePriceDisplay = document.getElementById('livePriceDisplay');
@@ -1343,30 +1349,57 @@
         // Extract user data if launched from Telegram
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
           tgUser = tg.initDataUnsafe.user;
-          const userFullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
-          
-          const fullNameInput = document.getElementById('fullNameInput');
-          const tgIdInput = document.getElementById('telegramIdInput');
-          const tgStatusBadge = document.getElementById('tgStatusBadge');
-          const tgUserName = document.getElementById('tgUserName');
+          if (tgUser && tgUser.id) discoveredTgId = String(tgUser.id);
+        }
 
-          if (fullNameInput && userFullName) {
-            fullNameInput.value = userFullName;
-          }
-          if (tgIdInput && tgUser.id) {
-            tgIdInput.value = tgUser.id;
-          }
-          if (tgStatusBadge && tgUserName) {
-            tgUserName.textContent = tgUser.username ? `@${tgUser.username}` : userFullName;
-            tgStatusBadge.classList.remove('hidden');
-          }
-
-          // Check if this telegram user has already registered
-          checkExistingTicket(tgUser.id);
+        // Fallback: Parse raw initData if initDataUnsafe.user was missing
+        if (!tgUser && tg.initData) {
+          try {
+            const rawParams = new URLSearchParams(tg.initData);
+            const rawUser = rawParams.get('user');
+            if (rawUser) {
+              const parsed = JSON.parse(rawUser);
+              if (parsed && parsed.id) {
+                tgUser = parsed;
+                discoveredTgId = String(parsed.id);
+              }
+            }
+          } catch(e) {}
         }
       } catch (e) {
         console.warn('Telegram WebApp initialization error:', e);
       }
+    }
+
+    // Persist or retrieve from LocalStorage
+    if (discoveredTgId) {
+      try { localStorage.setItem('visol_tg_id', String(discoveredTgId)); } catch(e) {}
+    } else {
+      try { discoveredTgId = localStorage.getItem('visol_tg_id') || null; } catch(e) {}
+    }
+
+    const tgIdInput = document.getElementById('telegramIdInput');
+    if (tgIdInput && discoveredTgId) {
+      tgIdInput.value = discoveredTgId;
+    }
+
+    if (tgUser) {
+      const userFullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
+      const fullNameInput = document.getElementById('fullNameInput');
+      const tgStatusBadge = document.getElementById('tgStatusBadge');
+      const tgUserName = document.getElementById('tgUserName');
+
+      if (fullNameInput && userFullName && !fullNameInput.value) {
+        fullNameInput.value = userFullName;
+      }
+      if (tgStatusBadge && tgUserName) {
+        tgUserName.textContent = tgUser.username ? `@${tgUser.username}` : userFullName;
+        tgStatusBadge.classList.remove('hidden');
+      }
+    }
+
+    if (discoveredTgId) {
+      checkExistingTicket(discoveredTgId);
     }
 
     // 2. Mobile Navigation Toggle
@@ -1787,7 +1820,11 @@
           phone: phone,
           guests_count: parseInt(guestsCount, 10),
           comment: comment,
-          telegram_id: telegramId || (tgUser ? String(tgUser.id) : null),
+          telegram_id: (document.getElementById('telegramIdInput') ? document.getElementById('telegramIdInput').value.trim() : '') ||
+                       discoveredTgId ||
+                       (tgUser ? String(tgUser.id) : null) ||
+                       (function() { try { return localStorage.getItem('visol_tg_id'); } catch(e) { return null; } })() ||
+                       null,
           initData: tg?.initData || null
         };
 
