@@ -697,7 +697,7 @@
 
         <!-- FORM CONTAINER (Hides after successful submission) -->
         <div id="registrationFormContainer" class="luxury-card p-6 sm:p-10 rounded-3xl border border-gold-400/40 relative shadow-2xl transition-all duration-500">
-          <form id="rsvpForm" class="space-y-6" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" novalidate>
+          <form id="rsvpForm" class="space-y-6" autocomplete="on" novalidate>
             
             <!-- Hidden Telegram ID field -->
             <input type="hidden" id="telegramIdInput" name="telegram_id" value="" />
@@ -822,12 +822,7 @@
                     type="text"
                     id="customEventTypeInput"
                     name="custom_event_title"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    data-lpignore="true"
-                    data-form-type="other"
+                    autocomplete="on"
                     placeholder="Marosim nomini kiriting (masalan: Xatmi Qur'on yoki Iftorlik)"
                     class="w-full px-4 py-2 bg-navy-950 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 text-sm"
                   />
@@ -846,13 +841,8 @@
                   <input
                     type="text"
                     id="coupleNamesInput"
-                    name="party_couple"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    data-lpignore="true"
-                    data-form-type="other"
+                    name="couple_names"
+                    autocomplete="on"
                     placeholder="Masalan: Anvar & Madina"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -874,13 +864,8 @@
                   <input
                     type="text"
                     id="familyNamesInput"
-                    name="party_family"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    data-lpignore="true"
-                    data-form-type="other"
+                    name="family_names"
+                    autocomplete="on"
                     placeholder="Masalan: To'y egalari"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -899,13 +884,8 @@
                   <input
                     type="text"
                     id="venueNameInput"
-                    name="party_venue"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    data-lpignore="true"
-                    data-form-type="other"
+                    name="venue_name"
+                    autocomplete="on"
                     placeholder="Masalan: «Grand Palace» tantanalar saroyi"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -924,13 +904,8 @@
                   <input
                     type="text"
                     id="venueAddressInput"
-                    name="party_address"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    data-lpignore="true"
-                    data-form-type="other"
+                    name="venue_address"
+                    autocomplete="on"
                     placeholder="Masalan: Toshkent shahri, Yunusobod tumani"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -949,13 +924,8 @@
                   <input
                     type="text"
                     id="eventDateTimeInput"
-                    name="party_datetime"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    data-lpignore="true"
-                    data-form-type="other"
+                    name="event_date_time"
+                    autocomplete="on"
                     placeholder="Masalan: 2026-11-15 soat 18:00"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -982,13 +952,8 @@
                   <input
                     type="text"
                     id="fullNameInput"
-                    name="party_guest"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    data-lpignore="true"
-                    data-form-type="other"
+                    name="full_name"
+                    autocomplete="name"
                     placeholder="Masalan: Akmal aka yoki Karimovlar oilasi"
                     class="w-full pl-10 pr-4 py-3 bg-navy-950/80 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -1010,13 +975,8 @@
                   <input
                     type="tel"
                     id="phoneInput"
-                    name="party_phone"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    data-lpignore="true"
-                    data-form-type="other"
+                    name="phone"
+                    autocomplete="tel"
                     placeholder="+998 90 123 45 67 (ixtiyoriy)"
                     class="w-full pl-10 pr-4 py-3 bg-navy-950/80 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -1035,7 +995,7 @@
                   <select
                     id="guestsCountInput"
                     name="guests_count"
-                    autocomplete="off"
+                    autocomplete="on"
                     class="w-full pl-10 pr-10 py-3 bg-navy-950/90 border border-gold-400/30 rounded-xl text-slate-100 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm appearance-none transition-all cursor-pointer"
                   >
                     <option value="1">1 kishi (Shaxsiy taklifnoma)</option>
@@ -1062,8 +1022,8 @@
                     <input
                       type="number"
                       id="quantityInput"
-                      name="party_qty"
-                      autocomplete="off"
+                      name="quantity"
+                      autocomplete="on"
                       min="1"
                       max="1000"
                       value="1"
@@ -1085,12 +1045,8 @@
                 </label>
                 <textarea
                   id="commentInput"
-                  name="party_wishes"
-                  autocomplete="off"
-                  autocorrect="off"
-                  autocapitalize="off"
-                  spellcheck="false"
-                  data-lpignore="true"
+                  name="comment"
+                  autocomplete="on"
                   rows="3"
                   placeholder="Yoshlarga samimiy tilaklar yoki qo'shimcha ma'lumot..."
                   class="w-full p-3.5 bg-navy-950/80 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
@@ -1300,21 +1256,63 @@
 
   <!-- MAIN JAVASCRIPT LOGIC -->
   <script>
-    // 0. Disable browser autocomplete and saved suggestions popup across all inputs
-    function disableBrowserAutofill() {
-      const form = document.getElementById('rsvpForm');
-      if (form) form.setAttribute('autocomplete', 'off');
-      document.querySelectorAll('#rsvpForm input, #rsvpForm textarea, #rsvpForm select').forEach(function(el) {
-        el.setAttribute('autocomplete', 'off');
-        el.setAttribute('autocorrect', 'off');
-        el.setAttribute('autocapitalize', 'off');
-        el.setAttribute('spellcheck', 'false');
-        el.setAttribute('data-lpignore', 'true');
-        el.setAttribute('data-form-type', 'other');
-      });
+    // 0. Auto-fill and memory management for wedding details
+    function saveWeddingDetails() {
+      try {
+        const couple = document.getElementById('coupleNamesInput')?.value.trim() || '';
+        const family = document.getElementById('familyNamesInput')?.value.trim() || '';
+        const venue = document.getElementById('venueNameInput')?.value.trim() || '';
+        const address = document.getElementById('venueAddressInput')?.value.trim() || '';
+        const dateTime = document.getElementById('eventDateTimeInput')?.value.trim() || '';
+        const phone = document.getElementById('phoneInput')?.value.trim() || '';
+        const eventType = document.getElementById('eventTypeSelect')?.value || 'Nikoh toʻyi';
+
+        const data = { couple, family, venue, address, dateTime, phone, eventType };
+        localStorage.setItem('visol_wedding_details', JSON.stringify(data));
+      } catch (e) {}
     }
-    disableBrowserAutofill();
-    document.addEventListener('DOMContentLoaded', disableBrowserAutofill);
+
+    function restoreSavedWeddingDetails() {
+      try {
+        const raw = localStorage.getItem('visol_wedding_details');
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (!saved) return;
+
+        const coupleInput = document.getElementById('coupleNamesInput');
+        const familyInput = document.getElementById('familyNamesInput');
+        const venueInput = document.getElementById('venueNameInput');
+        const addressInput = document.getElementById('venueAddressInput');
+        const dateTimeInput = document.getElementById('eventDateTimeInput');
+        const phoneInput = document.getElementById('phoneInput');
+        const eventTypeSelect = document.getElementById('eventTypeSelect');
+
+        if (coupleInput && !coupleInput.value && saved.couple) coupleInput.value = saved.couple;
+        if (familyInput && !familyInput.value && saved.family) familyInput.value = saved.family;
+        if (venueInput && !venueInput.value && saved.venue) venueInput.value = saved.venue;
+        if (addressInput && !addressInput.value && saved.address) addressInput.value = saved.address;
+        if (dateTimeInput && !dateTimeInput.value && saved.dateTime) dateTimeInput.value = saved.dateTime;
+        if (phoneInput && (!phoneInput.value || phoneInput.value === '+998 ') && saved.phone) phoneInput.value = saved.phone;
+        if (eventTypeSelect && saved.eventType) eventTypeSelect.value = saved.eventType;
+      } catch (e) {}
+    }
+
+    // Auto-restore immediately and upon DOM ready
+    restoreSavedWeddingDetails();
+    document.addEventListener('DOMContentLoaded', restoreSavedWeddingDetails);
+
+    // Auto-save on input/change events
+    document.addEventListener('DOMContentLoaded', () => {
+      ['coupleNamesInput', 'familyNamesInput', 'venueNameInput', 'venueAddressInput', 'eventDateTimeInput', 'phoneInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', saveWeddingDetails);
+          el.addEventListener('change', saveWeddingDetails);
+        }
+      });
+      const evType = document.getElementById('eventTypeSelect');
+      if (evType) evType.addEventListener('change', saveWeddingDetails);
+    });
 
     // 1. Initialize Telegram WebApp SDK
     const tg = window.Telegram?.WebApp;
@@ -1709,6 +1707,25 @@
               });
             };
           }
+
+          // Auto-fill form from existing ticket if fields are empty
+          const coupleInput = document.getElementById('coupleNamesInput');
+          const familyInput = document.getElementById('familyNamesInput');
+          const venueInput = document.getElementById('venueNameInput');
+          const addressInput = document.getElementById('venueAddressInput');
+          const dateTimeInput = document.getElementById('eventDateTimeInput');
+          const phoneInput = document.getElementById('phoneInput');
+          const eventTypeSelect = document.getElementById('eventTypeSelect');
+
+          if (coupleInput && !coupleInput.value && t.couple_names) coupleInput.value = t.couple_names;
+          if (familyInput && !familyInput.value && t.family_names) familyInput.value = t.family_names;
+          if (venueInput && !venueInput.value && t.venue_name) venueInput.value = t.venue_name;
+          if (addressInput && !addressInput.value && t.venue_address) addressInput.value = t.venue_address;
+          if (dateTimeInput && !dateTimeInput.value && t.event_date_time) dateTimeInput.value = t.event_date_time;
+          if (phoneInput && (!phoneInput.value || phoneInput.value === '+998 ') && t.phone) phoneInput.value = t.phone;
+          if (eventTypeSelect && t.event_type) eventTypeSelect.value = t.event_type;
+
+          saveWeddingDetails();
         }
       } catch (err) {
         console.warn('Could not check existing ticket:', err);
@@ -1796,6 +1813,7 @@
       const quantityVal = Math.max(1, parseInt(document.getElementById('quantityInput')?.value, 10) || 1);
 
       // UI Loading state
+      saveWeddingDetails();
       btnText.textContent = "Rasmiylashtirilmoqda...";
       btnIcon.classList.add('hidden');
       btnSpinner.classList.remove('hidden');
@@ -1945,8 +1963,8 @@
           if (formContainer) {
             formContainer.classList.remove('hidden', 'opacity-0', 'scale-95');
             document.getElementById('fullNameInput').value = '';
-            document.getElementById('phoneInput').value = '+998 ';
             document.getElementById('commentInput').value = '';
+            restoreSavedWeddingDetails();
             formContainer.scrollIntoView({ behavior: 'smooth' });
           }
         };
