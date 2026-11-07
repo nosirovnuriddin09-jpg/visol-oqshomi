@@ -1,6 +1,7 @@
 /**
  * Visol Oqshomi - Production-ready Backend & Telegram Mini App Server
  * Express.js + Telegraf Bot + SQLite
+ * Build & Deploy: 2026-11-07 20:18 UTC
  */
 
 require('dotenv').config();
