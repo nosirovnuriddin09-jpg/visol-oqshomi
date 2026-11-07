@@ -157,6 +157,7 @@ main{ position:relative; z-index:2; }
   position:relative;
   box-shadow:0 24px 60px rgba(24,52,100,.18);
   animation:coverPop 1.2s var(--ease) both;
+  cursor:pointer;
 }
 @keyframes coverPop{
   from{ opacity:0; transform:translateY(26px) scale(.96); }
@@ -191,6 +192,9 @@ main{ position:relative; z-index:2; }
   position:relative; overflow:hidden;
   box-shadow:0 10px 26px rgba(24,52,100,.35);
   transition:transform .35s var(--ease), box-shadow .35s var(--ease);
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
 }
 .open-btn:active{ transform:scale(.96); }
 .open-btn::after{
@@ -673,14 +677,14 @@ h1.title{
 <body>
 
 <!-- ====== COVER (SCREENSHOT 1) ====== -->
-<div id="cover" role="dialog" aria-label="Taklifnoma muqovasi">
-  <div class="cover-card">
+<div id="cover" role="dialog" aria-label="Taklifnoma muqovasi" onclick="window.openInviteCover && window.openInviteCover(event)">
+  <div class="cover-card" onclick="window.openInviteCover && window.openInviteCover(event)">
     <svg class="cover-flower tl" viewBox="0 0 120 120" aria-hidden="true"><use href="#flower-bunch"/></svg>
     <svg class="cover-flower br" viewBox="0 0 120 120" aria-hidden="true"><use href="#flower-bunch"/></svg>
     <div class="cover-kicker" id="coverKicker">Nikoh toʻyi</div>
     <div class="cover-names" id="coverNames"><span style="opacity:0.85">Visol Oqshomi</span></div>
     <div class="cover-date" id="coverDate">Tantanali Oqshom</div>
-    <button class="open-btn" id="openBtn">Taklifnomani ochish</button>
+    <button class="open-btn" id="openBtn" type="button" onclick="window.openInviteCover && window.openInviteCover(event)">Taklifnomani ochish</button>
   </div>
 </div>
 
@@ -1040,6 +1044,112 @@ h1.title{
 (function(){
   "use strict";
 
+  /* ---------- Top-level elements & audio controls ---------- */
+  var cover = document.getElementById("cover");
+  var bgm = document.getElementById("bgm");
+  var musicBtn = document.getElementById("musicBtn");
+  var openBtn = document.getElementById("openBtn");
+  var opened = false;
+
+  var AUDIO_LOOP_START = 0;
+  var AUDIO_LOOP_END = 166;
+
+  if (bgm) {
+    bgm.addEventListener("timeupdate", function(){
+      if(bgm.currentTime >= AUDIO_LOOP_END){
+        bgm.currentTime = AUDIO_LOOP_START;
+        if(!bgm.paused){
+          bgm.play();
+        }
+      }
+    });
+  }
+
+  function tryPlay(){
+    if(!bgm) return;
+    if(bgm.currentTime >= AUDIO_LOOP_END || bgm.currentTime < AUDIO_LOOP_START){
+      bgm.currentTime = AUDIO_LOOP_START;
+    }
+    var pr = bgm.play();
+    if(pr && pr.then){
+      pr.then(function(){
+        if(musicBtn) musicBtn.classList.add("playing");
+      }).catch(function(err){
+        console.warn("Autoplay notice (user interaction required):", err);
+        if(musicBtn) musicBtn.classList.remove("playing");
+      });
+    }
+  }
+
+  function unlock(){
+    document.body.classList.remove("locked");
+    document.body.style.overflow = "";
+    if(cover){
+      cover.classList.add("hidden");
+      cover.style.display = "none";
+    }
+  }
+
+  function launchConfettiCelebration(){
+    if(typeof confetti === "function"){
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ["#cfa452", "#f3e0a6", "#5b7fb9", "#a9c4e2", "#ffffff", "#e5c479"]
+        });
+      } catch(e){}
+    }
+  }
+
+  function openInviteCover(e){
+    if(e && e.stopPropagation) e.stopPropagation();
+    opened = true;
+    unlock();
+    window.scrollTo(0, 0);
+    try { tryPlay(); } catch(err){}
+    try { if(typeof burst === "function") burst(); } catch(err){}
+    try { launchConfettiCelebration(); } catch(err){}
+  }
+  window.openInviteCover = openInviteCover;
+
+  if(openBtn){
+    openBtn.addEventListener("click", openInviteCover);
+    openBtn.addEventListener("touchend", function(e){
+      e.preventDefault();
+      openInviteCover(e);
+    });
+  }
+  document.body.classList.add("locked");
+  window.addEventListener("error", unlock);
+
+  /* ---------- Countdown timer: defined safely before applyCustomDetails ---------- */
+  var target = new Date("2026-08-11T19:00:00+05:00").getTime();
+  var cdTimer = null;
+  function pad(n){ return (n<10?"0":"") + n; }
+  function tick(){
+    var elD = document.getElementById("cdD"),
+        elH = document.getElementById("cdH"),
+        elM = document.getElementById("cdM"),
+        elS = document.getElementById("cdS");
+    var cdWrap = document.getElementById("countdown");
+    var cdDone = document.getElementById("cdDone");
+    if(!elD || !elH || !elM || !elS) return;
+    var diff = target - Date.now();
+    if(diff <= 0){
+      if(cdWrap) cdWrap.style.display = "none";
+      if(cdDone) cdDone.style.display = "block";
+      if(cdTimer) clearInterval(cdTimer);
+      return;
+    }
+    elD.textContent = pad(Math.floor(diff/864e5));
+    elH.textContent = pad(Math.floor(diff/36e5)%24);
+    elM.textContent = pad(Math.floor(diff/6e4)%60);
+    elS.textContent = pad(Math.floor(diff/1e3)%60);
+  }
+  cdTimer = setInterval(tick, 1000);
+
   /* ---------- URL params & Backend Ticket Integration ---------- */
   var p = new URLSearchParams(location.search);
   var ticketParam = p.get("ticket") || p.get("id");
@@ -1376,70 +1486,6 @@ h1.title{
       });
   }
 
-  /* ---------- cover open ---------- */
-  var cover = document.getElementById("cover");
-  var bgm = document.getElementById("bgm");
-  var musicBtn = document.getElementById("musicBtn");
-  var opened = false;
-
-  /* ---------- audio playback range (configurable from settings) ---------- */
-  var AUDIO_LOOP_START = 0;
-  var AUDIO_LOOP_END = 166; // default 2 minutes and 46 seconds = 166 seconds
-
-  bgm.addEventListener("timeupdate", function(){
-    if(bgm.currentTime >= AUDIO_LOOP_END){
-      bgm.currentTime = AUDIO_LOOP_START;
-      if(!bgm.paused){
-        bgm.play();
-      }
-    }
-  });
-
-  function tryPlay(){
-    if(bgm.currentTime >= AUDIO_LOOP_END || bgm.currentTime < AUDIO_LOOP_START){
-      bgm.currentTime = AUDIO_LOOP_START;
-    }
-    var pr = bgm.play();
-    if(pr && pr.then){
-      pr.then(function(){
-        musicBtn.classList.add("playing");
-      }).catch(function(err){
-        console.warn("Autoplay notice (user interaction required):", err);
-        musicBtn.classList.remove("playing");
-      });
-    }
-  }
-
-  function unlock(){
-    document.body.classList.remove("locked");
-    document.body.style.overflow = "";
-  }
-
-  function launchConfettiCelebration(){
-    if(typeof confetti === "function"){
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ["#cfa452", "#f3e0a6", "#5b7fb9", "#a9c4e2", "#ffffff", "#e5c479"]
-      });
-    }
-  }
-
-  document.getElementById("openBtn").addEventListener("click", function(){
-    opened = true;
-    cover.classList.add("hidden");
-    unlock();
-    window.scrollTo(0, 0);
-    tryPlay();
-    burst();
-    launchConfettiCelebration();
-  });
-  document.body.classList.add("locked");
-
-  window.addEventListener("error", unlock);
-  setTimeout(function(){ if(cover.classList.contains("hidden")) unlock(); }, 2000);
-
   /* ---------- audio toggle ---------- */
   function toggleMusic(e){
     if(e) e.preventDefault();
@@ -1502,27 +1548,6 @@ h1.title{
     revealEls.forEach(function(el){ el.classList.add("in"); });
     revealEls.length = 0;
   }, 8000);
-
-  /* ---------- countdown timer ---------- */
-  var target = new Date("2026-08-11T19:00:00+05:00").getTime();
-  var elD = document.getElementById("cdD"), elH = document.getElementById("cdH"),
-      elM = document.getElementById("cdM"), elS = document.getElementById("cdS");
-  function pad(n){ return (n<10?"0":"") + n; }
-  function tick(){
-    var diff = target - Date.now();
-    if(diff <= 0){
-      document.getElementById("countdown").style.display = "none";
-      document.getElementById("cdDone").style.display = "block";
-      if(cdTimer) clearInterval(cdTimer);
-      return;
-    }
-    elD.textContent = pad(Math.floor(diff/864e5));
-    elH.textContent = pad(Math.floor(diff/36e5)%24);
-    elM.textContent = pad(Math.floor(diff/6e4)%60);
-    elS.textContent = pad(Math.floor(diff/1e3)%60);
-  }
-  var cdTimer = setInterval(tick, 1000);
-  tick();
 
   /* ---------- calendar (.ics) generation ---------- */
   function updateCalendar(s){

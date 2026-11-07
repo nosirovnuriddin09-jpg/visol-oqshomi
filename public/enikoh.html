@@ -924,7 +924,7 @@ section{position:relative;z-index:4;padding:0 30px}
       <div class="seal"><span class="seal-txt">B<i>&amp;</i>M</span></div>
     </div>
     <p class="opener-sub">Baxodirjon &amp; Mexrangizxon</p>
-    <button class="open-btn" id="openBtn" type="button">TAKLIFNOMANI OCHISH</button>
+    <button class="open-btn" id="openBtn" type="button" onclick="window.openInvite && window.openInvite()">TAKLIFNOMANI OCHISH</button>
   </div>
 </div>
 
@@ -1698,8 +1698,15 @@ function openInvite(){
   }, RM ? 200 : 1000);
   setTimeout(()=>opener.remove(), 2400);
 }
-document.getElementById("openBtn").addEventListener("click", openInvite);
-env.addEventListener("click", openInvite);
+window.openInvite = openInvite;
+const openBtnEl = document.getElementById("openBtn");
+if (openBtnEl) {
+  openBtnEl.addEventListener("click", openInvite);
+  openBtnEl.addEventListener("touchend", (e) => { e.preventDefault(); openInvite(); });
+}
+if (env) {
+  env.addEventListener("click", openInvite);
+}
 
 /* ══════════ CALENDAR — August 2026, Monday-first ══════════ */
 (function calendar(){
