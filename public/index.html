@@ -697,7 +697,7 @@
 
         <!-- FORM CONTAINER (Hides after successful submission) -->
         <div id="registrationFormContainer" class="luxury-card p-6 sm:p-10 rounded-3xl border border-gold-400/40 relative shadow-2xl transition-all duration-500">
-          <form id="rsvpForm" class="space-y-6" novalidate>
+          <form id="rsvpForm" class="space-y-6" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" novalidate>
             
             <!-- Hidden Telegram ID field -->
             <input type="hidden" id="telegramIdInput" name="telegram_id" value="" />
@@ -821,6 +821,13 @@
                   <input
                     type="text"
                     id="customEventTypeInput"
+                    name="custom_event_title"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
                     placeholder="Marosim nomini kiriting (masalan: Xatmi Qur'on yoki Iftorlik)"
                     class="w-full px-4 py-2 bg-navy-950 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 text-sm"
                   />
@@ -839,7 +846,13 @@
                   <input
                     type="text"
                     id="coupleNamesInput"
-                    name="couple_names"
+                    name="party_couple"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
                     placeholder="Masalan: Anvar & Madina"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -861,7 +874,13 @@
                   <input
                     type="text"
                     id="familyNamesInput"
-                    name="family_names"
+                    name="party_family"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
                     placeholder="Masalan: To'y egalari"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -880,7 +899,13 @@
                   <input
                     type="text"
                     id="venueNameInput"
-                    name="venue_name"
+                    name="party_venue"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
                     placeholder="Masalan: «Grand Palace» tantanalar saroyi"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -899,7 +924,13 @@
                   <input
                     type="text"
                     id="venueAddressInput"
-                    name="venue_address"
+                    name="party_address"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
                     placeholder="Masalan: Toshkent shahri, Yunusobod tumani"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -918,7 +949,13 @@
                   <input
                     type="text"
                     id="eventDateTimeInput"
-                    name="event_date_time"
+                    name="party_datetime"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
                     placeholder="Masalan: 2026-11-15 soat 18:00"
                     class="w-full pl-10 pr-4 py-2.5 bg-navy-900 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -945,7 +982,13 @@
                   <input
                     type="text"
                     id="fullNameInput"
-                    name="full_name"
+                    name="party_guest"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
                     placeholder="Masalan: Akmal aka yoki Karimovlar oilasi"
                     class="w-full pl-10 pr-4 py-3 bg-navy-950/80 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -967,7 +1010,13 @@
                   <input
                     type="tel"
                     id="phoneInput"
-                    name="phone"
+                    name="party_phone"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
                     placeholder="+998 90 123 45 67 (ixtiyoriy)"
                     class="w-full pl-10 pr-4 py-3 bg-navy-950/80 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
                   />
@@ -986,6 +1035,7 @@
                   <select
                     id="guestsCountInput"
                     name="guests_count"
+                    autocomplete="off"
                     class="w-full pl-10 pr-10 py-3 bg-navy-950/90 border border-gold-400/30 rounded-xl text-slate-100 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm appearance-none transition-all cursor-pointer"
                   >
                     <option value="1">1 kishi (Shaxsiy taklifnoma)</option>
@@ -1012,7 +1062,8 @@
                     <input
                       type="number"
                       id="quantityInput"
-                      name="quantity"
+                      name="party_qty"
+                      autocomplete="off"
                       min="1"
                       max="1000"
                       value="1"
@@ -1034,7 +1085,12 @@
                 </label>
                 <textarea
                   id="commentInput"
-                  name="comment"
+                  name="party_wishes"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  data-lpignore="true"
                   rows="3"
                   placeholder="Yoshlarga samimiy tilaklar yoki qo'shimcha ma'lumot..."
                   class="w-full p-3.5 bg-navy-950/80 border border-gold-400/30 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 text-sm transition-all"
@@ -1244,6 +1300,22 @@
 
   <!-- MAIN JAVASCRIPT LOGIC -->
   <script>
+    // 0. Disable browser autocomplete and saved suggestions popup across all inputs
+    function disableBrowserAutofill() {
+      const form = document.getElementById('rsvpForm');
+      if (form) form.setAttribute('autocomplete', 'off');
+      document.querySelectorAll('#rsvpForm input, #rsvpForm textarea, #rsvpForm select').forEach(function(el) {
+        el.setAttribute('autocomplete', 'off');
+        el.setAttribute('autocorrect', 'off');
+        el.setAttribute('autocapitalize', 'off');
+        el.setAttribute('spellcheck', 'false');
+        el.setAttribute('data-lpignore', 'true');
+        el.setAttribute('data-form-type', 'other');
+      });
+    }
+    disableBrowserAutofill();
+    document.addEventListener('DOMContentLoaded', disableBrowserAutofill);
+
     // 1. Initialize Telegram WebApp SDK
     const tg = window.Telegram?.WebApp;
     let tgUser = null;
