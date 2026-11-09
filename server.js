@@ -288,6 +288,251 @@ app.use((req, res, next) => {
   next();
 });
 
+// Helper: Escape string for HTML attribute safety
+function escapeHtmlAttr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Helper: Inject dynamic Open Graph & social preview meta tags into invitation HTML
+function injectSocialMeta(html, { title, description, url }) {
+  const safeTitle = escapeHtmlAttr(title);
+  const safeDesc = escapeHtmlAttr(description);
+  const safeUrl = escapeHtmlAttr(url || '');
+
+  // 1. Replace or inject <title>
+  if (/<title[^>]*>[\s\S]*?<\/title>/i.test(html)) {
+    html = html.replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title>${safeTitle}</title>`);
+  } else {
+    html = html.replace(/<head[^>]*>/i, `$& \n<title>${safeTitle}</title>`);
+  }
+
+  // 2. Replace or inject <meta name="description">
+  if (/<meta\s+name=["']description["'][^>]*>/i.test(html)) {
+    html = html.replace(/<meta\s+name=["']description["'][^>]*>/i, `<meta name="description" content="${safeDesc}">`);
+  } else {
+    html = html.replace(/<title[^>]*>[\s\S]*?<\/title>/i, `$&\n<meta name="description" content="${safeDesc}">`);
+  }
+
+  // 3. Replace or inject <meta property="og:title">
+  if (/<meta\s+property=["']og:title["'][^>]*>/i.test(html)) {
+    html = html.replace(/<meta\s+property=["']og:title["'][^>]*>/i, `<meta property="og:title" content="${safeTitle}">`);
+  } else {
+    html = html.replace(/<meta\s+name=["']description["'][^>]*>/i, `$&\n<meta property="og:title" content="${safeTitle}">`);
+  }
+
+  // 4. Replace or inject <meta property="og:description">
+  if (/<meta\s+property=["']og:description["'][^>]*>/i.test(html)) {
+    html = html.replace(/<meta\s+property=["']og:description["'][^>]*>/i, `<meta property="og:description" content="${safeDesc}">`);
+  } else {
+    html = html.replace(/<meta\s+property=["']og:title["'][^>]*>/i, `$&\n<meta property="og:description" content="${safeDesc}">`);
+  }
+
+  // 5. Ensure <meta property="og:type">
+  if (!/<meta\s+property=["']og:type["']/i.test(html)) {
+    html = html.replace(/<meta\s+property=["']og:description["'][^>]*>/i, `$&\n<meta property="og:type" content="website">`);
+  }
+
+  // 6. Ensure <meta property="og:url">
+  if (safeUrl) {
+    if (/<meta\s+property=["']og:url["'][^>]*>/i.test(html)) {
+      html = html.replace(/<meta\s+property=["']og:url["'][^>]*>/i, `<meta property="og:url" content="${safeUrl}">`);
+    } else {
+      html = html.replace(/<meta\s+property=["']og:type["'][^>]*>/i, `$&\n<meta property="og:url" content="${safeUrl}">`);
+    }
+  }
+
+  // 7. Ensure Twitter card preview tags
+  if (/<meta\s+name=["']twitter:title["'][^>]*>/i.test(html)) {
+    html = html.replace(/<meta\s+name=["']twitter:title["'][^>]*>/i, `<meta name="twitter:title" content="${safeTitle}">`);
+  } else {
+    html = html.replace(/<meta\s+property=["']og:title["'][^>]*>/i, `$&\n<meta name="twitter:title" content="${safeTitle}">`);
+  }
+
+  if (/<meta\s+name=["']twitter:description["'][^>]*>/i.test(html)) {
+    html = html.replace(/<meta\s+name=["']twitter:description["'][^>]*>/i, `<meta name="twitter:description" content="${safeDesc}">`);
+  } else {
+    html = html.replace(/<meta\s+property=["']og:description["'][^>]*>/i, `$&\n<meta name="twitter:description" content="${safeDesc}">`);
+  }
+
+  if (!/<meta\s+name=["']twitter:card["']/i.test(html)) {
+    html = html.replace(/<meta\s+name=["']twitter:title["'][^>]*>/i, `<meta name="twitter:card" content="summary">\n$&`);
+  }
+
+  return html;
+}
+
+// Dynamic Social Preview / Open Graph handler for invitation links
+function handleInvitationPage(req, res) {
+  try {
+    const isEnikoh = req.path.toLowerCase().includes('enikoh');
+    const filename = isEnikoh ? 'enikoh.html' : 'invite.html';
+    const filePath = path.join(__dirname, 'public', filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send('Taklifnoma sahifasi topilmadi');
+    }
+
+    let html = fs.readFileSync(filePath, 'utf8');
+
+    const query = req.query || {};
+    const ticketId = (query.ticket || query.id || query.t || '').trim();
+    let couple = (query.couple || query.kelin_kuyov || '').trim();
+    let event = (query.event || query.event_type || query.tadbir || '').trim();
+    let date = (query.date || query.sana || '').trim();
+    let time = (query.time || query.vaqt || '').trim();
+    let venue = (query.venue || query.restoran || query.toyxona || '').trim();
+    let address = (query.address || query.manzil || '').trim();
+    let family = (query.family || query.oila || query.family_names || '').trim();
+    let guest = (query.name || query.ism || query.mehmon || '').trim();
+
+    // If ticket provided, enrich missing fields from database
+    if (ticketId) {
+      try {
+        const t = db.getParticipantByTicketId(ticketId);
+        if (t) {
+          if (!couple) couple = (t.couple_names || t.groom_bride || '').trim();
+          if (!event) event = (t.event_type || '').trim();
+          if (!date) date = (t.event_date_time || t.event_date || '').trim();
+          if (!venue) venue = (t.venue_name || '').trim();
+          if (!address) address = (t.venue_address || '').trim();
+          if (!family) family = (t.family_names || t.family || '').trim();
+          if (!guest) guest = (t.full_name || t.guest_name || '').trim();
+        }
+      } catch (dbErr) {
+        console.error('[OG Preview] Ticket lookup error:', dbErr.message);
+      }
+    }
+
+    // Format couple names
+    let coupleFormatted = '';
+    if (couple) {
+      const parts = String(couple).trim().split(/\s*&\s*|\s+va\s+/i);
+      if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
+        coupleFormatted = `${parts[0].trim()} va ${parts[1].trim()}`;
+      } else {
+        coupleFormatted = String(couple).trim();
+      }
+    }
+
+    // Only inject if specific data or ticket was supplied
+    if (coupleFormatted || event || date || venue || address || ticketId) {
+      const pageTitle = coupleFormatted
+        ? `Taklifnoma — ${coupleFormatted}`
+        : (isEnikoh ? 'Taklifnoma — Baxodirjon va Mexrangizxon' : 'Taklifnoma — Visol Oqshomi');
+
+      // Format event type
+      let evDisplay = '';
+      if (event) {
+        const evClean = String(event).replace(/[«»]/g, '').trim();
+        if (evClean) {
+          evDisplay = /to['ʻ`]?y|osh/i.test(evClean) ? `«${evClean}»` : `«${evClean}» toʻylari`;
+        }
+      } else if (coupleFormatted) {
+        evDisplay = '«Nikoh toʻyi»';
+      }
+
+      // Format date and time
+      const UZ_MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentyabr", "oktyabr", "noyabr", "dekabr"];
+      let dateDisplay = '';
+      if (date) {
+        const rawDt = String(date).trim();
+        let parsedYear = null, parsedMonthIdx = null, parsedDay = null, parsedHour = null, parsedMinute = null;
+
+        const isoMatch = rawDt.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+        if (isoMatch) {
+          parsedYear = parseInt(isoMatch[1], 10);
+          parsedMonthIdx = Math.max(0, Math.min(11, parseInt(isoMatch[2], 10) - 1));
+          parsedDay = parseInt(isoMatch[3], 10);
+        } else {
+          const dmyMatch = rawDt.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+          if (dmyMatch) {
+            parsedDay = parseInt(dmyMatch[1], 10);
+            parsedMonthIdx = Math.max(0, Math.min(11, parseInt(dmyMatch[2], 10) - 1));
+            parsedYear = parseInt(dmyMatch[3], 10);
+          }
+        }
+
+        const timeMatch = rawDt.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          parsedHour = parseInt(timeMatch[1], 10);
+          parsedMinute = parseInt(timeMatch[2], 10);
+        } else if (time) {
+          const tm = String(time).match(/(\d{1,2}):(\d{2})/);
+          if (tm) {
+            parsedHour = parseInt(tm[1], 10);
+            parsedMinute = parseInt(tm[2], 10);
+          }
+        }
+
+        if (parsedYear && parsedMonthIdx !== null && parsedDay) {
+          const mName = UZ_MONTHS[parsedMonthIdx];
+          const datePart = `${parsedYear}-yil ${parsedDay}-${mName}`;
+          if (parsedHour !== null && parsedMinute !== null) {
+            const timePart = `soat ${String(parsedHour).padStart(2, '0')}:${String(parsedMinute).padStart(2, '0')}`;
+            dateDisplay = `${datePart}, ${timePart}`;
+          } else {
+            dateDisplay = datePart;
+          }
+        } else {
+          dateDisplay = rawDt;
+        }
+      }
+
+      // Format location
+      let locationDisplay = '';
+      const vName = venue ? String(venue).trim() : '';
+      const vAddr = address ? String(address).trim() : '';
+      if (vName && vAddr) {
+        if (vAddr.toLowerCase().includes(vName.toLowerCase())) {
+          locationDisplay = vAddr;
+        } else {
+          locationDisplay = `${vName}, ${vAddr}`;
+        }
+      } else if (vName) {
+        locationDisplay = vName;
+      } else if (vAddr) {
+        locationDisplay = vAddr;
+      }
+
+      // Build description
+      const descParts = [];
+      if (evDisplay) descParts.push(evDisplay);
+      if (dateDisplay) descParts.push(dateDisplay);
+      if (locationDisplay) descParts.push(locationDisplay);
+      const pageDescription = descParts.join(' · ');
+
+      // Build full URL
+      const host = req.get('host') || 'visol-oqshomi.onrender.com';
+      const protocol = req.protocol || 'https';
+      const fullUrl = `${protocol}://${host}${req.originalUrl}`;
+
+      html = injectSocialMeta(html, {
+        title: pageTitle,
+        description: pageDescription,
+        url: fullUrl
+      });
+    }
+
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
+  } catch (err) {
+    console.error('[OG Preview] Failed to render invitation HTML:', err);
+    return res.sendFile(path.join(__dirname, 'public', req.path.includes('enikoh') ? 'enikoh.html' : 'invite.html'));
+  }
+}
+
+// Dynamic Open Graph / Telegram / WhatsApp preview routes for invitations
+app.get(['/enikoh.html', '/enikoh', '/invite.html', '/invite'], handleInvitationPage);
+
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
   lastModified: false,
