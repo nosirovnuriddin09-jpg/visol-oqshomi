@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
@@ -1729,7 +1729,7 @@ function renderCalendar(){
   const total  = new Date(Y, M+1, 0).getDate();
   for(let i=0;i<offset;i++) html += '<div class="d mute"></div>';
   for(let d=1; d<=total; d++)
-    html += `<div class="d${d===DAY?" on":"}">${d}</div>`;
+    html += `<div class="d${d===DAY?" on":""}">${d}</div>`;
   grid.innerHTML = html;
   const names = ["Yakshanba","Dushanba","Seshanba","Chorshanba","Payshanba","Juma","Shanba"];
   const dowLbl = document.getElementById("dowLabel");
@@ -1757,12 +1757,12 @@ function reveal(){
 /* ══════════ ADD TO CALENDAR (.ics) ══════════ */
 document.getElementById("icsBtn").addEventListener("click", ()=>{
   const pad = n => String(n).padStart(2, "0");
-  const yr = calData.year || 2026;
-  const mo = pad((calData.monthIdx || 7) + 1);
-  const da = pad(calData.day || 10);
-  const hr = pad(calData.hour || 18);
-  const mi = pad(calData.minute || 30);
-  const endHr = pad(((calData.hour || 18) + 4) % 24);
+  const yr = calData.year != null ? calData.year : 2026;
+  const mo = pad((calData.monthIdx != null ? calData.monthIdx : 7) + 1);
+  const da = pad(calData.day != null ? calData.day : 10);
+  const hr = pad(calData.hour != null ? calData.hour : 18);
+  const mi = pad(calData.minute != null ? calData.minute : 30);
+  const endHr = pad(((calData.hour != null ? calData.hour : 18) + 4) % 24);
 
   const dtStart = `${yr}${mo}${da}T${hr}${mi}00`;
   const dtEnd   = `${yr}${mo}${da}T${endHr}${mi}00`;
