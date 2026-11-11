@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
@@ -1327,18 +1327,38 @@ if(document.getElementById("cd")){
   if(TARGET > Date.now()) timer = setInterval(tick, 1000);
 }
 
-const calData = {
-  year: 2026,
-  monthIdx: 7,
-  day: 10,
-  hour: 18,
-  minute: 30,
-  couple: "Baxodirjon va Mexrangizxon",
-  event: "Fotiha",
-  venue: "Moʻjiza restorani",
-  address: "Buxoro shahri",
-  family: "Toʻy egalari va xonadon ahillari"
-};
+// calData: URL parametrlardan sinxron olinadi, default qiymatlar fallback sifatida
+const calData = (function(){
+  const _p = new URLSearchParams(location.search);
+  const _date = _p.get("date") || _p.get("sana") || "";
+  let _year = 2026, _mIdx = 7, _day = 10, _hour = 18, _min = 30;
+  if(_date){
+    const _iso = _date.match(/(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+    if(_iso){
+      _year = parseInt(_iso[1],10);
+      _mIdx = Math.max(0,Math.min(11,parseInt(_iso[2],10)-1));
+      _day  = parseInt(_iso[3],10);
+    } else {
+      const _dmy = _date.match(/(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/);
+      if(_dmy){
+        _day  = parseInt(_dmy[1],10);
+        _mIdx = Math.max(0,Math.min(11,parseInt(_dmy[2],10)-1));
+        _year = parseInt(_dmy[3],10);
+      }
+    }
+    const _t = _date.match(/(\d{1,2}):(\d{2})/);
+    if(_t){ _hour=parseInt(_t[1],10); _min=parseInt(_t[2],10); }
+  }
+  return {
+    year: _year, monthIdx: _mIdx, day: _day,
+    hour: _hour, minute: _min,
+    couple: "Baxodirjon va Mexrangizxon",
+    event: "Fotiha",
+    venue: "Mo\u02BBjiza restorani",
+    address: "Buxoro shahri",
+    family: "To\u02BBy egalari va xonadon ahillari"
+  };
+})();
 
 (function setupDynamicData(){
   const p = new URLSearchParams(location.search);
@@ -1508,21 +1528,7 @@ const calData = {
         }
       }
 
-      const calTitle = document.querySelector(".cal .cal-h");
-      if(calTitle) calTitle.textContent = `${mName.toUpperCase()} ${parsedYear}`;
-      const grid = document.getElementById("cal");
-      if(grid){
-        const dows = ["Du","Se","Cho","Pa","Ju","Sha","Ya"];
-        let html = dows.map(d=>`<div class="dow">${d}</div>`).join("");
-        const first = new Date(parsedYear, parsedMonthIdx, 1).getDay();
-        const offset = (first + 6) % 7;
-        const total = new Date(parsedYear, parsedMonthIdx + 1, 0).getDate();
-        for(let i = 0; i < offset; i++) html += '<div class="d mute"></div>';
-        for(let d = 1; d <= total; d++){
-          html += `<div class="d${d === parsedDay ? " on" : ""}">${d}</div>`;
-        }
-        grid.innerHTML = html;
-      }
+      renderCalendar();
 
       const footerCouple = document.querySelector(".final .sm");
       if(footerCouple){
@@ -1709,22 +1715,29 @@ if (env) {
 }
 
 /* ══════════ CALENDAR — August 2026, Monday-first ══════════ */
-(function calendar(){
+function renderCalendar(){
   const grid = document.getElementById("cal");
+  if(!grid) return;
+  const UZ_MONTHS_CAL = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentyabr","Oktyabr","Noyabr","Dekabr"];
+  const Y   = calData.year     != null ? calData.year     : 2026;
+  const M   = calData.monthIdx != null ? calData.monthIdx : 11;
+  const DAY = calData.day      != null ? calData.day      : 26;
   const dows = ["Du","Se","Cho","Pa","Ju","Sha","Ya"];
-  const Y = 2026, M = 7, DAY = 10;               // M: 0-indexed → 7 = August
   let html = dows.map(d=>`<div class="dow">${d}</div>`).join("");
-  const first  = new Date(Y, M, 1).getDay();     // 0 = Sunday
-  const offset = (first + 6) % 7;                // shift to Monday-first
+  const first  = new Date(Y, M, 1).getDay();
+  const offset = (first + 6) % 7;
   const total  = new Date(Y, M+1, 0).getDate();
   for(let i=0;i<offset;i++) html += '<div class="d mute"></div>';
   for(let d=1; d<=total; d++)
-    html += `<div class="d${d===DAY?" on":""}">${d}</div>`;
+    html += `<div class="d${d===DAY?" on":"}">${d}</div>`;
   grid.innerHTML = html;
-
   const names = ["Yakshanba","Dushanba","Seshanba","Chorshanba","Payshanba","Juma","Shanba"];
-  document.getElementById("dowLabel").textContent = names[new Date(Y,M,DAY).getDay()];
-})();
+  const dowLbl = document.getElementById("dowLabel");
+  if(dowLbl) dowLbl.textContent = names[new Date(Y,M,DAY).getDay()];
+  const calTitle = document.querySelector(".cal .cal-h");
+  if(calTitle) calTitle.textContent = `${(UZ_MONTHS_CAL[M]||"").toUpperCase()} ${Y}`;
+}
+renderCalendar();
 
 /* ══════════ SCROLL REVEAL ══════════ */
 let io;

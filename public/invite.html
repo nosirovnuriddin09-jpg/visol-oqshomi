@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
@@ -1173,14 +1173,16 @@ h1.title{
     if(vBanner) vBanner.style.display = "inline-block";
   }
 
+  // hasCustom: ticket yoki URL parametrlar mavjud bo'lsa, /api/settings override qilmasin
+  var _hasTicketOrParams = !!(ticketParam || coupleParam || venueParam || addressParam || dateParam || familyParam || eventParam);
   var hasCustom = {
-    guest: false,
-    couple: false,
-    venue: false,
-    address: false,
-    dateTime: false,
-    family: false,
-    event: false
+    guest:    _hasTicketOrParams || !!guestParam,
+    couple:   _hasTicketOrParams || !!coupleParam,
+    venue:    _hasTicketOrParams || !!venueParam,
+    address:  _hasTicketOrParams || !!addressParam,
+    dateTime: _hasTicketOrParams || !!dateParam,
+    family:   _hasTicketOrParams || !!familyParam,
+    event:    _hasTicketOrParams || !!eventParam
   };
 
   function applyCustomDetails(details) {

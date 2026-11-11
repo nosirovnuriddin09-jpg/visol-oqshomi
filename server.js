@@ -299,6 +299,15 @@ function escapeHtmlAttr(str) {
     .replace(/>/g, '&gt;');
 }
 
+// Helper: Escape string for Telegram HTML parse_mode safety
+function escapeTelegramHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 // Helper: Inject dynamic Open Graph & social preview meta tags into invitation HTML
 function injectSocialMeta(html, { title, description, url }) {
   const safeTitle = escapeHtmlAttr(title);
@@ -1273,22 +1282,25 @@ function setupBotCommands(botInstance) {
   // RECEIPT SUBMISSION & ADMIN APPROVAL FLOW
   // -------------------------------------------------------------
 
-  // 2. Chek rasmini qabul qilish va mijozga javob
-  botInstance.on('photo', async (ctx) => {
+  // Helper: Chek (rasm yoki fayl/document) qabul qilish va adminga yuborish
+  async function handleReceiptSubmission(ctx, { fileId, mediaType = 'photo', fileName = '' }) {
+    if (!ctx.chat || ctx.chat.type !== 'private') return;
+    if (!ctx.from || !fileId) return;
+
     const user = ctx.from;
     const userId = String(user.id);
-    const username = user.username ? `@${user.username}` : "Mavjud emas";
-    const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || "Mijoz";
+    const username = user.username ? `@${escapeTelegramHtml(user.username)}` : "Mavjud emas";
+    const rawFullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || "Mijoz";
+    const fullName = escapeTelegramHtml(rawFullName);
 
-    // 2.1 Mijoz chek rasmini yuborganda, bot unga darhol quyidagi javobni beradi:
-    await ctx.reply(
-      "✅ Chekingiz qabul qilindi! Admin uni tekshirib, 1 soat ichida taklifnomangiz havolasini yuboradi. Iltimos, kuting."
-    );
-
-    // Rasmni olish
-    const photos = ctx.message.photo;
-    const photo = photos[photos.length - 1];
-    const fileId = photo.file_id;
+    // 2.1 Mijoz chekni yuborganda, bot unga darhol javob beradi:
+    try {
+      await ctx.reply(
+        "✅ Chekingiz qabul qilindi! Admin uni tekshirib, 1 soat ichida taklifnomangiz havolasini yuboradi. Iltimos, kuting."
+      );
+    } catch (replyErr) {
+      console.warn('[Receipt] User reply warning:', replyErr.message);
+    }
 
     // Chek yuborilganligi sababli botning eski to'lov so'rash xabarini o'chirish
     const prevMsgId = userPaymentMessages.get(userId) || db.getLastPaymentMsgId(userId);
@@ -1303,11 +1315,13 @@ function setupBotCommands(botInstance) {
       pendingTickets = db.getPendingParticipantsByTelegramId(userId);
       if (!pendingTickets || pendingTickets.length === 0) {
         const last = db.getParticipantByTelegramId(userId);
-        if (last) pendingTickets = [last];
+        if (last && last.payment_status !== 'paid') {
+          pendingTickets = [last];
+        }
       }
     }
 
-    // Agar foydalanuvchida hali buyurtma bo'lmasa, chek kelgani sababli avtomatik buyurtma yaratamiz
+    // Agar foydalanuvchida hali to'lanmagan buyurtma bo'lmasa, avtomatik buyurtma yaratamiz
     if (!pendingTickets || pendingTickets.length === 0) {
       let uniqueTicketId = generateUniqueTicketId();
       while (db.getParticipantByTicketId(uniqueTicketId)) {
@@ -1316,8 +1330,8 @@ function setupBotCommands(botInstance) {
       const s = getSettings();
       const autoTicket = db.createParticipant({
         telegram_id: userId,
-        full_name: fullName,
-        guest_name: fullName,
+        full_name: rawFullName,
+        guest_name: rawFullName,
         phone: "Noma'lum",
         guests_count: 1,
         couple_names: `${s.groom_name} va ${s.bride_name}`,
@@ -1354,55 +1368,135 @@ function setupBotCommands(botInstance) {
 
     // Tanlangan dizaynni aniqlash
     const primaryDesign = pendingTickets[0]?.design || 'visol';
-    const designDisplayName = getDesignDisplayName(primaryDesign);
-    const primaryPhone = pendingTickets[0]?.phone || "Noma'lum";
+    const designDisplayName = escapeTelegramHtml(getDesignDisplayName(primaryDesign));
+    const primaryPhone = escapeTelegramHtml(pendingTickets[0]?.phone || "Noma'lum");
 
-    // 2.2 Chek rasmi, mijoz ma'lumotlari va u tanlagan dizaynni maxsus admin guruhiga yuborish
-    const adminChatId = ADMIN_CHAT_ID || process.env.ADMIN_CHAT_ID;
-    if (adminChatId) {
-      let ticketsListText = '';
-      if (pendingTickets.length > 1) {
-        ticketsListText = pendingTickets.map((t, idx) => `  ${idx + 1}. <b>${t.full_name}</b> (<code>${t.unique_ticket_id}</code>, ${getDesignDisplayName(t.design)}) — ${(t.total_price || INVITATION_PRICE).toLocaleString('uz-UZ')} so'm`).join('\n');
-      } else if (pendingTickets.length === 1) {
-        ticketsListText = `<code>${pendingTickets[0].unique_ticket_id}</code> (${pendingTickets[0].full_name})`;
-      } else {
-        ticketsListText = `Yangi buyurtma`;
+    // 2.2 Chek rasmi/fayli va mijoz ma'lumotlarini admin guruhiga yuborish
+    const adminChatId = ADMIN_CHAT_ID || process.env.ADMIN_CHAT_ID || '-5542867358';
+    const fallbackOwnerId = process.env.ADMIN_OWNER_ID || '6770205751';
+
+    let ticketsListText = '';
+    if (pendingTickets.length > 1) {
+      const maxVisible = 5;
+      ticketsListText = pendingTickets.slice(0, maxVisible).map((t, idx) =>
+        `  ${idx + 1}. <b>${escapeTelegramHtml(t.full_name)}</b> (<code>${escapeTelegramHtml(t.unique_ticket_id)}</code>, ${escapeTelegramHtml(getDesignDisplayName(t.design))}) — ${(t.total_price || INVITATION_PRICE).toLocaleString('uz-UZ')} so'm`
+      ).join('\n');
+      if (pendingTickets.length > maxVisible) {
+        ticketsListText += `\n  <i>... va yana ${pendingTickets.length - maxVisible} ta buyurtma</i>`;
       }
+    } else if (pendingTickets.length === 1) {
+      ticketsListText = `<code>${escapeTelegramHtml(pendingTickets[0].unique_ticket_id)}</code> (${escapeTelegramHtml(pendingTickets[0].full_name)})`;
+    } else {
+      ticketsListText = `Yangi buyurtma`;
+    }
 
-      const adminCaption = `🧾 <b>YANGI TO‘LOV CHEKI QABUL QILINDI!</b>\n\n` +
-        `👤 <b>Mijoz:</b> ${fullName}\n` +
-        `📱 <b>Telegram ID:</b> <code>${userId}</code>\n` +
-        `🌐 <b>Username:</b> ${username}\n` +
-        `📞 <b>Telefon:</b> ${primaryPhone}\n` +
-        `🎨 <b>Tanlangan dizayn:</b> <b>${designDisplayName}</b>\n` +
-        `💌 <b>Taklifnomalar soni:</b> ${totalTicketsCount} ta\n` +
-        `💰 <b>Umumiy to‘lov summasi:</b> <b>${formattedTotalAmount} so'm</b>\n` +
-        `🎫 <b>Chiptalar:</b>\n${ticketsListText}\n` +
-        `⏰ <b>Vaqt:</b> ${new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n\n` +
-        `Chekni tekshirib, quyidagi tugma orqali tasdiqlang:`;
+    let adminCaption = `🧾 <b>YANGI TO‘LOV CHEKI QABUL QILINDI!</b>\n\n` +
+      `👤 <b>Mijoz:</b> ${fullName}\n` +
+      `📱 <b>Telegram ID:</b> <code>${userId}</code>\n` +
+      `🌐 <b>Username:</b> ${username}\n` +
+      `📞 <b>Telefon:</b> ${primaryPhone}\n` +
+      `🎨 <b>Tanlangan dizayn:</b> <b>${designDisplayName}</b>\n` +
+      `💌 <b>Taklifnomalar soni:</b> ${totalTicketsCount} ta\n` +
+      `💰 <b>Umumiy to‘lov summasi:</b> <b>${formattedTotalAmount} so'm</b>\n` +
+      (fileName ? `📎 <b>Fayl:</b> ${escapeTelegramHtml(fileName)}\n` : '') +
+      `🎫 <b>Chiptalar:</b>\n${ticketsListText}\n` +
+      `⏰ <b>Vaqt:</b> ${new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n\n` +
+      `Chekni tekshirib, quyidagi tugma orqali tasdiqlang:`;
 
-      const adminKeyboard = Markup.inlineKeyboard([
-        [
-          Markup.button.callback(
-            totalTicketsCount > 1 ? `✅ Barcha (${totalTicketsCount} ta) ni Tasdiqlash` : `✅ Tasdiqlash`,
-            `approve_payment:${cleanTicketId}`
-          )
-        ]
-      ]);
+    if (adminCaption.length > 1000) {
+      adminCaption = adminCaption.slice(0, 980) + '...\n\nTasdiqlash tugmasini bosing:';
+    }
 
-      try {
-        await botInstance.telegram.sendPhoto(adminChatId, fileId, {
+    const adminKeyboard = Markup.inlineKeyboard([
+      [
+        Markup.button.callback(
+          totalTicketsCount > 1 ? `✅ Barcha (${totalTicketsCount} ta) ni Tasdiqlash` : `✅ Tasdiqlash`,
+          `approve_payment:${cleanTicketId}`
+        )
+      ]
+    ]);
+
+    const sendReceiptToChat = async (targetChatId) => {
+      if (mediaType === 'document') {
+        await botInstance.telegram.sendDocument(targetChatId, fileId, {
           caption: adminCaption,
           parse_mode: 'HTML',
           ...adminKeyboard
         });
-        console.log(`[Receipt] Successfully forwarded receipt to admin chat: ${adminChatId}`);
-      } catch (err) {
-        console.warn(`[Receipt] Failed to send receipt to admin chat ${adminChatId}:`, err.message);
+      } else {
+        await botInstance.telegram.sendPhoto(targetChatId, fileId, {
+          caption: adminCaption,
+          parse_mode: 'HTML',
+          ...adminKeyboard
+        });
       }
-    } else {
-      console.warn('[Receipt] Warning: ADMIN_CHAT_ID is not set in .env!');
+    };
+
+    try {
+      await sendReceiptToChat(adminChatId);
+      console.log(`[Receipt] Successfully forwarded ${mediaType} receipt to admin chat: ${adminChatId}`);
+    } catch (err) {
+      console.warn(`[Receipt] Primary send to ${adminChatId} failed:`, err.message);
+      const migratedId = err?.response?.parameters?.migrate_to_chat_id;
+      let delivered = false;
+
+      if (migratedId) {
+        try {
+          await sendReceiptToChat(migratedId);
+          delivered = true;
+          console.log(`[Receipt] Forwarded to migrated admin chat: ${migratedId}`);
+        } catch (migErr) {
+          console.warn(`[Receipt] Migrated send failed:`, migErr.message);
+        }
+      }
+
+      if (!delivered) {
+        // Fallback: matnli tasdiqlash xabarini admin guruhiga yuborish
+        try {
+          await botInstance.telegram.sendMessage(adminChatId, adminCaption, {
+            parse_mode: 'HTML',
+            ...adminKeyboard
+          });
+          delivered = true;
+          console.log(`[Receipt] Forwarded text fallback to admin chat: ${adminChatId}`);
+        } catch (msgErr) {
+          console.warn(`[Receipt] Text fallback to ${adminChatId} failed:`, msgErr.message);
+        }
+      }
+
+      // Agar admin guruhiga umuman bormagan bo'lsa, shaxsiy adminga yuborish
+      if (!delivered && fallbackOwnerId && String(fallbackOwnerId) !== String(adminChatId)) {
+        try {
+          await sendReceiptToChat(fallbackOwnerId);
+          console.log(`[Receipt] Delivered to fallback admin owner: ${fallbackOwnerId}`);
+        } catch (ownerErr) {
+          console.warn(`[Receipt] Fallback owner send failed:`, ownerErr.message);
+          await botInstance.telegram.sendMessage(fallbackOwnerId, adminCaption, {
+            parse_mode: 'HTML',
+            ...adminKeyboard
+          }).catch(() => {});
+        }
+      }
     }
+  }
+
+  // 2. Chek rasmini (photo) qabul qilish
+  botInstance.on('photo', async (ctx) => {
+    const photos = ctx.message?.photo;
+    if (!photos || photos.length === 0) return;
+    const photo = photos[photos.length - 1];
+    await handleReceiptSubmission(ctx, { fileId: photo.file_id, mediaType: 'photo' });
+  });
+
+  // 2b. Chek faylini (document: PDF yoki siqilmagan rasm) qabul qilish
+  botInstance.on('document', async (ctx) => {
+    const doc = ctx.message?.document;
+    if (!doc || !doc.file_id) return;
+    await handleReceiptSubmission(ctx, {
+      fileId: doc.file_id,
+      mediaType: 'document',
+      fileName: doc.file_name || 'Chek fayli'
+    });
   });
 
   // 3. Admin guruhida tasdiqlash va mijozga havola yuborish
@@ -2563,6 +2657,24 @@ app.get('/api/payment/transactions', (req, res) => {
   }
 });
 
+let botMode = 'none';
+let isShuttingDown = false;
+
+/**
+ * POST /api/telegram/webhook
+ * Receives Telegram bot updates reliably in production (no 409 polling conflicts)
+ */
+app.post('/api/telegram/webhook', async (req, res) => {
+  try {
+    if (bot && req.body && typeof req.body === 'object') {
+      await bot.handleUpdate(req.body);
+    }
+  } catch (err) {
+    console.error('[Telegram Webhook Error]:', err.message);
+  }
+  return res.status(200).send('OK');
+});
+
 /**
  * GET /api/health
  */
@@ -2572,6 +2684,7 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     database_driver: db.driver,
     bot_active: isBotActive,
+    bot_mode: botMode,
     webapp_url: WEBAPP_URL
   });
 });
@@ -2585,6 +2698,21 @@ app.get('*', (req, res) => {
 // START SERVER AND BOT
 // -------------------------------------------------------------
 let server = null;
+
+function launchPollingWithRetry(delayMs = 0) {
+  if (!bot || isShuttingDown) return;
+  setTimeout(() => {
+    if (!bot || isShuttingDown) return;
+    botMode = 'polling';
+    bot.launch({ dropPendingUpdates: false }).catch((err) => {
+      console.warn('[Telegram Bot] Polling interrupted:', err.message, '— retrying in 5s...');
+      if (!isShuttingDown) {
+        launchPollingWithRetry(5000);
+      }
+    });
+    console.log(`[Telegram Bot] Polling started: actively listening for Telegram users!`);
+  }, delayMs);
+}
 
 async function startApp() {
   // Start Express Server first
@@ -2625,11 +2753,16 @@ async function startApp() {
       isBotActive = true;
       console.log(`[Telegram Bot] Authenticated successfully as @${botInfo.username}`);
 
-      // Start long polling
-      bot.launch({ dropPendingUpdates: true }).catch((err) => {
-        console.warn('[Telegram Bot] Polling warning:', err.message);
-      });
-      console.log(`[Telegram Bot] Polling started: actively listening for Telegram users!`);
+      const isRenderEnv = Boolean(process.env.RENDER || process.env.RENDER_EXTERNAL_URL);
+      if (isRenderEnv && WEBAPP_URL && WEBAPP_URL.startsWith('https://')) {
+        const webhookUrl = `${WEBAPP_URL.replace(/\/+$/, '')}/api/telegram/webhook`;
+        await bot.telegram.setWebhook(webhookUrl, { drop_pending_updates: false });
+        botMode = 'webhook';
+        console.log(`[Telegram Bot] Webhook active at: ${webhookUrl}`);
+      } else {
+        await bot.telegram.deleteWebhook({ drop_pending_updates: false }).catch(() => {});
+        launchPollingWithRetry(0);
+      }
 
       // Automatically configure Chat Menu Button
       await updateChatMenuButton(null, "Taklif noma", `${WEBAPP_URL}/index.html?v=${BUILD_VERSION}`);
@@ -2656,8 +2789,9 @@ async function startApp() {
 
 // Graceful termination handling
 function handleGracefulShutdown(signal) {
+  isShuttingDown = true;
   console.log(`\n[Shutdown] Received ${signal}. Closing gracefully...`);
-  if (bot && isBotActive) {
+  if (bot && isBotActive && botMode === 'polling') {
     try {
       bot.stop(signal);
     } catch {}
