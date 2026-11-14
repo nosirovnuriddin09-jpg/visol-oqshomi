@@ -397,9 +397,9 @@ section{position:relative;z-index:4;padding:0 30px}
 /* ---------- invitation sentence ---------- */
 .invite-panel{padding-top:52px;padding-bottom:52px}
 .invite-line{
-  font-size:clamp(19px,5.4vw,23px);
-  line-height:2.05;color:var(--ink-soft);
-  max-width:335px;margin:18px auto 0;
+  font-size:clamp(17px,4.6vw,20px);
+  line-height:1.95;color:var(--ink-soft);
+  max-width:340px;margin:18px auto 0;
   letter-spacing:.005em;
 }
 .invite-line b{font-weight:700;color:var(--navy-800)}
@@ -1081,8 +1081,7 @@ section{position:relative;z-index:4;padding:0 30px}
     <p class="eyebrow dashed rv">AZIZ MEHMONIMIZ</p>
 
     <p class="invite-line rv rv-d1">
-      Farzandlarimizning <b>nikoh toʻyi</b> munosabati bilan sizni
-      <em class="script">toʻy oqshomiga</em> lutfan taklif etamiz
+      Oilamizda quvonchli kun — farzandlarimizning <b>«NIKOH» to'yi</b> munosabati bilan bu baxtli damlarda Sizdek qadrdon insonlarimiz yonimizda bo'lsa, shodligimiz yanada to'kis bo'ladi
     </p>
 
     <div class="rule rv rv-d2" style="margin-top:26px" aria-hidden="true">
@@ -1439,8 +1438,12 @@ const calData = (function(){
 
     const inviteLine = document.querySelector(".invite-line");
     if(inviteLine){
-      inviteLine.innerHTML = `Farzandlarimizning <b>${evStr.toLowerCase()}</b> munosabati bilan sizni ` +
-        `<em class="script">${isPlov ? "toʻy oshimizga" : "toʻy oqshomiga"}</em> lutfan taklif etamiz`;
+      let eventTitle = "«NIKOH» to'yi";
+      if(evStr && !/nikoh/i.test(evStr) && !isPlov){
+        const clean = evStr.replace(/[«»]/g, "").trim();
+        eventTitle = /to['ʻ`]?y/i.test(clean) ? `«${clean.toUpperCase()}»` : `«${clean.toUpperCase()}» to'yi`;
+      }
+      inviteLine.innerHTML = `Oilamizda quvonchli kun — farzandlarimizning <b>${eventTitle}</b> munosabati bilan bu baxtli damlarda Sizdek qadrdon insonlarimiz yonimizda bo'lsa, shodligimiz yanada to'kis bo'ladi`;
     }
 
     // 4. Sana va Vaqt

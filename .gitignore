@@ -4,3 +4,5 @@ node_modules/
 *.log
 mingit.zip
 git/
+data/*.sqlite*
+data/participants.json
