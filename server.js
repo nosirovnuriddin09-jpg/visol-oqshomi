@@ -14,6 +14,7 @@ const QRCode = require('qrcode');
 const db = require('./database');
 const clickService = require('./payments/click.service');
 const paymeService = require('./payments/payme.service');
+const bulkInvite = require('./bulk_invite');
 
 // Configuration
 const PORT = process.env.PORT || 3000;
@@ -23,6 +24,8 @@ const BUILD_VERSION = Date.now();
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '-5542867358';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JN6cT8qet4kdBzHnB9hX4tRgnhy3xwRfFAA6pyUa2Oww';
 const INVITATION_PRICE = parseInt(process.env.INVITATION_PRICE, 10) || 3000;
+// Admin owner: ONLY this Telegram user ID can use /bulk command
+const ADMIN_OWNER_ID = process.env.ADMIN_OWNER_ID || '6770205751';
 
 // Active payment message tracking per user to allow deleting previous message when new orders arrive
 const userPaymentMessages = new Map();
@@ -30,6 +33,10 @@ const userPaymentMessages = new Map();
 // Active interactive wizard states for creating invitations via bot
 // key: userId (string), value: { step: string, data: object }
 const userWizardStates = new Map();
+
+// Bulk invitation wizard states (admin only)
+// key: userId (string), value: { step: string, data: object }
+const bulkWizardStates = new Map();
 
 // Helper: Get readable display name of design
 function getDesignDisplayName(design) {
@@ -1190,6 +1197,7 @@ function setupBotCommands(botInstance) {
       `• /start - Botni ishga tushirish va taklifnoma olish\n` +
       `• /myticket - O'zingizning shaxsiy chiptangizni olish\n` +
       `• /admin - To'y ma'lumotlarini o'zgartirish paneli\n` +
+      `• /bulk - 🔐 Admin: Ommaviy taklifnoma yaratish (200+ mehmon)\n` +
       `• /contact - Taklifnoma buyurtma qilish va aloqa\n` +
       `• /id - Ushbu chat yoki guruhning ID raqamini ko'rish\n` +
       `• /help - Ushbu yordam xabari\n\n` +
@@ -1492,6 +1500,18 @@ function setupBotCommands(botInstance) {
   botInstance.on('document', async (ctx) => {
     const doc = ctx.message?.document;
     if (!doc || !doc.file_id) return;
+
+    // Check bulk wizard first (admin uploading guest list .txt/.csv)
+    const userId = String(ctx.from.id);
+    if (bulkWizardStates.has(userId)) {
+      try {
+        const handled = await botInstance._handleBulkDocument(ctx, userId);
+        if (handled) return;
+      } catch (bulkDocErr) {
+        console.error('[Bulk Wizard Document Error]:', bulkDocErr.message);
+      }
+    }
+
     await handleReceiptSubmission(ctx, {
       fileId: doc.file_id,
       mediaType: 'document',
@@ -1699,6 +1719,17 @@ function setupBotCommands(botInstance) {
     if (!text || text.startsWith('/')) return; // ignore slash commands
 
     const userId = String(ctx.from.id);
+
+    // Check bulk wizard first (admin only)
+    if (bulkWizardStates.has(userId)) {
+      try {
+        const handled = await botInstance._handleBulkWizardText(ctx, userId, text);
+        if (handled) return;
+      } catch (bulkErr) {
+        console.error('[Bulk Wizard Text Error]:', bulkErr.message);
+      }
+    }
+
     const state = userWizardStates.get(userId);
     const lowerText = text.toLowerCase();
 
@@ -1982,6 +2013,481 @@ function setupBotCommands(botInstance) {
       console.warn('[Bot Text Handler]:', e.message);
     }
   });
+}
+
+// -------------------------------------------------------------
+// BULK INVITATION WIZARD (ADMIN ONLY)
+// Steps:
+//   1. /bulk → check admin, ask event_type
+//   2. couple_names (kelin-kuyov)
+//   3. family_names
+//   4. event_date_time
+//   5. venue_name
+//   6. venue_address
+//   7. design (inline keyboard)
+//   8. music (inline keyboard)
+//   9. Ask for guest list (text message OR .txt/.csv document)
+//  10. Process list → generate links → send results file + text chunks
+// -------------------------------------------------------------
+
+function isAdminOwner(userId) {
+  return String(userId) === String(ADMIN_OWNER_ID);
+}
+
+function setupBulkInviteWizard(botInstance) {
+  // Helper: check and reject non-admin
+  async function rejectIfNotAdmin(ctx) {
+    if (!isAdminOwner(ctx.from?.id)) {
+      await ctx.reply('⛔ Bu buyruq faqat admin uchun.');
+      return true;
+    }
+    return false;
+  }
+
+  // /bulk — start bulk wizard
+  botInstance.command(['bulk', 'ommaviy'], async (ctx) => {
+    if (await rejectIfNotAdmin(ctx)) return;
+    const userId = String(ctx.from.id);
+    bulkWizardStates.delete(userId);
+    bulkWizardStates.set(userId, { step: 'waiting_event_type', data: {} });
+    await ctx.replyWithHTML(
+      `🎯 <b>Ommaviy Taklifnoma Yaratish Ustasi</b>\n\n` +
+      `Bu buyruq faqat sizga — adminga mos.\n\n` +
+      `Qadamlar:\n` +
+      `1️⃣ Tadbir turi\n2️⃣ Kelin-kuyov / Mezbonlar ismi\n3️⃣ Oila / Mezbonlar nomi\n` +
+      `4️⃣ Sana va vaqt\n5️⃣ To'yxona nomi\n6️⃣ Manzil\n7️⃣ Dizayn\n8️⃣ Musiqa\n9️⃣ Mehmonlar ro'yxati\n\n` +
+      `1️⃣ <b>Tadbir turini kiriting:</b>\n<i>(Masalan: Nikoh to'yi, Sunnat to'yi, Nahor oshi, Tuy)</i>`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback('❌ Bekor qilish', 'bulk_cancel')]
+      ])
+    );
+  });
+
+  // Cancel bulk wizard
+  botInstance.action('bulk_cancel', async (ctx) => {
+    await ctx.answerCbQuery('Bekor qilindi');
+    const userId = String(ctx.from.id);
+    bulkWizardStates.delete(userId);
+    await ctx.replyWithHTML('🛑 <b>Ommaviy taklifnoma yaratish bekor qilindi.</b>');
+  });
+
+  // Design selection for bulk
+  botInstance.action(/^bulk_design:(visol|enikoh)$/, async (ctx) => {
+    if (!isAdminOwner(ctx.from?.id)) { await ctx.answerCbQuery('⛔ Ruxsat yo\'q'); return; }
+    await ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    const state = bulkWizardStates.get(userId);
+    if (!state) return;
+    state.data.design = ctx.match[1];
+    state.step = 'waiting_music';
+    await ctx.replyWithHTML(
+      `✅ Dizayn tanlandi: <b>${ctx.match[1] === 'enikoh' ? '💍 E-Nikoh Oqshomi' : '✨ Visol Oqshomi'}</b>\n\n` +
+      `8️⃣ <b>Musiqa (qo'shiq) tanlang:</b>`,
+      Markup.inlineKeyboard([
+        [
+          Markup.button.callback('🎵 Kelibdi (music1)', 'bulk_music:music1'),
+          Markup.button.callback('👰 Jon qizim (music2)', 'bulk_music:music2')
+        ],
+        [Markup.button.callback('❌ Bekor qilish', 'bulk_cancel')]
+      ])
+    );
+  });
+
+  // Music selection for bulk
+  botInstance.action(/^bulk_music:(music1|music2)$/, async (ctx) => {
+    if (!isAdminOwner(ctx.from?.id)) { await ctx.answerCbQuery('⛔ Ruxsat yo\'q'); return; }
+    await ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    const state = bulkWizardStates.get(userId);
+    if (!state) return;
+    state.data.music = ctx.match[1];
+    state.step = 'waiting_guest_list';
+    await ctx.replyWithHTML(
+      `✅ Musiqa tanlandi: <b>${ctx.match[1] === 'music2' ? '"Jon qizim"' : '"Kelibdi"'}</b>\n\n` +
+      `9️⃣ <b>Mehmonlar ro'yxatini yuboring:</b>\n\n` +
+      `📋 Quyidagi usullardan birini tanlang:\n` +
+      `• <b>Oddiy matn:</b> Har bir qatorda bitta ism\n` +
+      `  <code>Alisher Karimov\nZulfiya Rahimova\nBobur Toshmatov</code>\n\n` +
+      `• <b>Fayl yuborish:</b> <code>.txt</code> yoki <code>.csv</code> fayl yuboring\n` +
+      `  (CSV da birinchi ustun ism bo'lsin)\n\n` +
+      `⚠️ Bo'sh satrlar va ortiqcha probel avtomatik tozalanadi.\n\n` +
+      `Ro'yxatni yuboring:`,
+      Markup.inlineKeyboard([[Markup.button.callback('❌ Bekor qilish', 'bulk_cancel')]])
+    );
+  });
+
+  // -------------------------------------------------------
+  // Core: Run bulk generation in background, send progress
+  // -------------------------------------------------------
+  async function runBulkGeneration(ctx, userId, guestNames) {
+    const state = bulkWizardStates.get(userId);
+    if (!state) return;
+
+    const eventData = state.data;
+    const total = guestNames.length;
+
+    if (total === 0) {
+      await ctx.replyWithHTML('⚠️ <b>Ro\'yxatda hech qanday ism topilmadi.</b> Qaytadan urinib ko\'ring.');
+      return;
+    }
+    if (total > 500) {
+      await ctx.replyWithHTML(`⚠️ <b>Juda ko'p ism:</b> ${total} ta. Maksimum 500 ta qabul qilinadi. Ro'yxatni qisqartirib yuboring.`);
+      return;
+    }
+
+    bulkWizardStates.delete(userId);
+
+    const progressMsg = await ctx.replyWithHTML(
+      `⏳ <b>Ommaviy taklifnoma yaratish boshlandi!</b>\n\n` +
+      `📊 Jami: <b>${total} ta mehmon</b>\n` +
+      `🎨 Dizayn: <b>${eventData.design === 'enikoh' ? 'E-Nikoh Oqshomi' : 'Visol Oqshomi'}</b>\n` +
+      `🎵 Musiqa: <b>${eventData.music === 'music2' ? 'Jon qizim' : 'Kelibdi'}</b>\n\n` +
+      `⚙️ Ishlanmoqda... 0/${total}`
+    );
+    const progressMsgId = progressMsg?.message_id;
+
+    const results = [];
+    let doneCount = 0;
+    let lastProgressUpdate = Date.now();
+
+    // Process in batches to avoid blocking the event loop
+    const BATCH_SIZE = 20;
+    const PROGRESS_INTERVAL_MS = 3000; // update progress every 3 seconds
+
+    for (let i = 0; i < guestNames.length; i += BATCH_SIZE) {
+      const batch = guestNames.slice(i, Math.min(i + BATCH_SIZE, guestNames.length));
+
+      for (const name of batch) {
+        try {
+          const ticket = bulkInvite.createOneInvitation(db, {
+            guestName: name,
+            eventData,
+            adminTelegramId: userId
+          });
+          results.push({ name, success: true, ticket });
+        } catch (err) {
+          results.push({ name, success: false, error: err.message });
+          console.error(`[Bulk] Failed for "${name}":`, err.message);
+        }
+        doneCount++;
+      }
+
+      // Update progress periodically (not on every single item to avoid flood)
+      const now = Date.now();
+      if (progressMsgId && (now - lastProgressUpdate > PROGRESS_INTERVAL_MS || doneCount === total)) {
+        lastProgressUpdate = now;
+        try {
+          await ctx.telegram.editMessageText(
+            ctx.chat.id,
+            progressMsgId,
+            undefined,
+            `⏳ <b>Ommaviy taklifnoma yaratish boshlandi!</b>\n\n` +
+            `📊 Jami: <b>${total} ta mehmon</b>\n` +
+            `🎨 Dizayn: <b>${eventData.design === 'enikoh' ? 'E-Nikoh Oqshomi' : 'Visol Oqshomi'}</b>\n` +
+            `🎵 Musiqa: <b>${eventData.music === 'music2' ? 'Jon qizim' : 'Kelibdi'}</b>\n\n` +
+            `⚙️ Ishlanmoqda... <b>${doneCount}/${total}</b>` +
+            (doneCount === total ? '\n\n✅ <i>Tayyor! Natijalar yuborilmoqda...</i>' : ''),
+            { parse_mode: 'HTML' }
+          );
+        } catch (_) { /* edit may fail if message unchanged */ }
+      }
+
+      // Yield to event loop between batches
+      await new Promise(resolve => setImmediate(resolve));
+    }
+
+    // Count successes and failures
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+
+    // Build summary header
+    const coupleOrHost = eventData.couple_names || eventData.family_names || 'Tadbir';
+    const label = `${coupleOrHost} — ${eventData.event_type || 'Tadbir'}`;
+
+    // Save results to .txt file
+    let resultsFilePath = null;
+    try {
+      resultsFilePath = bulkInvite.saveResultsFile(results, getInvitationUrl, label);
+    } catch (fileErr) {
+      console.error('[Bulk] File save error:', fileErr.message);
+    }
+
+    // Build result lines for Telegram messages
+    const resultLines = bulkInvite.buildResultLines(results, getInvitationUrl);
+
+    // Summary message
+    const summaryMsg =
+      `🎉 <b>Ommaviy taklifnoma yaratish yakunlandi!</b>\n\n` +
+      `📊 <b>Natija:</b>\n` +
+      `✅ Muvaffaqiyatli: <b>${successCount} ta</b>\n` +
+      `❌ Xatolik: <b>${failCount} ta</b>\n\n` +
+      `📅 <b>Tadbir:</b> ${label}\n` +
+      `📆 <b>Sana:</b> ${eventData.event_date_time || '—'}\n` +
+      `🏛 <b>To'yxona:</b> ${eventData.venue_name || '—'}, ${eventData.venue_address || '—'}\n` +
+      `🎨 <b>Dizayn:</b> ${eventData.design === 'enikoh' ? 'E-Nikoh Oqshomi' : 'Visol Oqshomi'}\n` +
+      `🎵 <b>Musiqa:</b> ${eventData.music === 'music2' ? 'Jon qizim' : 'Kelibdi'}\n\n` +
+      `📄 <i>Barcha havolalar quyida (fayl va matn shaklida) yuborildi.</i>`;
+
+    await ctx.replyWithHTML(summaryMsg);
+
+    // Send the .txt file first (most convenient — download once, use in spreadsheet)
+    if (resultsFilePath && fs.existsSync(resultsFilePath)) {
+      try {
+        await ctx.replyWithDocument(
+          { source: fs.createReadStream(resultsFilePath), filename: path.basename(resultsFilePath) },
+          { caption: `📄 ${total} ta mehmon uchun barcha taklifnoma havolalari (matn fayli)` }
+        );
+      } catch (docErr) {
+        console.warn('[Bulk] File send error:', docErr.message);
+      }
+    }
+
+    // Also send as chunked text messages
+    const chunks = bulkInvite.chunkText(resultLines, 3800);
+    for (let ci = 0; ci < chunks.length; ci++) {
+      const header = chunks.length > 1 ? `📋 <b>Havolalar (${ci + 1}/${chunks.length}):</b>\n\n` : `📋 <b>Barcha havolalar:</b>\n\n`;
+      await ctx.replyWithHTML(header + chunks[ci]);
+      // small delay between chunks to avoid flood
+      if (ci < chunks.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    // Report parse errors if any (name lines that were skipped)
+    if (state._parseErrors && state._parseErrors.length > 0) {
+      const errLines = state._parseErrors.slice(0, 20).map(e =>
+        `• Satr ${e.line}: "${e.raw.slice(0, 40)}" — ${e.reason}`
+      ).join('\n');
+      await ctx.replyWithHTML(
+        `⚠️ <b>Quyidagi satrlar o'tkazib yuborildi (${state._parseErrors.length} ta):</b>\n\n` +
+        errLines +
+        (state._parseErrors.length > 20 ? `\n... va yana ${state._parseErrors.length - 20} ta` : '')
+      );
+    }
+
+    console.log(`[Bulk] Admin ${userId} generated ${successCount} invitations (${failCount} errors) for event: ${label}`);
+  }
+
+  // -------------------------------------------------------
+  // Handle TEXT messages in bulk wizard
+  // -------------------------------------------------------
+  function handleBulkText(botInstance) {
+    // This is called from the main text handler — not registered here
+    // Returns true if handled, false if not in bulk wizard
+  }
+
+  // Export handler for use in main text handler
+  botInstance._handleBulkWizardText = async function(ctx, userId, text) {
+    const state = bulkWizardStates.get(userId);
+    if (!state) return false;
+
+    if (!isAdminOwner(userId)) {
+      bulkWizardStates.delete(userId);
+      return false;
+    }
+
+    const s = getSettings();
+
+    // Step 1: event_type
+    if (state.step === 'waiting_event_type') {
+      state.data.event_type = text.trim() || s.event_type || "Nikoh to'yi";
+      state.step = 'waiting_couple_names';
+      await ctx.replyWithHTML(
+        `✅ Tadbir turi: <b>${state.data.event_type}</b>\n\n` +
+        `2️⃣ <b>Kelin-kuyov ismlarini kiriting:</b>\n<i>(Masalan: Farrux va Sevara, yoki oila boshi ism-familiyasi)</i>`,
+        Markup.inlineKeyboard([
+          [Markup.button.callback(`⏭ Standart (${s.groom_name} va ${s.bride_name})`, 'bulk_skip:couple_names')],
+          [Markup.button.callback('❌ Bekor qilish', 'bulk_cancel')]
+        ])
+      );
+      return true;
+    }
+
+    // Step 2: couple_names
+    if (state.step === 'waiting_couple_names') {
+      state.data.couple_names = text.trim() || `${s.groom_name} va ${s.bride_name}`;
+      state.step = 'waiting_family_names';
+      await ctx.replyWithHTML(
+        `✅ Kelin-kuyov: <b>${state.data.couple_names}</b>\n\n` +
+        `3️⃣ <b>Oila / Mezbonlar nomini kiriting:</b>\n<i>(Taklifnoma oxirida «Hurmat va ehtirom ila...» qatorida chiqadi)</i>`,
+        Markup.inlineKeyboard([
+          [Markup.button.callback(`⏭ Standart (${s.family_names || "To'y egalari"})`, 'bulk_skip:family_names')],
+          [Markup.button.callback('❌ Bekor qilish', 'bulk_cancel')]
+        ])
+      );
+      return true;
+    }
+
+    // Step 3: family_names
+    if (state.step === 'waiting_family_names') {
+      state.data.family_names = text.trim() || s.family_names || "To'y egalari va xonadon ahillari";
+      state.step = 'waiting_event_date_time';
+      await ctx.replyWithHTML(
+        `✅ Oila: <b>${state.data.family_names}</b>\n\n` +
+        `4️⃣ <b>To'y sanasi va vaqtini kiriting:</b>\n<i>(Masalan: 2026-12-25 18:00)</i>`,
+        Markup.inlineKeyboard([
+          [Markup.button.callback('⏭ Standart sanani qoldirish', 'bulk_skip:event_date_time')],
+          [Markup.button.callback('❌ Bekor qilish', 'bulk_cancel')]
+        ])
+      );
+      return true;
+    }
+
+    // Step 4: event_date_time
+    if (state.step === 'waiting_event_date_time') {
+      state.data.event_date_time = text.trim() || `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`;
+      state.step = 'waiting_venue_name';
+      await ctx.replyWithHTML(
+        `✅ Sana: <b>${state.data.event_date_time}</b>\n\n` +
+        `5️⃣ <b>To'yxona nomini kiriting:</b>`,
+        Markup.inlineKeyboard([
+          [Markup.button.callback(`⏭ Standart (${s.venue_name})`, 'bulk_skip:venue_name')],
+          [Markup.button.callback('❌ Bekor qilish', 'bulk_cancel')]
+        ])
+      );
+      return true;
+    }
+
+    // Step 5: venue_name
+    if (state.step === 'waiting_venue_name') {
+      state.data.venue_name = text.trim() || s.venue_name;
+      state.step = 'waiting_venue_address';
+      await ctx.replyWithHTML(
+        `✅ To'yxona: <b>${state.data.venue_name}</b>\n\n` +
+        `6️⃣ <b>To'yxona manzilini kiriting:</b>`,
+        Markup.inlineKeyboard([
+          [Markup.button.callback(`⏭ Standart (${s.venue_address})`, 'bulk_skip:venue_address')],
+          [Markup.button.callback('❌ Bekor qilish', 'bulk_cancel')]
+        ])
+      );
+      return true;
+    }
+
+    // Step 6: venue_address
+    if (state.step === 'waiting_venue_address') {
+      state.data.venue_address = text.trim() || s.venue_address;
+      state.step = 'waiting_design';
+      await ctx.replyWithHTML(
+        `✅ Manzil: <b>${state.data.venue_address}</b>\n\n` +
+        `7️⃣ <b>Dizayn tanlang:</b>`,
+        Markup.inlineKeyboard([
+          [
+            Markup.button.callback('✨ Visol Oqshomi', 'bulk_design:visol'),
+            Markup.button.callback('💍 E-Nikoh Oqshomi', 'bulk_design:enikoh')
+          ],
+          [Markup.button.callback('❌ Bekor qilish', 'bulk_cancel')]
+        ])
+      );
+      return true;
+    }
+
+    // Step 9: Guest list (plain text)
+    if (state.step === 'waiting_guest_list') {
+      const { names, errors } = bulkInvite.parseGuestNames(text);
+      state._parseErrors = errors;
+
+      if (names.length === 0) {
+        await ctx.replyWithHTML(
+          `⚠️ <b>Hech qanday ism topilmadi.</b>\n\n` +
+          `Iltimos, har bir qatorda bitta ism yozing:\n` +
+          `<code>Alisher Karimov\nZulfiya Rahimova\nBobur Toshmatov</code>`
+        );
+        return true;
+      }
+
+      await ctx.replyWithHTML(
+        `✅ <b>${names.length} ta ism aniqlandi.</b>` +
+        (errors.length > 0 ? ` (${errors.length} ta satr o'tkazib yuborildi)` : '') +
+        `\n\n⏳ Taklifnomalar yaratilmoqda...`
+      );
+
+      // Run async — do not await, let it run in background
+      runBulkGeneration(ctx, userId, names).catch(err => {
+        console.error('[Bulk] runBulkGeneration error:', err);
+        ctx.reply('❌ Ommaviy yaratishda xatolik: ' + err.message).catch(() => {});
+      });
+
+      return true;
+    }
+
+    return false;
+  };
+
+  // Skip action handlers for bulk wizard steps
+  botInstance.action(/^bulk_skip:(.+)$/, async (ctx) => {
+    if (!isAdminOwner(ctx.from?.id)) { await ctx.answerCbQuery('⛔ Ruxsat yo\'q'); return; }
+    await ctx.answerCbQuery('Standart qiymati ishlatildi');
+    const userId = String(ctx.from.id);
+    const state = bulkWizardStates.get(userId);
+    if (!state) return;
+    const field = ctx.match[1];
+    const s = getSettings();
+
+    // Fill defaults for skipped field and advance step
+    if (field === 'couple_names') {
+      await botInstance._handleBulkWizardText(ctx, userId, `${s.groom_name} va ${s.bride_name}`);
+    } else if (field === 'family_names') {
+      await botInstance._handleBulkWizardText(ctx, userId, s.family_names || "To'y egalari");
+    } else if (field === 'event_date_time') {
+      await botInstance._handleBulkWizardText(ctx, userId, `${s.day_number}-${s.month_name}, ${s.year} • ${s.event_time}`);
+    } else if (field === 'venue_name') {
+      await botInstance._handleBulkWizardText(ctx, userId, s.venue_name || 'Tantanalar Saroyi');
+    } else if (field === 'venue_address') {
+      await botInstance._handleBulkWizardText(ctx, userId, s.venue_address || 'Toshkent');
+    }
+  });
+
+  // Handle document uploads in bulk wizard (for .txt / .csv files)
+  botInstance._handleBulkDocument = async function(ctx, userId) {
+    const state = bulkWizardStates.get(userId);
+    if (!state || state.step !== 'waiting_guest_list') return false;
+    if (!isAdminOwner(userId)) return false;
+
+    const doc = ctx.message?.document;
+    if (!doc || !doc.file_id) return false;
+
+    const fname = (doc.file_name || '').toLowerCase();
+    if (!fname.endsWith('.txt') && !fname.endsWith('.csv')) {
+      await ctx.reply('⚠️ Iltimos, faqat .txt yoki .csv fayl yuboring.');
+      return true; // handled (rejected)
+    }
+
+    // Download the file content via Telegram API
+    try {
+      const fileLink = await ctx.telegram.getFileLink(doc.file_id);
+      const response = await fetch(fileLink.toString());
+      if (!response.ok) throw new Error(`File download failed: ${response.status}`);
+      const rawText = await response.text();
+
+      const { names, errors } = bulkInvite.parseGuestNames(rawText);
+      state._parseErrors = errors;
+
+      if (names.length === 0) {
+        await ctx.replyWithHTML(
+          `⚠️ <b>Faylda hech qanday ism topilmadi.</b>\n` +
+          `Fayl har qatorda bitta ism bo'lishi kerak, yoki CSV da birinchi ustun ism bo'lishi kerak.`
+        );
+        return true;
+      }
+
+      await ctx.replyWithHTML(
+        `✅ <b>Fayldan ${names.length} ta ism o'qildi.</b>` +
+        (errors.length > 0 ? ` (${errors.length} ta satr o'tkazib yuborildi)` : '') +
+        `\n\n⏳ Taklifnomalar yaratilmoqda...`
+      );
+
+      runBulkGeneration(ctx, userId, names).catch(err => {
+        console.error('[Bulk] runBulkGeneration error:', err);
+        ctx.reply('❌ Ommaviy yaratishda xatolik: ' + err.message).catch(() => {});
+      });
+
+    } catch (err) {
+      console.error('[Bulk] Document download error:', err.message);
+      await ctx.reply(`❌ Faylni yuklab olishda xatolik: ${err.message}\nIltimos, matn shaklida yuboring.`);
+    }
+
+    return true;
+  };
 }
 
 // -------------------------------------------------------------
@@ -2746,6 +3252,7 @@ async function startApp() {
     try {
       bot = new Telegraf(BOT_TOKEN);
       setupBotCommands(bot);
+      setupBulkInviteWizard(bot);
 
       // Verify token with getMe
       const botInfo = await bot.telegram.getMe();
