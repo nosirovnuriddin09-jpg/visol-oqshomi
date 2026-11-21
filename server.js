@@ -25,7 +25,7 @@ const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '-5542867358';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JN6cT8qet4kdBzHnB9hX4tRgnhy3xwRfFAA6pyUa2Oww';
 const INVITATION_PRICE = parseInt(process.env.INVITATION_PRICE, 10) || 3000;
 // Admin owner: ONLY this Telegram user ID can use /bulk command
-const ADMIN_OWNER_ID = process.env.ADMIN_OWNER_ID || '6770205751';
+const ADMIN_OWNER_ID = String(process.env.ADMIN_OWNER_ID || '6770205751').trim().replace(/['"]/g, '');
 
 // Active payment message tracking per user to allow deleting previous message when new orders arrive
 const userPaymentMessages = new Map();
@@ -644,8 +644,12 @@ async function updateChatMenuButton(chatId, text, url) {
 }
 
 function setupBotCommands(botInstance) {
-  // Global middleware: Record active user and ensure personalized menu button
+  // Global middleware: Record active user, log commands, and ensure personalized menu button
   botInstance.use((ctx, next) => {
+    const text = ctx.message?.text || ctx.callbackQuery?.data || '';
+    if (text.startsWith('/')) {
+      console.log(`[Bot Command Received] command="${text}" from=${ctx.from?.id} (@${ctx.from?.username || 'no_username'})`);
+    }
     if (ctx.from) {
       recordActiveTelegramUser(ctx.from);
       updateChatMenuButton(ctx.from.id, "Taklif noma", getWebAppUrlForUser(ctx.from.id)).catch(() => {});
@@ -1235,6 +1239,9 @@ function setupBotCommands(botInstance) {
     );
   });
 
+  // Register Bulk Invitation Wizard (Admin only) BEFORE any generic message/text/document handlers
+  setupBulkInviteWizard(botInstance);
+
   // When bot is added to a group, automatically greet and display the Group ID
   botInstance.on('new_chat_members', async (ctx) => {
     const newMembers = ctx.message?.new_chat_members || [];
@@ -1714,9 +1721,12 @@ function setupBotCommands(botInstance) {
   });
 
   // Text message handler: handles wizard steps or AI assistant
-  botInstance.on('text', async (ctx) => {
+  // IMPORTANT: must accept (ctx, next) so that command-like messages ('/...')
+  // are passed through to bot.command() handlers registered later in the chain.
+  botInstance.on('text', async (ctx, next) => {
     const text = ctx.message?.text?.trim();
-    if (!text || text.startsWith('/')) return; // ignore slash commands
+    // Pass slash-commands through to their dedicated bot.command() handlers
+    if (!text || text.startsWith('/')) return next();
 
     const userId = String(ctx.from.id);
 
@@ -2031,14 +2041,18 @@ function setupBotCommands(botInstance) {
 // -------------------------------------------------------------
 
 function isAdminOwner(userId) {
-  return String(userId) === String(ADMIN_OWNER_ID);
+  return bulkInvite.isAdminOwner(userId, ADMIN_OWNER_ID);
 }
 
 function setupBulkInviteWizard(botInstance) {
-  // Helper: check and reject non-admin
+  // Helper: check and reject non-admin with clear diagnostic log and feedback
   async function rejectIfNotAdmin(ctx) {
-    if (!isAdminOwner(ctx.from?.id)) {
-      await ctx.reply('⛔ Bu buyruq faqat admin uchun.');
+    const rawId = ctx.from?.id;
+    const isOwner = isAdminOwner(rawId);
+    console.log(`[Bulk Auth Check] incoming_id=${rawId} allowed=${isOwner} configured=${ADMIN_OWNER_ID}`);
+    if (!isOwner) {
+      console.warn(`[Bulk Access Denied] User ID ${rawId} (@${ctx.from?.username || 'no_user'}) attempted to use /bulk`);
+      await ctx.reply(`⛔ Bu buyruq faqat bot admini uchun.\nSizning Telegram ID: <code>${rawId}</code>`, { parse_mode: 'HTML' });
       return true;
     }
     return false;
@@ -2046,6 +2060,7 @@ function setupBulkInviteWizard(botInstance) {
 
   // /bulk — start bulk wizard
   botInstance.command(['bulk', 'ommaviy'], async (ctx) => {
+    console.log(`[Bulk Command Triggered] from=${ctx.from?.id} (@${ctx.from?.username || 'no_user'})`);
     if (await rejectIfNotAdmin(ctx)) return;
     const userId = String(ctx.from.id);
     bulkWizardStates.delete(userId);
@@ -3171,14 +3186,21 @@ let isShuttingDown = false;
  * Receives Telegram bot updates reliably in production (no 409 polling conflicts)
  */
 app.post('/api/telegram/webhook', async (req, res) => {
+  // Always respond 200 immediately so Telegram doesn't retry
+  res.status(200).send('OK');
   try {
     if (bot && req.body && typeof req.body === 'object') {
-      await bot.handleUpdate(req.body);
+      const upd = req.body;
+      // Log every incoming update type for diagnostics (remove once stable)
+      const updType = Object.keys(upd).filter(k => k !== 'update_id').join(',') || 'unknown';
+      const msgText = upd.message?.text || upd.edited_message?.text || '';
+      const fromId  = upd.message?.from?.id || upd.callback_query?.from?.id || '?';
+      console.log(`[Webhook] update_id=${upd.update_id} type=${updType} from=${fromId}${msgText ? ' text=' + msgText.slice(0, 60) : ''}`);
+      await bot.handleUpdate(upd);
     }
   } catch (err) {
-    console.error('[Telegram Webhook Error]:', err.message);
+    console.error('[Telegram Webhook Error]:', err.message, err.stack ? err.stack.split('\n').slice(0,3).join(' | ') : '');
   }
-  return res.status(200).send('OK');
 });
 
 /**
@@ -3252,7 +3274,6 @@ async function startApp() {
     try {
       bot = new Telegraf(BOT_TOKEN);
       setupBotCommands(bot);
-      setupBulkInviteWizard(bot);
 
       // Verify token with getMe
       const botInfo = await bot.telegram.getMe();

